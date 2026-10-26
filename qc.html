@@ -248,6 +248,7 @@
       <div class="navsec">ANALYTICS</div>
       <a href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Recovery Dashboard</a>
       <a href="qc.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>QC Dashboard</a>
+      <a href="tracker.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Recovery Tracker</a>
     </nav>
     <div class="foot">
       <a href="admin.html" class="adminlink hidden" id="adminLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/><path d="M19 3l2 2-2 2"/></svg>Admin · Users</a>
@@ -261,6 +262,7 @@
     <nav class="tabs-top">
       <a href="dashboard.html">Recovery Dashboard</a>
       <a href="qc.html" class="active">QC Dashboard</a>
+      <a href="tracker.html">Recovery Tracker</a>
     </nav>
     <h1 class="page-title">QC Dashboard</h1>
     <p class="page-sub" id="pageSub">Vehicle QC checks — approved, rejected and the mistakes behind them</p>
@@ -767,6 +769,9 @@
     ['fromDate', 'toDate'].forEach(id => $(id).addEventListener('change', render));
     $('clearBtn').addEventListener('click', () => { $('cityFilter').value = ''; $('hubFilter').value = ''; $('periodFilter').value = '30'; $('rangeBox').classList.add('hidden'); $('fromDate').value = ''; $('toDate').value = ''; fillFilters(); render(); });
     $('syncBtn').addEventListener('click', load);
+    // New QCs arrive from the Google Sheet every ~10 minutes: refresh every 5 minutes while the page is open
+    setInterval(() => { if (qcs.length && document.visibilityState === 'visible') load(); }, 5 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && qcs.length) load(); });
     $('menuBtn').addEventListener('click', () => $('side').classList.toggle('open'));
     const CARD_KEYS = ['total', 'appr', 'rej', 'pct', 'hold', 'tech', 'mis', 'top'];
     const ICONS = [

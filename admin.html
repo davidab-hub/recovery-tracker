@@ -227,12 +227,29 @@
     td.acts { display: flex; gap: 6px; }
     .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--soft); color: var(--text-2); }
     .tag-admin { background: var(--s4); color: var(--s3); } .tag-ok { background: #e8f5ec; color: #15803d; } .tag-wait { background: #fff4e0; color: #a15c00; }
+    /* Collapse button at the top of the sidebar (desktop) */
+    .side { transition: width .2s; }
+    .side button.collapse { display: block; width: 100%; background: none; border: none; border-bottom: 1px solid #262930; cursor: pointer;
+      text-align: right; padding: 10px 14px; color: var(--side-text); font: inherit; font-size: 15px; }
+    @media (max-width: 900px) { .side button.collapse { display: none; } }
+    .side button.collapse:hover { color: #fff; background: var(--side-2); }
+    @media (min-width: 901px) {
+      html.side-min .side { width: 64px; }
+      html.side-min .side button.collapse { text-align: center; }
+      html.side-min .brandrow { justify-content: center; padding: 12px 0; }
+      html.side-min .brandname, html.side-min .navsec, html.side-min #authBox, html.side-min .side .foot .live { display: none; }
+      html.side-min .nav a, html.side-min .adminlink { font-size: 0; justify-content: center; padding: 10px 0; gap: 0; }
+      html.side-min .nav a svg, html.side-min .adminlink svg { width: 18px; height: 18px; }
+      html.side-min .nav { padding-top: 8px; }
+      html.side-min .side .foot { padding: 10px 8px; }
+      html.side-min .adminlink { margin: 0; }
+    }
   </style>
 </head>
 <body>
  <div class="app">
   <aside class="side" id="side">
-    <div class="collapse" aria-hidden="true">«</div>
+    <button class="collapse" id="sideToggle" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">«</button>
     <div class="brandrow">
       <div style="display:flex;align-items:center;gap:12px">
         <div class="logo"><img src="logo.png" alt="Bounce" onerror="this.parentNode.textContent = 'BOUNCE DAILY'"></div>
@@ -244,6 +261,7 @@
       <div class="navsec">ANALYTICS</div>
       <a href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Recovery Dashboard</a>
       <a href="qc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>QC Dashboard</a>
+      <a href="tracker.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Recovery Tracker</a>
     </nav>
     <div class="foot">
       <a href="admin.html" class="adminlink active" id="adminLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/><path d="M19 3l2 2-2 2"/></svg>Admin · Users</a>
@@ -257,6 +275,7 @@
     <nav class="tabs-top">
       <a href="dashboard.html">Recovery Dashboard</a>
       <a href="qc.html">QC Dashboard</a>
+      <a href="tracker.html">Recovery Tracker</a>
       <a href="admin.html" class="active">Admin</a>
     </nav>
     <h1 class="page-title">Admin · Users</h1>
@@ -424,6 +443,25 @@
       setTimeout(() => showFor(session), 0);
     });
     $('menuBtn').addEventListener('click', () => $('side').classList.toggle('open'));
+  </script>
+  <script>
+    // Sidebar collapse button («): remembers your choice on this browser
+    (function () {
+      const KEY = 'rt-side-min', btn = document.getElementById('sideToggle');
+      let min = false; try { min = localStorage.getItem(KEY) === '1'; } catch (e) {}
+      const apply = () => {
+        document.documentElement.classList.toggle('side-min', min);
+        btn.textContent = min ? '»' : '«';
+        btn.title = min ? 'Expand sidebar' : 'Collapse sidebar'; btn.setAttribute('aria-label', btn.title);
+      };
+      document.querySelectorAll('.side .nav a, .side .adminlink').forEach(a => a.title = a.textContent.trim());
+      apply();
+      btn.addEventListener('click', () => {
+        min = !min; apply();
+        try { localStorage.setItem(KEY, min ? '1' : '0'); } catch (e) {}
+        setTimeout(() => { if (typeof map !== 'undefined' && map.invalidateSize) map.invalidateSize(); window.dispatchEvent(new Event('resize')); }, 250);
+      });
+    })();
   </script>
 </body>
 </html>

@@ -88,8 +88,47 @@
 
     .table-wrap, #mapWrap { box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
     .legend i[style*='#000000'] { border-color: #8590a8; }
-    #mapWrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-    #map { height: 440px; width: 100%; }
+    /* Map view: map on the left (50%), fleet details on the right */
+    #mapWrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; height: max(560px, calc(100vh - 290px)); box-shadow: none; }
+    #mapWrap.hidden { display: none; }
+    .mapcol { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; min-height: 0;
+              box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
+    #map { flex: 1; width: 100%; min-height: 0; }
+    .fleet { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow-y: auto; padding: 12px 14px; min-height: 0;
+             box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
+    .fleet h3 { margin: 0; font-size: 14px; }
+    .fleet h4 { margin: 16px 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; }
+    .fleet h4 a { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--accent); cursor: pointer; }
+    .fleet .scope { font-size: 12px; color: var(--muted); margin: 2px 0 10px; }
+    .fgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .fbox { background: var(--soft); border-radius: 8px; padding: 8px 10px; border: 1px solid transparent; text-align: left; font-family: inherit; color: inherit; cursor: default; }
+    .fbox .n { font-size: 20px; font-weight: 800; line-height: 1.1; }
+    .fbox .t { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 5px; }
+    .fbox .t i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .fbar { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: var(--soft); margin-top: 10px; }
+    .fbar span { height: 100%; }
+    .agebars { display: grid; gap: 4px; }
+    .agebar { display: grid; grid-template-columns: 70px 1fr 30px; align-items: center; gap: 8px; font-size: 12px; background: none; border: 1px solid transparent;
+              border-radius: 6px; padding: 3px 4px; cursor: pointer; font-family: inherit; color: inherit; text-align: left; }
+    .agebar:hover { background: var(--hover); }
+    .agebar.on { border-color: var(--accent); background: var(--hover); }
+    .agebar .track { height: 12px; background: var(--soft); border-radius: 4px; overflow: hidden; }
+    .agebar .fill { height: 100%; border-radius: 4px; }
+    .agebar b { text-align: right; }
+    .fleet table { font-size: 12px; }
+    .fleet th, .fleet td { padding: 5px 6px; }
+    .fleet td.num, .fleet th.num { text-align: right; }
+    .watch { list-style: none; margin: 0; padding: 0; }
+    .watch li { display: flex; align-items: center; gap: 8px; padding: 6px 4px; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 12.5px; }
+    .watch li:hover { background: var(--hover); }
+    .watch li .who { flex: 1; min-width: 0; }
+    .watch li .who small { display: block; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    @media (max-width: 900px) {
+      #mapWrap { grid-template-columns: minmax(0, 1fr); height: auto; }
+      .fleet .ftable { overflow-x: auto; }
+      .mapcol { height: 50vh; min-height: 320px; }
+      .fleet { overflow: visible; }
+    }
     .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 10px 12px; font-size: 12px; color: var(--muted);
               border-top: 1px solid var(--border); }
     .legend span { display: inline-flex; align-items: center; gap: 6px; }
@@ -123,7 +162,6 @@
     .history li { border-left: 3px solid var(--accent); padding: 6px 10px; margin-bottom: 8px; background: var(--soft); border-radius: 0 6px 6px 0; }
     .history .when { font-size: 12px; color: var(--muted); }
     .hidden { display: none !important; }
-    @media (max-width: 600px) { #map { height: 420px; } }
     .live { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--side-text); }
     .live i { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; display: inline-block; }
     .live.on i { background: #4ade80; }
@@ -134,13 +172,35 @@
     .preview { font-size: 13px; margin-top: 10px; }
     .preview ul { margin: 6px 0 0; padding-left: 18px; color: var(--bad); max-height: 120px; overflow-y: auto; }
     a.link { color: var(--accent); font-size: 13px; }
+    /* Collapse button at the top of the sidebar (desktop) */
+    .side { transition: width .2s; }
+    .side button.collapse { display: block; width: 100%; background: none; border: none; border-bottom: 1px solid #262930; cursor: pointer;
+      text-align: right; padding: 10px 14px; color: var(--side-text); font: inherit; font-size: 15px; }
+    @media (max-width: 900px) { .side button.collapse { display: none; } }
+    .side button.collapse:hover { color: #fff; background: var(--side-2); }
+    @media (min-width: 901px) {
+      html.side-min .side { width: 64px; }
+      html.side-min .side button.collapse { text-align: center; }
+      html.side-min .brandrow { justify-content: center; padding: 12px 0; }
+      html.side-min .brandname, html.side-min .navsec, html.side-min #authBox, html.side-min .side .foot .live { display: none; }
+      html.side-min .nav a, html.side-min .adminlink { font-size: 0; justify-content: center; padding: 10px 0; gap: 0; }
+      html.side-min .nav a svg, html.side-min .adminlink svg { width: 18px; height: 18px; }
+      html.side-min .nav { padding-top: 8px; }
+      html.side-min .side .foot { padding: 10px 8px; }
+      html.side-min .adminlink { margin: 0; }
+    }
+    /* Admin link at the bottom of the sidebar */
+    .adminlink { display: flex; align-items: center; gap: 8px; padding: 7px 8px; margin: 0 -4px 10px; border-radius: 8px; color: var(--side-text); text-decoration: none; font-size: 13px; font-weight: 600; }
+    @media (max-width: 900px) { .side.open .foot { display: block; } }
+    .adminlink svg { width: 15px; height: 15px; }
+    .adminlink:hover, .adminlink.active { background: var(--brand-tint); color: #fff; }
   </style>
 </head>
 <body>
  <div class="app">
   <!-- Sidebar (same as the dashboard) -->
   <aside class="side" id="side">
-    <div class="collapse" aria-hidden="true">«</div>
+    <button class="collapse" id="sideToggle" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">«</button>
     <div class="brandrow">
       <div style="display:flex;align-items:center;gap:12px">
         <!-- Upload your logo to the repo as logo.png and it shows here automatically -->
@@ -150,12 +210,13 @@
       <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu">☰</button>
     </div>
     <nav class="nav">
-      <div class="navsec">NAVIGATION</div>
-      <a href="tracker.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Recovery Tracker</a>
       <div class="navsec">ANALYTICS</div>
       <a href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Recovery Dashboard</a>
+      <a href="qc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>QC Dashboard</a>
+      <a href="tracker.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Recovery Tracker</a>
     </nav>
     <div class="foot">
+      <a href="admin.html" class="adminlink hidden" id="adminLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/><path d="M19 3l2 2-2 2"/></svg>Admin · Users</a>
       <!-- Sign in / sign out, filled in by JavaScript -->
       <div id="authBox"></div>
       <span class="live" id="liveDot"><i></i><span>Connecting…</span></span>
@@ -166,6 +227,7 @@
   <main>
     <nav class="tabs-top">
       <a href="dashboard.html">Recovery Dashboard</a>
+      <a href="qc.html">QC Dashboard</a>
       <a href="tracker.html" class="active">Recovery Tracker</a>
     </nav>
     <h1 class="page-title">Recovery Tracker</h1>
@@ -195,6 +257,7 @@
 
     <!-- Map view -->
     <div id="mapWrap">
+      <div class="mapcol">
       <div id="map"></div>
       <div class="legend">
         <span><i style="background:#2E7D32"></i>0-1 days</span>
@@ -206,6 +269,21 @@
         <span><i style="background:#000000"></i>10+ days</span>
         <span><i style="background:#ffffff;border:2px solid #2E7D32"></i>Recovered</span>
       </div>
+      </div>
+      <!-- Fleet details next to the map (follows the City / Hub filters) -->
+      <aside class="fleet" id="fleetPanel" aria-label="Fleet details">
+        <h3>Fleet details</h3>
+        <p class="scope" id="fleetScope"></p>
+        <div class="fgrid" id="fleetBoxes"></div>
+        <div class="fbar" id="fleetBar"></div>
+        <h4><span>MFR bikes by age</span><a id="ageClear" class="hidden">Show all ages</a></h4>
+        <div class="agebars" id="ageBars"></div>
+        <h4><span>Hubs</span><span id="hubNote"></span></h4>
+        <div class="ftable"><table><thead><tr><th>Hub</th><th class="num">Fleet</th><th class="num">MFR</th><th class="num">MFR %</th><th class="num">Avg days</th><th class="num">Never called</th></tr></thead>
+          <tbody id="hubRows"></tbody></table></div>
+        <h4><span>Needs attention</span><span>oldest, not reached</span></h4>
+        <ul class="watch" id="watchList"></ul>
+      </aside>
     </div>
 
     <!-- Leaderboard view: today's calls per agent (from the agent_leaderboard view) -->
@@ -390,9 +468,17 @@
     ['email', 'password'].forEach(id => $(id).addEventListener('input', () => $('authError').textContent = ''));
 
     // React to sign in / sign out (also runs once when the page loads)
+    // Show the Admin link at the bottom of the sidebar for admins only
+    async function showAdminLink() {
+      const { data: { session } } = await db.auth.getSession();
+      if (!session) return $('adminLink').classList.add('hidden');
+      const { data } = await db.from('app_admins').select('user_id').eq('user_id', session.user.id).maybeSingle();
+      $('adminLink').classList.toggle('hidden', !data);
+    }
     db.auth.onAuthStateChange((_event, session) => {
       currentUser = session ? session.user : null;
       renderAuth();
+      setTimeout(showAdminLink, 0);
     });
 
     // ---------------------------------------------------------------
@@ -451,6 +537,7 @@
       hubSel.value = hubs.includes(hub) ? hub : '';
     }
 
+    let ageFilter = '';   // set by clicking an age bar in the fleet panel
     function visibleBikes() {
       const q = $('search').value.trim().toLowerCase();
       const city = $('cityFilter').value, hub = $('hubFilter').value, showRec = $('showRecovered').checked;
@@ -459,6 +546,7 @@
         !b.police_case &&                              // police / legal cases are handled separately
         (showRec || b.status === 'in_recovery') &&
         (!city || b.city === city) && (!hub || b.hub === hub) &&
+        (!ageFilter || (b.status === 'in_recovery' && ageColour(b.age_days)[1] === ageFilter)) &&
         (!q || b.reg_number.toLowerCase().includes(q) || (b.rider_name || '').toLowerCase().includes(q)));
     }
 
@@ -501,6 +589,7 @@
         </tr>`;
       }).join('');
       drawPins(rows);
+      renderFleet();
     }
 
     // ---------------------------------------------------------------
@@ -514,14 +603,15 @@
     window.addEventListener('resize', () => map.invalidateSize());
     let firstFit = true, filterChanged = false;
 
+    const markers = {};
     function drawPins(rows) {
-      pinLayer.clearLayers();
+      pinLayer.clearLayers(); Object.keys(markers).forEach(k => delete markers[k]);
       const points = [];
       rows.forEach(b => {
         if (b.latitude == null || b.longitude == null) return;
         const done = isDone(b);
         const [colour, label] = ageColour(b.age_days);
-        L.circleMarker([b.latitude, b.longitude], done
+        markers[b.id] = L.circleMarker([b.latitude, b.longitude], done
             ? { radius: 8, color: '#2E7D32', weight: 3, fillColor: '#ffffff', fillOpacity: 1 }
             : { radius: 9, color: '#ffffff', weight: 2, fillColor: colour, fillOpacity: 0.95 })
           .bindPopup(`<div class="pop">
@@ -543,6 +633,74 @@
       }
       filterChanged = false;
     }
+
+
+    // ---------------------------------------------------------------
+    // FLEET DETAILS panel (right half of the map view)
+    // ---------------------------------------------------------------
+    const AGE_ORDER = ['0-1 days', '1-2 days', '2-3 days', '3-4 days', '4-5 days', '5-10 days', '10+ days'];
+    function renderFleet() {
+      const city = $('cityFilter').value, hub = $('hubFilter').value;
+      const F = allBikes.filter(b => (!city || b.city === city) && (!hub || b.hub === hub));
+      const mfr = F.filter(b => b.status === 'in_recovery' && !b.police_case);
+      const cnt = (fn) => F.filter(fn).length;
+      $('fleetScope').textContent = [city || 'All cities', hub || 'all hubs'].join(' · ') + ` · ${F.length} bikes`;
+      const parts = [
+        { t: 'Active (with rider)', n: cnt(b => b.status === 'active' && !b.police_case), c: '#2E7D32' },
+        { t: 'In MFR', n: mfr.length, c: '#e3262b' },
+        { t: 'Recovered', n: cnt(b => b.status === 'recovered' && !b.police_case), c: '#F57C00' },
+        { t: 'At hub', n: cnt(b => b.status === 'at_hub' && !b.police_case), c: '#1565C0' },
+        { t: 'Police / FIR', n: cnt(b => !!b.police_case), c: '#6b7280' }];
+      $('fleetBoxes').innerHTML = `<div class="fbox"><div class="n">${F.length}</div><div class="t">Total fleet</div></div>` +
+        parts.map(p => `<div class="fbox"><div class="n">${p.n}</div><div class="t"><i style="background:${p.c}"></i>${p.t}</div></div>`).join('');
+      $('fleetBar').innerHTML = parts.map(p => `<span title="${p.t}: ${p.n}" style="width:${F.length ? 100 * p.n / F.length : 0}%;background:${p.c}"></span>`).join('');
+
+      const byAge = {}; mfr.forEach(b => { const k = ageColour(b.age_days)[1]; byAge[k] = (byAge[k] || 0) + 1; });
+      const maxAge = Math.max(1, ...Object.values(byAge));
+      $('ageBars').innerHTML = AGE_ORDER.map(k => {
+        const colour = ageColour({ '0-1 days': 0, '1-2 days': 1, '2-3 days': 2, '3-4 days': 3, '4-5 days': 4, '5-10 days': 6, '10+ days': 11 }[k])[0];
+        const n = byAge[k] || 0;
+        return `<button type="button" class="agebar ${ageFilter === k ? 'on' : ''}" data-age="${k}" title="Show only ${k} on the map">
+          <span>${k}</span><span class="track"><span class="fill" style="display:block;width:${100 * n / maxAge}%;background:${colour}"></span></span><b>${n}</b></button>`;
+      }).join('');
+      $('ageClear').classList.toggle('hidden', !ageFilter);
+
+      const H = {};
+      F.forEach(b => { const h = H[b.hub || '(no hub)'] ||= { hub: b.hub || '(no hub)', city: b.city, all: 0, mfr: [] }; h.all++; if (b.status === 'in_recovery' && !b.police_case) h.mfr.push(b); });
+      const hubs = Object.values(H).sort((a, b) => b.mfr.length - a.mfr.length || a.hub.localeCompare(b.hub));
+      $('hubNote').textContent = hub ? 'click again to show all' : 'click a hub to zoom in';
+      $('hubRows').innerHTML = hubs.map(h => { const n = h.mfr.length;
+        return `<tr class="hubrow" data-hub="${escapeHtml(h.hub)}" data-city="${escapeHtml(h.city)}"><td><strong>${escapeHtml(h.hub)}</strong> <span class="muted">${escapeHtml(h.city)}</span></td>
+          <td class="num">${h.all}</td><td class="num"><strong>${n}</strong></td><td class="num">${h.all ? (100 * n / h.all).toFixed(0) + '%' : '–'}</td>
+          <td class="num">${n ? (h.mfr.reduce((s, b) => s + b.age_days, 0) / n).toFixed(1) : '–'}</td>
+          <td class="num">${h.mfr.filter(b => b.total_calls === 0).length}</td></tr>`; }).join('')
+        || '<tr><td colspan="6" class="muted">No bikes for this filter.</td></tr>';
+
+      const notReached = (b) => !b.last_outcome || ['No Answer', 'Switched Off'].includes(b.last_outcome);
+      const watch = mfr.filter(notReached).sort((a, b) => b.age_days - a.age_days).slice(0, 8);
+      $('watchList').innerHTML = watch.map(b => { const [colour, label] = ageColour(b.age_days);
+        return `<li data-id="${b.id}" title="Show on the map"><span class="badge" style="background:${colour}">${label}</span>
+          <span class="who"><strong>${escapeHtml(b.reg_number)}</strong><small>${escapeHtml(b.hub || '')} · ${b.last_outcome ? escapeHtml(b.last_outcome) + ' · ' + b.total_calls + ' calls' : 'never called'}</small></span>
+          <a class="call" href="tel:${escapeHtml(b.rider_phone || '')}" onclick="event.stopPropagation()">Call</a></li>`; }).join('')
+        || '<li class="muted" style="cursor:default">Every MFR bike has been reached. 👍</li>';
+    }
+    $('ageBars').addEventListener('click', (e) => {
+      const b = e.target.closest('.agebar'); if (!b) return;
+      ageFilter = ageFilter === b.dataset.age ? '' : b.dataset.age; filterChanged = true; render();
+    });
+    $('ageClear').addEventListener('click', () => { ageFilter = ''; filterChanged = true; render(); });
+    $('hubRows').addEventListener('click', (e) => {
+      const r = e.target.closest('tr.hubrow'); if (!r) return;
+      if ($('hubFilter').value === r.dataset.hub) { $('hubFilter').value = ''; }
+      else { $('cityFilter').value = r.dataset.city; fillFilters(); $('hubFilter').value = r.dataset.hub; }
+      filterChanged = true; render();
+    });
+    $('watchList').addEventListener('click', (e) => {
+      const li = e.target.closest('li[data-id]'); if (!li) return;
+      const m = markers[li.dataset.id];
+      if (!m) return;
+      map.setView(m.getLatLng(), Math.max(map.getZoom(), 15)); m.openPopup();
+    });
 
     function showView(view) {
       ['map', 'table', 'leader'].forEach(v => {
@@ -758,6 +916,25 @@
 
     renderAuth();
     loadBikes();
+  </script>
+  <script>
+    // Sidebar collapse button («): remembers your choice on this browser
+    (function () {
+      const KEY = 'rt-side-min', btn = document.getElementById('sideToggle');
+      let min = false; try { min = localStorage.getItem(KEY) === '1'; } catch (e) {}
+      const apply = () => {
+        document.documentElement.classList.toggle('side-min', min);
+        btn.textContent = min ? '»' : '«';
+        btn.title = min ? 'Expand sidebar' : 'Collapse sidebar'; btn.setAttribute('aria-label', btn.title);
+      };
+      document.querySelectorAll('.side .nav a, .side .adminlink').forEach(a => a.title = a.textContent.trim());
+      apply();
+      btn.addEventListener('click', () => {
+        min = !min; apply();
+        try { localStorage.setItem(KEY, min ? '1' : '0'); } catch (e) {}
+        setTimeout(() => { if (typeof map !== 'undefined' && map.invalidateSize) map.invalidateSize(); window.dispatchEvent(new Event('resize')); }, 250);
+      });
+    })();
   </script>
 </body>
 </html>
