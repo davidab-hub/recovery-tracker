@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recovery Tracker</title>
+  <!-- Leaflet: free, open-source map library (pinned version) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root {
+      --bg: #f5f6f8; --card: #ffffff; --text: #1d2433; --muted: #6b7280;
+      --border: #e3e6eb; --accent: #1f4e78; --accent-text: #ffffff; --ok: #2e7d32; --bad: #c00000;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+           background: var(--bg); color: var(--text); }
+    header { background: var(--accent); color: var(--accent-text); padding: 12px 16px;
+             display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+    header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+    header p  { margin: 2px 0 0; font-size: 13px; opacity: .85; }
+    #authBox { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    #authBox button { border-color: #fff; }
+    main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+    .stat .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+    .stat .value { font-size: 26px; font-weight: 700; margin-top: 4px; }
+
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .toolbar input[type=search], .toolbar select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+                                       font-size: 14px; background: #fff; min-width: 0; }
+    .toolbar input[type=search] { flex: 1 1 200px; }
+    .toolbar label.check { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+
+    .tabs { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fff; }
+    .tabs button { border: none; border-radius: 0; background: #fff; color: var(--accent); padding: 8px 14px; }
+    .tabs button.active { background: var(--accent); color: #fff; }
+
+    .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { background: #f0f2f5; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+    tbody tr { cursor: pointer; }
+    tbody tr:hover { background: #f8f9fb; }
+    tr:last-child td { border-bottom: none; }
+    tr.recovered td { color: var(--muted); }
+
+    #mapWrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    #map { height: 520px; width: 100%; }
+    .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 10px 12px; font-size: 12px; color: var(--muted);
+              border-top: 1px solid var(--border); }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,.2); }
+    .pop h3 { margin: 0 0 4px; font-size: 15px; }
+    .pop p { margin: 2px 0; font-size: 13px; }
+    .pop .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #fff; }
+    .badge.done { background: #e8f5e9; color: var(--ok); }
+    .muted { color: var(--muted); }
+    a.call { color: var(--accent); font-weight: 600; text-decoration: none; }
+    button { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent);
+             color: #fff; font-size: 13px; cursor: pointer; font-family: inherit; }
+    button.secondary { background: #fff; color: var(--accent); }
+    button.green { background: var(--ok); border-color: var(--ok); }
+    .rowBtns { display: flex; gap: 6px; }
+
+    dialog { border: none; border-radius: 12px; padding: 20px; width: min(440px, 92vw); }
+    dialog::backdrop { background: rgba(0,0,0,.4); }
+    dialog h2 { margin: 0 0 12px; font-size: 18px; }
+    dialog label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+    dialog select, dialog input, dialog textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+                                                  border-radius: 8px; font-size: 14px; font-family: inherit; }
+    .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .error { color: var(--bad); font-size: 13px; margin-top: 8px; min-height: 1em; }
+    .note { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    #status { font-size: 13px; color: var(--muted); margin: 8px 0; }
+    .history { list-style: none; padding: 0; margin: 0; max-height: 50vh; overflow-y: auto; }
+    .history li { border-left: 3px solid var(--accent); padding: 6px 10px; margin-bottom: 8px; background: #f8f9fb; border-radius: 0 6px 6px 0; }
+    .history .when { font-size: 12px; color: var(--muted); }
+    .hidden { display: none !important; }
+    @media (max-width: 600px) { #map { height: 420px; } }
+    .live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; opacity: .9; }
+    .live i { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; display: inline-block; }
+    .live.on i { background: #4ade80; }
+    #leaderWrap td.num, #leaderWrap th.num { text-align: right; }
+    .rank { display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 50%;
+            background: #eef2f7; font-weight: 700; font-size: 12px; margin-right: 8px; }
+    .rank.r1 { background: #fde68a; } .rank.r2 { background: #e5e7eb; } .rank.r3 { background: #fed7aa; }
+    .preview { font-size: 13px; margin-top: 10px; }
+    .preview ul { margin: 6px 0 0; padding-left: 18px; color: var(--bad); max-height: 120px; overflow-y: auto; }
+    a.link { color: var(--accent); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Recovery Tracker</h1>
+      <p>Learning project · Supabase + GitHub · sample data only · <span class="live" id="liveDot"><i></i><span>Connecting…</span></span></p>
+    </div>
+    <!-- Sign in / sign out, filled in by JavaScript -->
+    <div id="authBox"></div>
+  </header>
+
+  <main>
+    <section class="stats">
+      <div class="stat"><div class="label">In recovery</div><div class="value" id="statBikes">–</div></div>
+      <div class="stat"><div class="label">Avg days in MFR</div><div class="value" id="statAge">–</div></div>
+      <div class="stat"><div class="label">Never called</div><div class="value" id="statNever">–</div></div>
+      <div class="stat"><div class="label">Calls today</div><div class="value" id="statToday">–</div></div>
+      <div class="stat"><div class="label">Recovered</div><div class="value" id="statRecovered" style="color:var(--ok)">–</div></div>
+    </section>
+
+    <section class="toolbar">
+      <input id="search" type="search" placeholder="Search reg number or rider">
+      <select id="cityFilter"><option value="">All cities</option></select>
+      <select id="hubFilter"><option value="">All hubs</option></select>
+      <label class="check"><input type="checkbox" id="showRecovered"> Show recovered</label>
+      <div class="tabs" role="group" aria-label="View">
+        <button type="button" id="mapTab" class="active">Map</button>
+        <button type="button" id="tableTab">Table</button>
+        <button type="button" id="leaderTab">Leaderboard</button>
+      </div>
+      <button type="button" class="secondary hidden" id="uploadBtn">Upload bikes (CSV)</button>
+    </section>
+
+    <div id="status">Loading…</div>
+
+    <!-- Map view -->
+    <div id="mapWrap">
+      <div id="map"></div>
+      <div class="legend">
+        <span><i style="background:#2E7D32"></i>0-1 days</span>
+        <span><i style="background:#1565C0"></i>1-2 days</span>
+        <span><i style="background:#B8860B"></i>2-3 days</span>
+        <span><i style="background:#6D4C41"></i>3-4 days</span>
+        <span><i style="background:#F57C00"></i>4-5 days</span>
+        <span><i style="background:#D32F2F"></i>5-10 days</span>
+        <span><i style="background:#000000"></i>10+ days</span>
+        <span><i style="background:#ffffff;border:2px solid #2E7D32"></i>Recovered</span>
+      </div>
+    </div>
+
+    <!-- Leaderboard view: today's calls per agent (from the agent_leaderboard view) -->
+    <div class="table-wrap hidden" id="leaderWrap">
+      <table>
+        <thead>
+          <tr><th>Agent</th><th class="num">Calls today</th><th class="num">Recovered</th>
+              <th class="num">Will renew</th><th class="num">Not reached</th><th>Last call</th></tr>
+        </thead>
+        <tbody id="leaderRows"><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- Table view -->
+    <div class="table-wrap hidden" id="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Reg number</th><th>City / hub</th><th>Age</th><th>Rider</th>
+            <th>Phone</th><th>Last outcome</th><th>Calls</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Sign in / sign up -->
+  <dialog id="authDialog">
+    <form id="authForm" method="dialog">
+      <h2>Agent sign in</h2>
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" placeholder="name@company.com">
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="At least 6 characters">
+      <div class="error" id="authError"></div>
+      <div class="note" id="authNote"></div>
+      <div class="actions">
+        <button type="button" class="secondary" id="authCancel">Cancel</button>
+        <button type="button" class="secondary" id="signUpBtn">Create account</button>
+        <button type="submit">Sign in</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Log a call -->
+  <dialog id="logDialog">
+    <form id="logForm" method="dialog">
+      <h2>Log a call · <span id="dlgReg"></span></h2>
+      <label for="outcome">Outcome</label>
+      <select id="outcome">
+        <option>Will Renew</option><option>Not Renewing</option><option>No Answer</option>
+        <option>Switched Off</option><option>Recovered</option>
+      </select>
+      <label for="notes">Notes (optional)</label>
+      <textarea id="notes" rows="3" maxlength="500" placeholder="Will renew by evening"></textarea>
+      <div class="note">Saved as <strong id="dlgAgent"></strong>. Choosing "Recovered" removes the bike from the active list.</div>
+      <div class="error" id="formError"></div>
+      <div class="actions">
+        <button type="button" class="secondary" id="cancelBtn">Cancel</button>
+        <button type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Call history -->
+  <dialog id="historyDialog">
+    <h2>Call history · <span id="histReg"></span></h2>
+    <p class="muted" id="histInfo" style="margin:0 0 12px;font-size:13px"></p>
+    <ul class="history" id="histList"></ul>
+    <div class="actions">
+      <button type="button" class="secondary" id="histClose">Close</button>
+      <button type="button" id="histLog">Log call</button>
+    </div>
+  </dialog>
+
+  <!-- Upload bikes from a CSV file -->
+  <dialog id="uploadDialog">
+    <h2>Upload bikes (CSV)</h2>
+    <p class="muted" style="margin:0;font-size:13px">Columns: reg_number, city, hub, model, rider_name, rider_phone,
+      mfr_since (YYYY-MM-DD), latitude, longitude. Only reg_number and city are required.
+      Bikes already in the list are skipped.</p>
+    <p style="margin:8px 0"><a class="link" id="templateLink" download="bikes_template.csv">Download a template</a></p>
+    <label for="csvFile">CSV file</label>
+    <input id="csvFile" type="file" accept=".csv,text/csv">
+    <div class="preview" id="csvPreview"></div>
+    <div class="error" id="uploadError"></div>
+    <div class="actions">
+      <button type="button" class="secondary" id="uploadCancel">Close</button>
+      <button type="button" id="uploadGo">Upload</button>
+    </div>
+  </dialog>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+    // ---------------------------------------------------------------
+    // 1. CONNECT TO SUPABASE
+    // The public (anon) key is safe in a web page: Row Level Security
+    // decides what it can read and write.
+    // ---------------------------------------------------------------
+    const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const $ = (id) => document.getElementById(id);
+    let allBikes = [];
+    let selectedBike = null;
+    let currentUser = null;
+    let pendingOutcome = null;   // remembers what to open after signing in
+
+    // Same age colours as the AppSheet map pins
+    function ageColour(days) {
+      if (days < 1)   return ['#2E7D32', '0-1 days'];
+      if (days < 2)   return ['#1565C0', '1-2 days'];
+      if (days < 3)   return ['#B8860B', '2-3 days'];
+      if (days < 4)   return ['#6D4C41', '3-4 days'];
+      if (days < 5)   return ['#F57C00', '4-5 days'];
+      if (days <= 10) return ['#D32F2F', '5-10 days'];
+      return ['#000000', '10+ days'];
+    }
+
+    // ---------------------------------------------------------------
+    // 2. AGENT LOGIN (Supabase Auth, email + password)
+    // ---------------------------------------------------------------
+    function renderAuth() {
+      $('uploadBtn').classList.toggle('hidden', !currentUser);   // only signed-in agents can upload
+      const box = $('authBox');
+      if (currentUser) {
+        box.innerHTML = `<span>Signed in as <strong>${escapeHtml(currentUser.email)}</strong></span>
+                         <button class="secondary" id="signOutBtn">Sign out</button>`;
+        $('signOutBtn').onclick = () => db.auth.signOut();
+      } else {
+        box.innerHTML = `<span>Sign in to log calls</span><button class="secondary" id="signInBtn">Sign in</button>`;
+        $('signInBtn').onclick = () => openAuth();
+      }
+    }
+
+    function openAuth(message) {
+      $('authError').textContent = '';
+      $('authNote').textContent = message || '';
+      $('authDialog').showModal();
+    }
+
+    async function signIn() {
+      const email = $('email').value.trim(), password = $('password').value;
+      if (!email || !password) { $('authError').textContent = 'Enter your email and password first.'; return; }
+      const { error } = await db.auth.signInWithPassword({ email, password });
+      if (error) { $('authError').textContent = error.message; return; }
+      $('authDialog').close();
+      if (pendingOutcome !== null && selectedBike) openLog(selectedBike.id, pendingOutcome);
+      pendingOutcome = null;
+    }
+
+    async function signUp() {
+      const email = $('email').value.trim(), password = $('password').value;
+      if (!email || password.length < 6) {
+        $('authError').textContent = 'Enter your email and a password of at least 6 characters.'; return;
+      }
+      const { data, error } = await db.auth.signUp({
+        email, password,
+        options: { emailRedirectTo: location.origin + location.pathname }
+      });
+      if (error) { $('authError').textContent = error.message; return; }
+      if (data.session) {
+        $('authDialog').close();            // email confirmation is off: signed in straight away
+      } else {
+        $('authError').textContent = '';
+        $('authNote').textContent = 'Account created. Check your email for the confirmation link, then sign in.';
+      }
+    }
+
+    $('authForm').addEventListener('submit', (e) => { e.preventDefault(); signIn(); });
+    $('signUpBtn').addEventListener('click', signUp);
+    $('authCancel').addEventListener('click', () => { pendingOutcome = null; $('authDialog').close(); });
+    ['email', 'password'].forEach(id => $(id).addEventListener('input', () => $('authError').textContent = ''));
+
+    // React to sign in / sign out (also runs once when the page loads)
+    db.auth.onAuthStateChange((_event, session) => {
+      currentUser = session ? session.user : null;
+      renderAuth();
+    });
+
+    // ---------------------------------------------------------------
+    // 3. READ DATA from the bike_overview view
+    // ---------------------------------------------------------------
+    async function loadBikes() {
+      const { data, error } = await db.from('bike_overview').select('*').order('age_days', { ascending: false });
+      if (error) { $('status').textContent = 'Could not load data: ' + error.message; return; }
+      allBikes = data;
+      fillFilters();
+      render();
+      loadStats();
+      loadLeaderboard();
+    }
+
+    // ---------------------------------------------------------------
+    // LEADERBOARD: today's calls per agent (agent_leaderboard view)
+    // ---------------------------------------------------------------
+    async function loadLeaderboard() {
+      const { data, error } = await db.from('agent_leaderboard').select('*')
+        .order('calls_today', { ascending: false }).order('recovered_today', { ascending: false });
+      if (error) { $('leaderRows').innerHTML = `<tr><td colspan="6">Could not load: ${escapeHtml(error.message)}</td></tr>`; return; }
+      $('leaderRows').innerHTML = data.length
+        ? data.map((a, i) => `<tr>
+            <td><span class="rank ${i < 3 ? 'r' + (i + 1) : ''}">${i + 1}</span>${escapeHtml(a.agent)}</td>
+            <td class="num"><strong>${a.calls_today}</strong></td>
+            <td class="num" style="color:var(--ok)">${a.recovered_today}</td>
+            <td class="num">${a.will_renew_today}</td>
+            <td class="num">${a.not_reached_today}</td>
+            <td class="muted">${timeAgo(a.last_call_at)}</td></tr>`).join('')
+        : '<tr><td colspan="6" class="muted">No calls logged yet today.</td></tr>';
+    }
+
+    async function loadStats() {
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      const { count } = await db.from('call_logs').select('*', { count: 'exact', head: true })
+                                .gte('called_at', start.toISOString());
+      const active = allBikes.filter(b => b.status !== 'recovered');
+      const avg = active.length ? (active.reduce((s, b) => s + b.age_days, 0) / active.length).toFixed(1) : '0';
+      $('statBikes').textContent = active.length;
+      $('statAge').textContent = avg;
+      $('statNever').textContent = active.filter(b => b.total_calls === 0).length;
+      $('statToday').textContent = count ?? 0;
+      $('statRecovered').textContent = allBikes.length - active.length;
+    }
+
+    // City list, and hubs for the chosen city only
+    function fillFilters() {
+      const citySel = $('cityFilter'), hubSel = $('hubFilter');
+      const city = citySel.value, hub = hubSel.value;
+      const cities = [...new Set(allBikes.map(b => b.city))].sort();
+      citySel.innerHTML = '<option value="">All cities</option>' + cities.map(c => `<option>${escapeHtml(c)}</option>`).join('');
+      citySel.value = cities.includes(city) ? city : '';
+      const hubs = [...new Set(allBikes.filter(b => !citySel.value || b.city === citySel.value).map(b => b.hub).filter(Boolean))].sort();
+      hubSel.innerHTML = '<option value="">All hubs</option>' + hubs.map(h => `<option>${escapeHtml(h)}</option>`).join('');
+      hubSel.value = hubs.includes(hub) ? hub : '';
+    }
+
+    function visibleBikes() {
+      const q = $('search').value.trim().toLowerCase();
+      const city = $('cityFilter').value, hub = $('hubFilter').value, showRec = $('showRecovered').checked;
+      return allBikes.filter(b =>
+        (showRec || b.status !== 'recovered') &&
+        (!city || b.city === city) && (!hub || b.hub === hub) &&
+        (!q || b.reg_number.toLowerCase().includes(q) || (b.rider_name || '').toLowerCase().includes(q)));
+    }
+
+    function lastText(b) {
+      return b.last_outcome
+        ? `${escapeHtml(b.last_outcome)} <span class="muted">· ${escapeHtml(b.last_agent)}, ${timeAgo(b.last_called_at)}</span>`
+        : '<span class="muted">Not called yet</span>';
+    }
+
+    function render() {
+      const rows = visibleBikes();
+      $('status').textContent = `${rows.length} bike${rows.length === 1 ? '' : 's'}`;
+      $('rows').innerHTML = rows.map(b => {
+        const done = b.status === 'recovered';
+        const [colour, label] = ageColour(b.age_days);
+        const ageCell = done ? '<span class="badge done">Recovered</span>'
+                             : `<span class="badge" style="background:${colour}">${label}</span>`;
+        return `<tr data-id="${b.id}" class="${done ? 'recovered' : ''}">
+          <td><strong>${escapeHtml(b.reg_number)}</strong></td>
+          <td>${escapeHtml(b.city)} <span class="muted">· ${escapeHtml(b.hub || '')}</span></td>
+          <td>${ageCell}</td>
+          <td>${escapeHtml(b.rider_name || '')}</td>
+          <td><a class="call" href="tel:${escapeHtml(b.rider_phone || '')}">${escapeHtml(b.rider_phone || '')}</a></td>
+          <td>${lastText(b)}</td>
+          <td>${b.total_calls}</td>
+          <td><div class="rowBtns">${done ? '' : `<button class="logBtn" data-id="${b.id}">Log call</button>
+               <button class="green recBtn" data-id="${b.id}">Recovered</button>`}</div></td>
+        </tr>`;
+      }).join('');
+      drawPins(rows);
+    }
+
+    // ---------------------------------------------------------------
+    // 4. MAP VIEW (Leaflet + OpenStreetMap)
+    // ---------------------------------------------------------------
+    const map = L.map('map').setView([20.5937, 78.9629], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    const pinLayer = L.layerGroup().addTo(map);
+    window.addEventListener('resize', () => map.invalidateSize());
+    let firstFit = true, filterChanged = false;
+
+    function drawPins(rows) {
+      pinLayer.clearLayers();
+      const points = [];
+      rows.forEach(b => {
+        if (b.latitude == null || b.longitude == null) return;
+        const done = b.status === 'recovered';
+        const [colour, label] = ageColour(b.age_days);
+        L.circleMarker([b.latitude, b.longitude], done
+            ? { radius: 8, color: '#2E7D32', weight: 3, fillColor: '#ffffff', fillOpacity: 1 }
+            : { radius: 9, color: '#ffffff', weight: 2, fillColor: colour, fillOpacity: 0.95 })
+          .bindPopup(`<div class="pop">
+              <h3>${escapeHtml(b.reg_number)}</h3>
+              <p>${escapeHtml(b.city)} · ${escapeHtml(b.hub || '')} · <strong>${done ? 'Recovered' : label}</strong></p>
+              <p>${escapeHtml(b.rider_name || '')} · <a class="call" href="tel:${escapeHtml(b.rider_phone || '')}">${escapeHtml(b.rider_phone || '')}</a></p>
+              <p style="color:#6b7280">${lastText(b)}</p>
+              <div class="btns">
+                <button class="secondary histBtn" data-id="${b.id}">History</button>
+                ${done ? '' : `<button class="logBtn" data-id="${b.id}">Log call</button>
+                <button class="green recBtn" data-id="${b.id}">Recovered</button>`}
+              </div>
+            </div>`)
+          .addTo(pinLayer);
+        points.push([b.latitude, b.longitude]);
+      });
+      if (points.length && (firstFit || filterChanged)) {
+        setTimeout(() => { map.invalidateSize(); map.fitBounds(points, { padding: [40, 40], maxZoom: 13 }); }, 150);
+        firstFit = false;
+      }
+      filterChanged = false;
+    }
+
+    function showView(view) {
+      ['map', 'table', 'leader'].forEach(v => {
+        $(v + 'Wrap').classList.toggle('hidden', v !== view);
+        $(v + 'Tab').classList.toggle('active', v === view);
+      });
+      if (view === 'map') map.invalidateSize();
+      if (view === 'leader') loadLeaderboard();
+    }
+    $('mapTab').addEventListener('click', () => showView('map'));
+    $('tableTab').addEventListener('click', () => showView('table'));
+    $('leaderTab').addEventListener('click', () => showView('leader'));
+
+    // ---------------------------------------------------------------
+    // LIVE UPDATES (Supabase Realtime): reload when anyone changes data
+    // ---------------------------------------------------------------
+    let reloadTimer = null;
+    function reloadSoon() { clearTimeout(reloadTimer); reloadTimer = setTimeout(loadBikes, 400); }
+    db.channel('recovery-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'call_logs' }, reloadSoon)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bikes' }, reloadSoon)
+      .subscribe((state) => {
+        const on = state === 'SUBSCRIBED';
+        $('liveDot').classList.toggle('on', on);
+        $('liveDot').querySelector('span').textContent = on ? 'Live' : 'Offline';
+      });
+
+    // ---------------------------------------------------------------
+    // CSV UPLOAD: add new bikes (signed-in agents only)
+    // ---------------------------------------------------------------
+    const CSV_COLS = ['reg_number', 'city', 'hub', 'model', 'rider_name', 'rider_phone', 'mfr_since', 'latitude', 'longitude'];
+    const TEMPLATE = CSV_COLS.join(',') + '\n' +
+      'TEST0101,Bangalore,Koramangala,e1+x,Test Rider,+919000000101,2026-10-20,12.9352,77.6245\n' +
+      'TEST0102,NCR,Okhla,e1+xPRO,Test Rider Two,+919000000102,,28.5355,77.2710\n';
+    $('templateLink').href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(TEMPLATE);
+    let csvRows = [];
+
+    // Small CSV reader: handles commas and "quoted, values"
+    function parseCsv(text) {
+      const rows = []; let row = [], cell = '', q = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (q) {
+          if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+          else if (ch === '"') q = false;
+          else cell += ch;
+        } else if (ch === '"') q = true;
+        else if (ch === ',') { row.push(cell); cell = ''; }
+        else if (ch === '\n' || ch === '\r') {
+          if (ch === '\r' && text[i + 1] === '\n') i++;
+          row.push(cell); cell = '';
+          if (row.some(c => c.trim() !== '')) rows.push(row);
+          row = [];
+        } else cell += ch;
+      }
+      row.push(cell); if (row.some(c => c.trim() !== '')) rows.push(row);
+      return rows;
+    }
+
+    $('uploadBtn').addEventListener('click', () => {
+      $('csvFile').value = ''; $('csvPreview').innerHTML = ''; $('uploadError').textContent = ''; csvRows = [];
+      $('uploadDialog').showModal();
+    });
+    $('uploadCancel').addEventListener('click', () => $('uploadDialog').close());
+
+    $('csvFile').addEventListener('change', async () => {
+      $('uploadError').textContent = ''; csvRows = [];
+      const file = $('csvFile').files[0]; if (!file) return;
+      const rows = parseCsv(await file.text());
+      if (rows.length < 2) { $('uploadError').textContent = 'The file has no data rows.'; return; }
+      const head = rows[0].map(h => h.trim().toLowerCase());
+      if (!head.includes('reg_number') || !head.includes('city')) {
+        $('uploadError').textContent = 'The first row must have the column names reg_number and city.'; return;
+      }
+      const problems = [];
+      rows.slice(1).forEach((r, n) => {
+        const o = {}; head.forEach((h, i) => { if (CSV_COLS.includes(h)) o[h] = (r[i] || '').trim(); });
+        o.reg_number = (o.reg_number || '').toUpperCase().replace(/\s+/g, '');
+        const line = n + 2;
+        if (o.reg_number.length < 4 || o.reg_number.length > 20) { problems.push(`Row ${line}: reg_number missing or wrong length`); return; }
+        if (!o.city) { problems.push(`Row ${line}: city missing`); return; }
+        for (const k of ['latitude', 'longitude']) {
+          if (o[k] === '' || o[k] === undefined) { o[k] = null; continue; }
+          if (isNaN(Number(o[k]))) { problems.push(`Row ${line}: ${k} is not a number`); return; }
+          o[k] = Number(o[k]);
+        }
+        if (o.mfr_since) {
+          if (isNaN(Date.parse(o.mfr_since))) { problems.push(`Row ${line}: mfr_since is not a date`); return; }
+        } else o.mfr_since = new Date().toISOString();   // empty = now (every row must send the same columns)
+        for (const k of ['hub', 'model', 'rider_name', 'rider_phone']) if (o[k] === '') o[k] = null;
+        csvRows.push(o);
+      });
+      $('csvPreview').innerHTML = `<strong>${csvRows.length}</strong> bike${csvRows.length === 1 ? '' : 's'} ready to upload` +
+        (problems.length ? `, ${problems.length} row${problems.length === 1 ? '' : 's'} will be skipped:<ul>${problems.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>` : '.');
+    });
+
+    $('uploadGo').addEventListener('click', async () => {
+      if (!csvRows.length) { $('uploadError').textContent = 'Choose a CSV file with at least one valid row first.'; return; }
+      const { data, error } = await db.from('bikes')
+        .upsert(csvRows, { onConflict: 'reg_number', ignoreDuplicates: true })
+        .select('reg_number');
+      if (error) { $('uploadError').textContent = 'Could not upload: ' + error.message; return; }
+      const added = data ? data.length : 0;
+      $('csvPreview').innerHTML = `Added <strong>${added}</strong> new bike${added === 1 ? '' : 's'}` +
+        (csvRows.length - added ? `, skipped ${csvRows.length - added} already in the list.` : '.');
+      csvRows = []; $('csvFile').value = '';
+      loadBikes();
+    });
+
+    // ---------------------------------------------------------------
+    // 5. CALL HISTORY: read every call for one bike
+    // ---------------------------------------------------------------
+    async function openHistory(bikeId) {
+      selectedBike = allBikes.find(b => b.id === bikeId);
+      $('histReg').textContent = selectedBike.reg_number;
+      $('histInfo').textContent = `${selectedBike.rider_name || ''} · ${selectedBike.rider_phone || ''} · ` +
+        (selectedBike.status === 'recovered' ? 'Recovered' : `${selectedBike.age_days} days in recovery`);
+      $('histLog').classList.toggle('hidden', selectedBike.status === 'recovered');
+      $('histList').innerHTML = '<li class="muted">Loading…</li>';
+      $('historyDialog').showModal();
+
+      const { data, error } = await db.from('call_logs')
+        .select('outcome, notes, agent, called_at')
+        .eq('bike_id', bikeId)
+        .order('called_at', { ascending: false });
+      if (error) { $('histList').innerHTML = `<li>Could not load: ${escapeHtml(error.message)}</li>`; return; }
+      $('histList').innerHTML = data.length
+        ? data.map(c => `<li><strong>${escapeHtml(c.outcome)}</strong>${c.notes ? ' · ' + escapeHtml(c.notes) : ''}
+             <div class="when">${escapeHtml(c.agent)} · ${new Date(c.called_at).toLocaleString('en-IN')}</div></li>`).join('')
+        : '<li class="muted">No calls logged yet.</li>';
+    }
+    $('histClose').addEventListener('click', () => $('historyDialog').close());
+    $('histLog').addEventListener('click', () => { $('historyDialog').close(); openLog(selectedBike.id); });
+
+    // ---------------------------------------------------------------
+    // 6. LOG A CALL / MARK RECOVERED (insert into call_logs)
+    // A database trigger marks the bike as recovered when outcome = 'Recovered'.
+    // ---------------------------------------------------------------
+    function openLog(bikeId, outcome) {
+      selectedBike = allBikes.find(b => b.id === bikeId);
+      if (!currentUser) {
+        pendingOutcome = outcome || '';
+        openAuth('Sign in to log a call for ' + selectedBike.reg_number + '.');
+        return;
+      }
+      $('dlgReg').textContent = selectedBike.reg_number;
+      $('dlgAgent').textContent = currentUser.email;
+      $('outcome').value = outcome || 'Will Renew';
+      $('notes').value = '';
+      $('formError').textContent = '';
+      $('logDialog').showModal();
+    }
+
+    $('logForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const { error } = await db.from('call_logs').insert({
+        bike_id: selectedBike.id,
+        outcome: $('outcome').value,
+        agent: currentUser.email,
+        user_id: currentUser.id,
+        notes: $('notes').value.trim() || null
+      });
+      if (error) { $('formError').textContent = 'Could not save: ' + error.message; return; }
+      $('logDialog').close();
+      loadBikes();
+    });
+    $('cancelBtn').addEventListener('click', () => $('logDialog').close());
+
+    // One click handler for all buttons and table rows
+    document.addEventListener('click', (e) => {
+      const log = e.target.closest('.logBtn'), rec = e.target.closest('.recBtn'), hist = e.target.closest('.histBtn');
+      if (log)  { map.closePopup(); openLog(Number(log.dataset.id)); return; }
+      if (rec)  { map.closePopup(); openLog(Number(rec.dataset.id), 'Recovered'); return; }
+      if (hist) { map.closePopup(); openHistory(Number(hist.dataset.id)); return; }
+      const row = e.target.closest('#rows tr');
+      if (row && !e.target.closest('a')) openHistory(Number(row.dataset.id));
+    });
+
+    // Filters
+    $('search').addEventListener('input', () => { filterChanged = true; render(); });
+    $('cityFilter').addEventListener('change', () => { $('hubFilter').value = ''; fillFilters(); filterChanged = true; render(); });
+    $('hubFilter').addEventListener('change', () => { filterChanged = true; render(); });
+    $('showRecovered').addEventListener('change', () => { filterChanged = true; render(); });
+
+    // Helpers
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function timeAgo(iso) {
+      const mins = Math.round((Date.now() - new Date(iso)) / 60000);
+      if (mins < 60) return `${mins} min ago`;
+      const hrs = Math.round(mins / 60);
+      if (hrs < 24) return `${hrs} h ago`;
+      return `${Math.round(hrs / 24)} d ago`;
+    }
+
+    renderAuth();
+    loadBikes();
+  </script>
+</body>
+</html>
