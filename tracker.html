@@ -194,6 +194,13 @@
     @media (max-width: 900px) { .side.open .foot { display: block; } }
     .adminlink svg { width: 15px; height: 15px; }
     .adminlink:hover, .adminlink.active { background: var(--brand-tint); color: #fff; }
+    /* Admin contact details */
+    .contact { margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: var(--soft); font-size: 12.5px; line-height: 1.6; color: var(--text-2, var(--muted)); }
+    .contact a { color: var(--accent, var(--brand)); font-weight: 600; text-decoration: none; }
+    .contact-side { font-size: 11.5px; line-height: 1.5; color: var(--side-text); padding: 0 0 10px; margin-bottom: 10px; border-bottom: 1px solid #262930; word-break: break-all; }
+    .contact-side a { color: #d1d5db; text-decoration: none; }
+    .contact-side a:hover { color: #fff; }
+    @media (min-width: 901px) { html.side-min .contact-side { display: none; } }
   </style>
 </head>
 <body>
@@ -216,6 +223,7 @@
       <a href="tracker.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Recovery Tracker</a>
     </nav>
     <div class="foot">
+      <div class="contact-side">Need help? Contact admin<br><a href="tel:+919180260780">+91 91802 60780</a><br><a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a></div>
       <a href="admin.html" class="adminlink hidden" id="adminLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/><path d="M19 3l2 2-2 2"/></svg>Admin · Users</a>
       <!-- Sign in / sign out, filled in by JavaScript -->
       <div id="authBox"></div>
@@ -322,9 +330,10 @@
       <input id="password" type="password" autocomplete="current-password" placeholder="At least 6 characters">
       <div class="error" id="authError"></div>
       <div class="note" id="authNote"></div>
+      <div class="contact"><strong>No login yet?</strong> Contact the admin, David Abraham:<br>
+        <a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a> · <a href="tel:+919180260780">+91 91802 60780</a> · <a href="https://wa.me/919180260780" target="_blank" rel="noopener">WhatsApp</a></div>
       <div class="actions">
         <button type="button" class="secondary" id="authCancel">Cancel</button>
-        <button type="button" class="secondary" id="signUpBtn">Create account</button>
         <button type="submit">Sign in</button>
       </div>
     </form>
@@ -462,7 +471,6 @@
     }
 
     $('authForm').addEventListener('submit', (e) => { e.preventDefault(); signIn(); });
-    $('signUpBtn').addEventListener('click', signUp);
     $('authCancel').addEventListener('click', () => { pendingOutcome = null; $('authDialog').close(); });
     ['email', 'password'].forEach(id => $(id).addEventListener('input', () => $('authError').textContent = ''));
 

@@ -216,6 +216,13 @@
       html.side-min .side .foot { padding: 10px 8px; }
       html.side-min .adminlink { margin: 0; }
     }
+    /* Admin contact details */
+    .contact { margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: var(--soft); font-size: 12.5px; line-height: 1.6; color: var(--text-2, var(--muted)); }
+    .contact a { color: var(--accent, var(--brand)); font-weight: 600; text-decoration: none; }
+    .contact-side { font-size: 11.5px; line-height: 1.5; color: var(--side-text); padding: 0 0 10px; margin-bottom: 10px; border-bottom: 1px solid #262930; word-break: break-all; }
+    .contact-side a { color: #d1d5db; text-decoration: none; }
+    .contact-side a:hover { color: #fff; }
+    @media (min-width: 901px) { html.side-min .contact-side { display: none; } }
   </style>
 </head>
 <body>
@@ -238,6 +245,7 @@
       <a href="tracker.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Recovery Tracker</a>
     </nav>
     <div class="foot">
+      <div class="contact-side">Need help? Contact admin<br><a href="tel:+919180260780">+91 91802 60780</a><br><a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a></div>
       <a href="admin.html" class="adminlink hidden" id="adminLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/><path d="M19 3l2 2-2 2"/></svg>Admin · Users</a>
       <div class="live"><i></i>Live · Supabase</div>
     </div>
