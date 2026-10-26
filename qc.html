@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="light" data-palette="coral">
+<html lang="en" data-theme="light" data-palette="blue">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -66,19 +66,19 @@
 
     /* ===== Colours: Bounce red, soft coral shades ===== */
     :root { --a1: #86b6ef; --a2: #3987e5; --a3: #1c5cab; --a4: #0d366b; }
-    html[data-palette="coral"] {
-      --page: #fff8f7; --card: #ffffff; --border: #f7e6e3; --input: #ffffff; --soft: #fff1ef; --hover: #fde4e2; --ring: #f68179;
-      --text: #2a1d1e; --text-2: #5b4a4b; --muted: #8a7778; --label: #4a3536; --tip: #ffffff; --tip-text: #2a1d1e;
-      --grid: rgba(120,40,40,.07); --axis: #f7e6e3;
-      --s1: #f68179; --s2: #fcceca; --s3: #f02719; --s4: #feedec; --s5: #f35449; --s6: #f9aaa4; --s7: #c9190d; --red: #f35449; --dark: #f02719;
-      --a1: #fddbd9; --a2: #f89c96; --a3: #f35449; --a4: #d81b0e;
+    html[data-palette="blue"] {
+      --page: #f8fbff; --card: #ffffff; --border: #e6eef8; --input: #ffffff; --soft: #f1f6fd; --hover: #e8f0fb; --ring: #7fb3f8;
+      --text: #1b2538; --text-2: #4a5670; --muted: #7a879f; --label: #4a5670; --tip: #ffffff; --tip-text: #1b2538;
+      --grid: rgba(30,60,120,.06); --axis: #e6eef8;
+      --s1: #7fb3f8; --s2: #cfe2fd; --s3: #3b82f6; --s4: #eaf3fe; --s5: #5b9cf6; --s6: #a8cbfa; --s7: #2563eb; --red: #5b9cf6; --dark: #3b82f6;
+      --a1: #dbe9fe; --a2: #a8cbfa; --a3: #5b9cf6; --a4: #2563eb;
     }
-    html[data-palette="coral"] .cards .card { --k: #f68179 !important; }
-    html[data-palette="coral"] .card .value { color: var(--text) !important; }
-    html[data-palette="coral"] .card .delta { color: #b6170c !important; background: #fde4e2 !important; }
-    html[data-palette="coral"] .pill:not(.off) { background: #f68179; border-color: #f68179; color: #861109; }
-    html[data-palette="coral"] .page-title { color: var(--text); }
-    html[data-palette="coral"] .cards .card, html[data-palette="coral"] .panel, html[data-palette="coral"] .bar { box-shadow: 0 1px 2px rgba(120,30,30,.04), 0 6px 16px rgba(120,30,30,.05); }
+    html[data-palette="blue"] .cards .card { --k: #7fb3f8 !important; }
+    html[data-palette="blue"] .card .value { color: var(--text) !important; }
+    html[data-palette="blue"] .card .delta { color: #2563eb !important; background: #e8f0fb !important; }
+    html[data-palette="blue"] .pill:not(.off) { background: #7fb3f8; border-color: #7fb3f8; color: #0b2a6f; }
+    html[data-palette="blue"] .page-title { color: var(--text); }
+    html[data-palette="blue"] .cards .card, html[data-palette="blue"] .panel, html[data-palette="blue"] .bar { box-shadow: 0 1px 2px rgba(20,40,90,.03), 0 6px 16px rgba(20,40,90,.05); }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--page); color: var(--text); }
 
@@ -238,6 +238,18 @@
     .contact-side a { color: #d1d5db; text-decoration: none; }
     .contact-side a:hover { color: #fff; }
     @media (min-width: 901px) { html.side-min .contact-side { display: none; } }
+    /* ===== Blue theme: only the Bounce logo stays red ===== */
+    .brandname, .brandname span { color: #fff !important; }
+    .side { background: #0f1e36 !important; }
+    :root { --side: #0f1e36; --side-2: #172a48; --side-text: #a9b8d0; --brand-tint: #1e3a66; }
+    .side .collapse, .side button.collapse, .brandrow, .side .foot, .authbox, #authBox, .contact-side { border-color: #1d3050 !important; }
+    .nav a.active { background: #1e3a66 !important; color: #fff !important; border-left-color: #7fb3f8 !important; }
+    .adminlink:hover, .adminlink.active { background: #1e3a66 !important; }
+    .tabs-top a.active { color: #2563eb !important; border-bottom-color: #5b9cf6 !important; }
+    .authbox button, #authBox button { color: #9cc5fa !important; border-color: #2a4166 !important; }
+    .btn-clear { background: #5b9cf6 !important; color: #fff !important; }
+    .btn-sync { background: #2563eb !important; color: #fff !important; }
+    .contact a { color: #2563eb !important; }
   </style>
 </head>
 <body>

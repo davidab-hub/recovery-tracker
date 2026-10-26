@@ -11,9 +11,9 @@
       /* Bounce brand (same as the dashboard) */
       --brand: #e3262b; --brand-tint: #3a1517; --side: #16181d; --side-2: #1f2228; --side-text: #9aa0aa;
       /* Dark theme (same as the dashboard) */
-      --bg: #fff8f7; --card: #ffffff; --text: #2a1d1e; --muted: #8a7778; --text-2: #5b4a4b;
-      --border: #f7e6e3; --accent: #f24236; --accent-text: #ffffff; --ok: #16a34a; --bad: #c00000;
-      --input: #ffffff; --soft: #fff1ef; --hover: #fde4e2; --blue: #f68179;
+      --bg: #f8fbff; --card: #ffffff; --text: #1b2538; --muted: #7a879f; --text-2: #4a5670;
+      --border: #e6eef8; --accent: #2563eb; --accent-text: #ffffff; --ok: #16a34a; --bad: #c00000;
+      --input: #ffffff; --soft: #f1f6fd; --hover: #e8f0fb; --blue: #7fb3f8;
     }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
@@ -62,7 +62,7 @@
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
     .stat { background: var(--card); border: 1px solid var(--border); border-top: 2px solid var(--k, var(--brand));
             border-radius: 10px; padding: 10px 14px; box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
-    .stat { --k: #f68179; }
+    .stat { --k: #7fb3f8; }
     .stat .label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
     .stat .value { font-size: 24px; font-weight: 800; margin-top: 2px; color: var(--text) !important; }
 
@@ -201,6 +201,18 @@
     .contact-side a { color: #d1d5db; text-decoration: none; }
     .contact-side a:hover { color: #fff; }
     @media (min-width: 901px) { html.side-min .contact-side { display: none; } }
+    /* ===== Blue theme: only the Bounce logo stays red ===== */
+    .brandname, .brandname span { color: #fff !important; }
+    .side { background: #0f1e36 !important; }
+    :root { --side: #0f1e36; --side-2: #172a48; --side-text: #a9b8d0; --brand-tint: #1e3a66; }
+    .side .collapse, .side button.collapse, .brandrow, .side .foot, .authbox, #authBox, .contact-side { border-color: #1d3050 !important; }
+    .nav a.active { background: #1e3a66 !important; color: #fff !important; border-left-color: #7fb3f8 !important; }
+    .adminlink:hover, .adminlink.active { background: #1e3a66 !important; }
+    .tabs-top a.active { color: #2563eb !important; border-bottom-color: #5b9cf6 !important; }
+    .authbox button, #authBox button { color: #9cc5fa !important; border-color: #2a4166 !important; }
+    .btn-clear { background: #5b9cf6 !important; color: #fff !important; }
+    .btn-sync { background: #2563eb !important; color: #fff !important; }
+    .contact a { color: #2563eb !important; }
   </style>
 </head>
 <body>
