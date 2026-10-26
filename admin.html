@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-palette="coral">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin · Users</title>
+  <style>
+    :root {
+      /* Bounce brand */
+      --brand: #e3262b; --brand-dark: #b91c21; --brand-tint: #3a1517; --side: #16181d; --side-2: #1f2228; --side-text: #9aa0aa;
+      --page: #f4f5f8; --card: #ffffff; --text: #111827; --text-2: #4b5563; --muted: #6b7280;
+      --border: #e5e7eb; --grid: #e1e0d9; --axis: #c3c2b7;
+      --red: #e3262b; --blue: #2563eb; --green: #16a34a; --orange: #d97706; --dark: #1f2937;
+      --input: #ffffff; --soft: #f5f6f8; --hover: #eef4ff; --ring: #93c5fd; --label: #374151; --tip: #ffffff; --tip-text: #111827;
+      --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6;
+    }
+
+    /* ===== Themes: switch with the buttons at the top right ===== */
+    html[data-theme="dark"] {
+      --page: #0b1020; --card: #121a2f; --text: #e8ecf5; --text-2: #b4bdd0; --muted: #8590a8;
+      --border: #222c47; --grid: rgba(255,255,255,.07); --axis: #2f3a58; --dark: #2a3452;
+      --input: #0e1528; --soft: #18213a; --hover: #1d2848; --ring: #4f7ddb; --label: #dfe5f2; --tip: #1a2340; --tip-text: #e8ecf5;
+      --side: #080c18; --side-2: #121a2f; --brand-tint: #3a1219;
+      --s1: #4c95ef; --s2: #f07a45; --s3: #2cc28c; --s4: #f2b31b; --s5: #ef8fb3; --s6: #4fb84f; --s7: #8b7cf0;
+      --blue: #5b9df5; --green: #34d399; --orange: #f59e0b;
+    }
+    html[data-theme="dark"] .card, html[data-theme="dark"] .panel, html[data-theme="dark"] .bar {
+      background: linear-gradient(180deg, #141d34, #10172b); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+    html[data-theme="dark"] .cards .card { border-top: 2px solid var(--k); }
+    html[data-theme="dark"] .cards .card .value { text-shadow: 0 0 18px color-mix(in srgb, var(--k) 55%, transparent); }
+    html[data-theme="dark"] .card .ico { box-shadow: 0 0 14px color-mix(in srgb, var(--k) 45%, transparent); }
+    html[data-theme="dark"] .page-title { color: #fff; }
+
+    html[data-theme="gradient"] .cards .card { background: linear-gradient(135deg, var(--k), color-mix(in srgb, var(--k) 62%, #1a0a2e));
+      border: none; color: #fff; box-shadow: 0 6px 18px color-mix(in srgb, var(--k) 35%, transparent); }
+    html[data-theme="gradient"] .cards .card .label, html[data-theme="gradient"] .cards .card .sub,
+    html[data-theme="gradient"] .cards .card .value, html[data-theme="gradient"] .cards .card .more { color: #fff !important; }
+    html[data-theme="gradient"] .cards .card .label, html[data-theme="gradient"] .cards .card .sub { opacity: .88; }
+    html[data-theme="gradient"] .card .ico { background: rgba(255,255,255,.22) !important; color: #fff !important; }
+    html[data-theme="gradient"] .card .delta { background: rgba(255,255,255,.22) !important; color: #fff !important; }
+    html[data-theme="gradient"] .card .meter { background: rgba(255,255,255,.25); }
+    html[data-theme="gradient"] .panel { box-shadow: 0 4px 14px rgba(17,24,39,.06); border-color: transparent; }
+
+    html[data-theme="light"] .cards .card, html[data-theme="light"] .panel { box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
+
+    /* Card extras: icon badge, change vs yesterday, sparkline, meter */
+    .card .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .card .ico { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      color: var(--k); background: color-mix(in srgb, var(--k) 14%, transparent); }
+    .card .ico svg { width: 16px; height: 16px; }
+    .card .vrow { display: flex; align-items: baseline; gap: 8px; }
+    .card .value { color: var(--k) !important; }
+    html[data-theme="light"] .card .value, html:not([data-theme]) .card .value { color: var(--text) !important; }
+    .card .delta { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px; white-space: nowrap; }
+    .delta.good { color: #15803d; background: rgba(22,163,74,.12); } .delta.bad { color: #c81e1e; background: rgba(227,38,43,.12); }
+    .delta.flat { color: var(--muted); background: var(--soft); }
+    html[data-theme="dark"] .delta.good { color: #4ade80; } html[data-theme="dark"] .delta.bad { color: #ff7b7f; }
+    .card canvas.spark { display: block; width: 100%; height: 30px; margin-top: 6px; }
+    .card .meter { height: 6px; border-radius: 999px; background: var(--soft); margin-top: 8px; overflow: hidden; display: flex; }
+    .card .meter span { display: block; height: 100%; }
+    .themes { display: inline-flex; background: var(--soft); border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px; margin-left: auto; align-self: center; }
+    .themes button { border: none; background: transparent; color: var(--text-2); font: 600 12px inherit; font-family: inherit; padding: 4px 12px; border-radius: 999px; cursor: pointer; }
+    .themes button.on { background: var(--brand); color: #fff; }
+    .tabs-top { align-items: flex-end; flex-wrap: wrap; }
+    @media (max-width: 600px) { .themes { margin: 6px 0 8px; } }
+
+    /* ===== Colours: Bounce red, soft coral shades ===== */
+    :root { --a1: #86b6ef; --a2: #3987e5; --a3: #1c5cab; --a4: #0d366b; }
+    html[data-palette="coral"] {
+      --page: #fff8f7; --card: #ffffff; --border: #f7e6e3; --input: #ffffff; --soft: #fff1ef; --hover: #fde4e2; --ring: #f68179;
+      --text: #2a1d1e; --text-2: #5b4a4b; --muted: #8a7778; --label: #4a3536; --tip: #ffffff; --tip-text: #2a1d1e;
+      --grid: rgba(120,40,40,.07); --axis: #f7e6e3;
+      --s1: #f68179; --s2: #fcceca; --s3: #f02719; --s4: #feedec; --s5: #f35449; --s6: #f9aaa4; --s7: #c9190d; --red: #f35449; --dark: #f02719;
+      --a1: #fddbd9; --a2: #f89c96; --a3: #f35449; --a4: #d81b0e;
+    }
+    html[data-palette="coral"] .cards .card { --k: #f68179 !important; }
+    html[data-palette="coral"] .card .value { color: var(--text) !important; }
+    html[data-palette="coral"] .card .delta { color: #b6170c !important; background: #fde4e2 !important; }
+    html[data-palette="coral"] .pill:not(.off) { background: #f68179; border-color: #f68179; color: #861109; }
+    html[data-palette="coral"] .page-title { color: var(--text); }
+    html[data-palette="coral"] .cards .card, html[data-palette="coral"] .panel, html[data-palette="coral"] .bar { box-shadow: 0 1px 2px rgba(120,30,30,.04), 0 6px 16px rgba(120,30,30,.05); }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--page); color: var(--text); }
+
+    /* App layout: dark sidebar + content */
+    .app { display: flex; min-height: 100vh; }
+    .side { width: 220px; flex-shrink: 0; background: var(--side); color: #fff; display: flex; flex-direction: column;
+            position: sticky; top: 0; height: 100vh; }
+    .side .collapse { text-align: right; padding: 10px 14px; color: var(--side-text); font-size: 15px; border-bottom: 1px solid #262930; }
+    .brandrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #262930; }
+    .logo { width: 38px; height: 38px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center;
+            justify-content: center; text-align: center; font-size: 8px; font-weight: 800; line-height: 1.1; letter-spacing: .03em; overflow: hidden; flex-shrink: 0; }
+    .logo img { width: 100%; height: 100%; object-fit: cover; }
+    .brandname { font-size: 14px; font-weight: 700; }
+    .brandname span { color: var(--brand); }
+    .navsec { padding: 12px 0 4px 16px; font-size: 10.5px; font-weight: 700; letter-spacing: .12em; color: #6b717c; }
+    .nav a { display: flex; align-items: center; gap: 10px; padding: 8px 16px; color: var(--side-text); text-decoration: none; font-size: 13.5px;
+             border-left: 3px solid transparent; }
+    .nav a:hover { background: var(--side-2); color: #fff; }
+    .nav a.active { background: var(--brand-tint); color: #fff; font-weight: 700; border-left-color: var(--brand); }
+    .nav svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .side .foot { margin-top: auto; border-top: 1px solid #262930; padding: 10px 14px; font-size: 12px; color: var(--side-text); }
+    .side .foot .live { display: flex; align-items: center; gap: 8px; }
+    .side .foot .live i { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block; }
+    .content { flex: 1; min-width: 0; }
+    main { max-width: 1520px; margin: 0 auto; padding: 4px 24px 28px; }
+    .tabs-top { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin: 0 0 14px; padding-top: 12px; }
+    .tabs-top a { padding: 8px 14px; font-size: 14.5px; font-weight: 600; color: var(--text-2); text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+    .tabs-top a.active { color: var(--brand); border-bottom-color: var(--brand); }
+    .page-title { margin: 0; font-size: 21px; font-weight: 800; }
+    .page-sub { margin: 3px 0 14px; color: var(--muted); font-size: 13px; }
+    .menu-btn { display: none; }
+    @media (max-width: 900px) {
+      .app { flex-direction: column; }
+      .side { width: 100%; height: auto; position: static; }
+      .side .collapse, .side .foot, .navsec { display: none; }
+      .side .nav { display: none; }
+      .side.open .nav { display: block; }
+      .brandrow { justify-content: space-between; padding: 12px 16px; }
+      .menu-btn { display: inline-block; background: none; border: 1px solid #3a3d44; color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 18px; }
+      main { padding: 8px 16px 32px; }
+    }
+    /* Show / hide pills for chart lines (brand red when on) */
+    .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+    .pill { border: 1.5px solid var(--brand); background: var(--brand); color: #fff; border-radius: 999px; padding: 4px 12px;
+            font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; }
+    .pill i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; border: 1.5px solid #fff; }
+    .pill.off { background: var(--input); color: var(--text-2); border-color: var(--border); }
+    .pill.off i { border-color: transparent; }
+
+    /* Top filter bar (matches the design) */
+    .bar { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px;
+           display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 14px; }
+    .bar label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+    .bar select { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;
+                  background: var(--input); color: var(--text); min-width: 120px; }
+    .bar .spacer { flex: 1; }
+    .btn { border: none; border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-clear { background: var(--red); color: #fff; }
+    .btn-sync { background: var(--dark); color: #fff; }
+    .synced { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+    .synced i { width: 9px; height: 9px; border-radius: 50%; background: #9ca3af; display: inline-block; }
+    .synced.ok i { background: #22c55e; }
+    .synced.err i { background: var(--red); }
+    .bar a { font-size: 12.5px; color: var(--blue); }
+
+    /* KPI cards */
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 10px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; min-height: 92px; }
+    .card .label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .card .value { font-size: 24px; font-weight: 800; margin-top: 3px; line-height: 1.1; }
+    .card .sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+    .c-red { color: var(--red); } .c-blue { color: var(--blue); } .c-green { color: var(--green); }
+    .c-orange { color: var(--orange); } .c-dark { color: var(--text); }
+
+    /* Detail section below the cards */
+    .section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 20px 0 8px; }
+    .section-head h2 { margin: 0; font-size: 13px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .05em; }
+    .section-head select { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: var(--input); color: var(--text); }
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 10px; }
+    @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .bar select { min-width: 0; flex: 1 1 120px; } }
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; min-width: 0; }
+    .panel h3 { margin: 0 0 2px; font-size: 13.5px; font-weight: 600; }
+    .panel .note { margin: 0 0 6px; font-size: 11px; color: var(--muted); }
+    .chart { position: relative; height: 230px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { font-size: 11px; color: var(--text-2); text-transform: uppercase; letter-spacing: .03em; background: var(--soft); }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tr:last-child td { border-bottom: none; }
+    .bad { color: var(--red); font-weight: 600; }
+    /* Count strip at the top of each panel */
+    .counts { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
+    .count { background: var(--soft); border-radius: 8px; padding: 5px 10px; min-width: 76px; }
+    .count .n { font-size: 17px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .count .t { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+    .count .t i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    button.count { border: 1px solid transparent; text-align: left; font-family: inherit; color: inherit; cursor: pointer; }
+    button.count:hover, button.count:focus-visible { border-color: var(--ring); background: var(--hover); outline: none; }
+    /* Clickable KPI cards */
+    .cards .card { cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
+    .cards .card:hover, .cards .card:focus-visible { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 35%, transparent); outline: none; transform: translateY(-1px); }
+    .cards .card .more { font-size: 11px; color: var(--blue); margin-top: 4px; opacity: 0; transition: opacity .15s; }
+    .cards .card:hover .more, .cards .card:focus-visible .more { opacity: 1; }
+    .panel.flash { box-shadow: 0 0 0 3px var(--ring); transition: box-shadow .3s; }
+    /* Details pop-up */
+    dialog#detail { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 14px; padding: 0; width: min(900px, 94vw); max-height: 86vh; }
+    dialog#detail::backdrop { background: rgba(0,0,0,.4); }
+    .dhead { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+    .dhead h2 { margin: 0; font-size: 16px; flex: 1; }
+    .dhead .big { font-size: 22px; font-weight: 800; }
+    .dbody { padding: 0 18px 16px; max-height: 64vh; overflow: auto; }
+    .dbody p { color: var(--muted); font-size: 13px; }
+    .btn-light { background: var(--input); border: 1px solid var(--border); color: var(--text); }
+    .hidden { display: none !important; }
+      /* QC page extras */
+    .login { max-width: 420px; margin: 20px 0; }
+    .login label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+    .login input { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
+    .login button { margin-top: 14px; width: 100%; padding: 9px; }
+    .login .err { color: var(--s3); font-size: 13px; min-height: 1em; margin: 8px 0 0; }
+    .authbox { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #262930; }
+    .authbox .who { color: #d1d5db; word-break: break-all; }
+    .authbox button { width: 100%; padding: 6px; background: transparent; border: 1px solid #3a3d44; color: var(--brand); font-size: 12.5px; font-weight: 600; border-radius: 8px; cursor: pointer; font-family: inherit; }
+    .card .value.small { font-size: 15px !important; line-height: 1.25; margin-top: 6px; }
+    td.wrap { white-space: normal; min-width: 260px; max-width: 420px; }
+    tr.click { cursor: pointer; } tr.click:hover td { background: var(--hover); }
+      /* Admin link at the bottom of the sidebar */
+    .adminlink { display: flex; align-items: center; gap: 8px; padding: 7px 8px; margin: 0 -4px 10px; border-radius: 8px; color: var(--side-text); text-decoration: none; font-size: 13px; font-weight: 600; }
+    @media (max-width: 900px) { .side.open .foot { display: block; } }
+    .adminlink svg { width: 15px; height: 15px; }
+    .adminlink:hover, .adminlink.active { background: var(--brand-tint); color: #fff; }
+    .admin-grid { align-items: start; }
+    .form label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+    .form input[type=text], .form input[type=email] { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
+    .form label.check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); margin-top: 12px; }
+    .form button { margin-top: 14px; }
+    .err { color: var(--s3); font-size: 13px; min-height: 1em; margin: 8px 0 0; }
+    #shareLink { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font: 12px ui-monospace, Menlo, Consolas, monospace; background: var(--soft); color: var(--text); resize: none; margin: 8px 0; }
+    .who-line { font-size: 13px; color: var(--text-2); }
+    .share-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+    .share-btns a { text-decoration: none; display: inline-flex; align-items: center; }
+    .btn-wa { background: #1fa855; color: #fff; }
+    .btn.sm { padding: 4px 10px; font-size: 12px; }
+    .btn.danger { color: var(--s3); border-color: color-mix(in srgb, var(--s3) 35%, var(--border)); }
+    td.acts { display: flex; gap: 6px; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--soft); color: var(--text-2); }
+    .tag-admin { background: var(--s4); color: var(--s3); } .tag-ok { background: #e8f5ec; color: #15803d; } .tag-wait { background: #fff4e0; color: #a15c00; }
+  </style>
+</head>
+<body>
+ <div class="app">
+  <aside class="side" id="side">
+    <div class="collapse" aria-hidden="true">«</div>
+    <div class="brandrow">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="logo"><img src="logo.png" alt="Bounce" onerror="this.parentNode.textContent = 'BOUNCE DAILY'"></div>
+        <div class="brandname">Bounce <span>Recovery Info</span></div>
+      </div>
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu">☰</button>
+    </div>
+    <nav class="nav">
+      <div class="navsec">ANALYTICS</div>
+      <a href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Recovery Dashboard</a>
+      <a href="qc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>QC Dashboard</a>
+    </nav>
+    <div class="foot">
+      <a href="admin.html" class="adminlink active" id="adminLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/><path d="M19 3l2 2-2 2"/></svg>Admin · Users</a>
+      <div id="authBox" class="authbox"></div>
+      <div class="live"><i></i>Live · Supabase</div>
+    </div>
+  </aside>
+
+  <div class="content">
+  <main>
+    <nav class="tabs-top">
+      <a href="dashboard.html">Recovery Dashboard</a>
+      <a href="qc.html">QC Dashboard</a>
+      <a href="admin.html" class="active">Admin</a>
+    </nav>
+    <h1 class="page-title">Admin · Users</h1>
+    <p class="page-sub">Give your team a login to the dashboards, send them their sign-in link, and remove access</p>
+
+    <section class="panel login" id="loginBox">
+      <h3>Sign in as an admin</h3>
+      <form id="loginForm">
+        <label for="email">Email</label><input id="email" type="email" autocomplete="username" required>
+        <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required>
+        <button class="btn btn-clear" type="submit">Sign in</button>
+        <p class="err" id="loginErr"></p>
+      </form>
+    </section>
+    <section class="panel login hidden" id="notAdmin">
+      <h3>No admin access</h3>
+      <p class="note">You're signed in, but only admins can manage users. Ask an admin to give you access.</p>
+    </section>
+
+    <div id="adminArea" class="hidden">
+      <section class="grid2 admin-grid">
+        <div class="panel">
+          <h3>Invite a team member</h3>
+          <p class="note">Creates their login and gives you a sign-in link to send them. They open it, choose a password, and they're in.</p>
+          <form id="inviteForm" class="form">
+            <label for="iName">Name</label><input id="iName" type="text" placeholder="e.g. Rahul Sharma" maxlength="80">
+            <label for="iEmail">Work email</label><input id="iEmail" type="email" placeholder="name@bounceshare.com" required>
+            <label class="check"><input id="iAdmin" type="checkbox"> Make admin (can add and remove users)</label>
+            <button class="btn btn-clear" type="submit" id="inviteBtn">Create login &amp; get link</button>
+            <p class="err" id="inviteErr"></p>
+          </form>
+        </div>
+        <div class="panel" id="sharePanel">
+          <h3>Send the sign-in link</h3>
+          <p class="note" id="shareNote">After you invite someone (or click "New link"), their link appears here.</p>
+          <div id="shareBox" class="hidden">
+            <div class="who-line" id="shareWho"></div>
+            <textarea id="shareLink" readonly rows="3"></textarea>
+            <div class="share-btns">
+              <button class="btn btn-clear" type="button" id="copyBtn">Copy link</button>
+              <a class="btn btn-wa" id="waBtn" target="_blank" rel="noopener">WhatsApp</a>
+              <a class="btn btn-light" id="mailBtn">Email</a>
+            </div>
+            <p class="note">The link works <strong>once</strong> and expires in <strong>24 hours</strong>. Send it only to that person. If it expires, click "New link" next to their name.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" style="margin-top:10px">
+        <h3>People with access</h3>
+        <p class="note">Viewers can see both dashboards and download Excel. Admins can also manage users.</p>
+        <div class="counts" id="userCounts"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Added</th><th></th></tr></thead>
+            <tbody id="userRows"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
+          </table>
+        </div>
+        <p class="err" id="listErr"></p>
+      </section>
+    </div>
+  </main>
+  </div>
+ </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const when = (iso) => iso ? new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+
+    // All user changes go through the admin-users function, which checks you're an admin.
+    async function call(action, extra = {}) {
+      const { data, error } = await db.functions.invoke('admin-users', { body: { action, ...extra } });
+      if (error) {
+        let msg = error.message;
+        try { const j = await error.context.json(); if (j.error) msg = j.error; } catch (e) {}
+        throw new Error(msg);
+      }
+      return data;
+    }
+
+    let users = [];
+    async function loadUsers() {
+      $('listErr').textContent = '';
+      try { users = (await call('list')).users; } catch (e) { $('listErr').textContent = e.message; return; }
+      const admins = users.filter(u => u.is_admin).length, pending = users.filter(u => u.status === 'pending').length;
+      $('userCounts').innerHTML = [[users.length, 'People'], [admins, 'Admins'], [pending, 'Waiting to set password']]
+        .map(([n, t]) => `<div class="count"><div class="n">${n}</div><div class="t">${t}</div></div>`).join('');
+      $('userRows').innerHTML = users.map(u => `<tr>
+          <td><strong>${esc(u.name || '—')}</strong>${u.is_me ? ' <span class="tag">you</span>' : ''}</td>
+          <td>${esc(u.email)}</td>
+          <td><span class="tag ${u.is_admin ? 'tag-admin' : ''}">${u.is_admin ? 'Admin' : 'Viewer'}</span></td>
+          <td>${u.status === 'pending' ? '<span class="tag tag-wait">Link sent · not set up</span>' : '<span class="tag tag-ok">Active</span>'}</td>
+          <td>${when(u.last_sign_in_at)}</td><td>${when(u.created_at)}</td>
+          <td class="acts">
+            <button class="btn btn-light sm" data-act="link" data-id="${u.id}">New link</button>
+            ${u.is_me ? '' : `<button class="btn btn-light sm" data-act="admin" data-id="${u.id}" data-val="${u.is_admin ? '' : '1'}">${u.is_admin ? 'Make viewer' : 'Make admin'}</button>
+            <button class="btn btn-light sm danger" data-act="remove" data-id="${u.id}">Remove</button>`}
+          </td></tr>`).join('') || '<tr><td colspan="7" style="color:var(--muted)">No users yet.</td></tr>';
+    }
+
+    function showLink({ link, email, name }) {
+      const who = name || email;
+      const msg = `Hi ${name || ''}, here is your login for the Bounce dashboards. Open this link, choose a password, and you're in (works once, valid for 24 hours):\n${link}\n\nAfter that, sign in any time at https://davidab-hub.github.io/recovery-tracker/qc.html with ${email}.`;
+      $('shareBox').classList.remove('hidden');
+      $('shareNote').classList.add('hidden');
+      $('shareWho').innerHTML = `For <strong>${esc(who)}</strong> · ${esc(email)}`;
+      $('shareLink').value = link;
+      $('waBtn').href = 'https://wa.me/?text=' + encodeURIComponent(msg);
+      $('mailBtn').href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent('Your login for the Bounce dashboards')}&body=${encodeURIComponent(msg)}`;
+      $('copyBtn').textContent = 'Copy link';
+      $('sharePanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    $('inviteForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); $('inviteErr').textContent = ''; $('inviteBtn').disabled = true; $('inviteBtn').textContent = 'Creating…';
+      try {
+        const r = await call('invite', { name: $('iName').value, email: $('iEmail').value, make_admin: $('iAdmin').checked });
+        showLink(r); $('inviteForm').reset(); loadUsers();
+      } catch (err) { $('inviteErr').textContent = err.message; }
+      $('inviteBtn').disabled = false; $('inviteBtn').textContent = 'Create login & get link';
+    });
+    $('copyBtn').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText($('shareLink').value); } catch (e) { $('shareLink').select(); document.execCommand('copy'); }
+      $('copyBtn').textContent = 'Copied ✓';
+    });
+    $('userRows').addEventListener('click', async (e) => {
+      const b = e.target.closest('button[data-act]'); if (!b) return;
+      const u = users.find(x => x.id === b.dataset.id); if (!u) return;
+      try {
+        if (b.dataset.act === 'link') showLink(await call('link', { id: u.id }));
+        if (b.dataset.act === 'admin') { await call('set_admin', { id: u.id, value: !!b.dataset.val }); loadUsers(); }
+        if (b.dataset.act === 'remove') {
+          if (!confirm(`Remove ${u.email}? They will lose access straight away.`)) return;
+          await call('remove', { id: u.id }); loadUsers();
+        }
+      } catch (err) { $('listErr').textContent = err.message; }
+    });
+
+    // ---- Sign-in ----
+    async function showFor(session) {
+      $('loginBox').classList.toggle('hidden', !!session);
+      $('authBox').innerHTML = session
+        ? `<span class="who">${esc(session.user.email)}</span><button type="button" id="signOutBtn">Sign Out</button>`
+        : '<span class="who">Not signed in</span>';
+      if (!session) { $('adminArea').classList.add('hidden'); $('notAdmin').classList.add('hidden'); return; }
+      $('signOutBtn').onclick = () => db.auth.signOut();
+      const { data } = await db.from('app_admins').select('user_id').eq('user_id', session.user.id).maybeSingle();
+      $('adminArea').classList.toggle('hidden', !data);
+      $('notAdmin').classList.toggle('hidden', !!data);
+      if (data) loadUsers();
+    }
+    $('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); $('loginErr').textContent = '';
+      const { error } = await db.auth.signInWithPassword({ email: $('email').value.trim(), password: $('password').value });
+      if (error) $('loginErr').textContent = error.message;
+    });
+    let lastUser;
+    db.auth.onAuthStateChange((_ev, session) => {
+      const id = session?.user?.id || null; if (id === lastUser) return; lastUser = id;
+      setTimeout(() => showFor(session), 0);
+    });
+    $('menuBtn').addEventListener('click', () => $('side').classList.toggle('open'));
+  </script>
+</body>
+</html>

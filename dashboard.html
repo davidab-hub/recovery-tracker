@@ -194,6 +194,11 @@
     .dbody p { color: var(--muted); font-size: 13px; }
     .btn-light { background: var(--input); border: 1px solid var(--border); color: var(--text); }
     .hidden { display: none !important; }
+    /* Admin link at the bottom of the sidebar */
+    .adminlink { display: flex; align-items: center; gap: 8px; padding: 7px 8px; margin: 0 -4px 10px; border-radius: 8px; color: var(--side-text); text-decoration: none; font-size: 13px; font-weight: 600; }
+    @media (max-width: 900px) { .side.open .foot { display: block; } }
+    .adminlink svg { width: 15px; height: 15px; }
+    .adminlink:hover, .adminlink.active { background: var(--brand-tint); color: #fff; }
   </style>
 </head>
 <body>
@@ -215,6 +220,7 @@
       <a href="qc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>QC Dashboard</a>
     </nav>
     <div class="foot">
+      <a href="admin.html" class="adminlink hidden" id="adminLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/><path d="M19 3l2 2-2 2"/></svg>Admin · Users</a>
       <div class="live"><i></i>Live · Supabase</div>
     </div>
   </aside>
@@ -932,6 +938,14 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bikes' }, soon)
       .subscribe();
 
+    // Show the Admin link at the bottom of the sidebar for admins only
+    async function showAdminLink() {
+      const { data: { session } } = await db.auth.getSession();
+      if (!session) return $('adminLink').classList.add('hidden');
+      const { data } = await db.from('app_admins').select('user_id').eq('user_id', session.user.id).maybeSingle();
+      $('adminLink').classList.toggle('hidden', !data);
+    }
+    showAdminLink();
     load();
   </script>
 </body>
