@@ -211,12 +211,29 @@
     @media (max-width: 900px) { .side.open .foot { display: block; } }
     .adminlink svg { width: 15px; height: 15px; }
     .adminlink:hover, .adminlink.active { background: var(--brand-tint); color: #fff; }
+    /* Collapse button at the top of the sidebar (desktop) */
+    .side { transition: width .2s; }
+    .side button.collapse { display: block; width: 100%; background: none; border: none; border-bottom: 1px solid #262930; cursor: pointer;
+      text-align: right; padding: 10px 14px; color: var(--side-text); font: inherit; font-size: 15px; }
+    @media (max-width: 900px) { .side button.collapse { display: none; } }
+    .side button.collapse:hover { color: #fff; background: var(--side-2); }
+    @media (min-width: 901px) {
+      html.side-min .side { width: 64px; }
+      html.side-min .side button.collapse { text-align: center; }
+      html.side-min .brandrow { justify-content: center; padding: 12px 0; }
+      html.side-min .brandname, html.side-min .navsec, html.side-min #authBox, html.side-min .side .foot .live { display: none; }
+      html.side-min .nav a, html.side-min .adminlink { font-size: 0; justify-content: center; padding: 10px 0; gap: 0; }
+      html.side-min .nav a svg, html.side-min .adminlink svg { width: 18px; height: 18px; }
+      html.side-min .nav { padding-top: 8px; }
+      html.side-min .side .foot { padding: 10px 8px; }
+      html.side-min .adminlink { margin: 0; }
+    }
   </style>
 </head>
 <body>
  <div class="app">
   <aside class="side" id="side">
-    <div class="collapse" aria-hidden="true">«</div>
+    <button class="collapse" id="sideToggle" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">«</button>
     <div class="brandrow">
       <div style="display:flex;align-items:center;gap:12px">
         <div class="logo"><img src="logo.png" alt="Bounce" onerror="this.parentNode.textContent = 'BOUNCE DAILY'"></div>
@@ -259,10 +276,10 @@
 
     <div id="dash" class="hidden">
     <section class="bar">
+      <label for="cityFilter">City</label>
+      <select id="cityFilter"><option value="">All Cities</option></select>
       <label for="hubFilter">Hub</label>
       <select id="hubFilter"><option value="">All Hubs</option></select>
-      <label for="techFilter">Technician</label>
-      <select id="techFilter"><option value="">All Technicians</option></select>
       <label for="periodFilter">Period</label>
       <select id="periodFilter">
         <option value="all">Whole month</option>
@@ -509,7 +526,7 @@
       if (!current) return;
       const q = $('dSearch').value.trim().toLowerCase();
       const rows = q ? current.rows.filter(r => r.join(' ').toLowerCase().includes(q)) : current.rows;
-      const filters = [$('hubFilter').value, $('techFilter').value, $('periodFilter').selectedOptions[0].text].filter(Boolean).join(' · ');
+      const filters = [$('cityFilter').value, $('hubFilter').value, $('periodFilter').selectedOptions[0].text].filter(Boolean).join(' · ');
       const data = [current.header, ...rows.map(r => r.map((v, i) => current.numeric.includes(i) && v !== '' && !isNaN(Number(v)) ? Number(v) : v))];
       const ws = XLSX.utils.aoa_to_sheet(data);
       ws['!cols'] = current.header.map((h, i) => ({ wch: Math.min(50, Math.max(h.length, ...data.slice(1).map(r => String(r[i] ?? '').length)) + 2) }));
@@ -524,6 +541,10 @@
     }
 
     // ---- Data ----
+    // Which city each QC hub belongs to (add new hubs here when other cities start using the QC form)
+    const HUB_CITY = { INDIRAPURAM: 'NCR', OKHLA: 'NCR', GURUGRAM: 'NCR', ROHINI: 'NCR', NOIDA: 'NCR', DWARKA: 'NCR',
+      KORAMANGALA: 'Bangalore', 'HSR LAYOUT': 'Bangalore', INDIRANAGAR: 'Bangalore', WHITEFIELD: 'Bangalore',
+      MADHAPUR: 'Hyderabad', GACHIBOWLI: 'Hyderabad' };
     let qcs = [], mistakes = [], qcById = new Map(), misByQc = new Map();
     async function fetchAll(table, cols, order) {
       const out = [];
@@ -540,7 +561,7 @@
           fetchAll('qc_checks', 'id, qc_at, hub, qc_name, technician, vehicle_number, result, remarks', 'qc_at'),
           fetchAll('qc_mistakes', 'id, qc_id, mistake, evidence', 'id')]);
       } catch (e) { s.className = 'synced err'; s.querySelector('span').textContent = 'Sync failed: ' + e.message; return; }
-      qcs.forEach(q => q.day = istDay(q.qc_at));
+      qcs.forEach(q => { q.day = istDay(q.qc_at); q.city = q.city || HUB_CITY[q.hub] || 'Other'; });
       qcById = new Map(qcs.map(q => [q.id, q]));
       misByQc = new Map(); mistakes.forEach(m => { (misByQc.get(m.qc_id) || misByQc.set(m.qc_id, []).get(m.qc_id)).push(m); });
       fillFilters(); render();
@@ -549,9 +570,9 @@
     function fillFilters() {
       const keep = (sel, values, all) => { const cur = sel.value;
         sel.innerHTML = `<option value="">${all}</option>` + values.map(v => `<option>${esc(v)}</option>`).join(''); sel.value = values.includes(cur) ? cur : ''; };
-      keep($('hubFilter'), [...new Set(qcs.map(q => q.hub))].sort(), 'All Hubs');
-      const hub = $('hubFilter').value;
-      keep($('techFilter'), [...new Set(qcs.filter(q => !hub || q.hub === hub).map(q => q.technician))].sort((a, b) => a.localeCompare(b)), 'All Technicians');
+      keep($('cityFilter'), [...new Set(qcs.map(q => q.city))].sort(), 'All Cities');
+      const city = $('cityFilter').value;
+      keep($('hubFilter'), [...new Set(qcs.filter(q => !city || q.city === city).map(q => q.hub))].sort(), 'All Hubs');
     }
 
     const RESULTS = ['APPROVED', 'REJECTED', 'HOLD'];
@@ -562,8 +583,8 @@
       const period = $('periodFilter').value;
       const from = period === 'all' ? allDays[0] : new Date(Date.parse(lastDay) - (Number(period) - 1) * 864e5).toISOString().slice(0, 10);
       const days = daysBetween(from, lastDay), labels = days.map(fmtDay);
-      const hub = $('hubFilter').value, tech = $('techFilter').value;
-      const Q = qcs.filter(q => q.day >= from && (!hub || q.hub === hub) && (!tech || q.technician === tech));
+      const city = $('cityFilter').value, hub = $('hubFilter').value;
+      const Q = qcs.filter(q => q.day >= from && (!city || q.city === city) && (!hub || q.hub === hub));
       const ids = new Set(Q.map(q => q.id));
       const M = mistakes.filter(m => ids.has(m.qc_id));
       const RES = { APPROVED: C.s2, REJECTED: C.s1, HOLD: C.s7 };
@@ -712,10 +733,10 @@
     db.auth.onAuthStateChange((_ev, session) => setTimeout(() => { showFor(session); showAdminLink(); }, 0));
 
     // ---- Controls ----
-    $('hubFilter').addEventListener('change', () => { $('techFilter').value = ''; fillFilters(); render(); });
-    $('techFilter').addEventListener('change', render);
+    $('cityFilter').addEventListener('change', () => { $('hubFilter').value = ''; fillFilters(); render(); });
+    $('hubFilter').addEventListener('change', render);
     $('periodFilter').addEventListener('change', render);
-    $('clearBtn').addEventListener('click', () => { $('hubFilter').value = ''; $('techFilter').value = ''; $('periodFilter').value = 'all'; fillFilters(); render(); });
+    $('clearBtn').addEventListener('click', () => { $('cityFilter').value = ''; $('hubFilter').value = ''; $('periodFilter').value = 'all'; fillFilters(); render(); });
     $('syncBtn').addEventListener('click', load);
     $('menuBtn').addEventListener('click', () => $('side').classList.toggle('open'));
     const CARD_KEYS = ['total', 'appr', 'rej', 'pct', 'hold', 'tech', 'mis', 'top'];
@@ -743,6 +764,25 @@
     $('dClose').addEventListener('click', () => $('detail').close());
     $('dSearch').addEventListener('input', showDetailRows);
     $('dXlsx').addEventListener('click', downloadExcel);
+  </script>
+  <script>
+    // Sidebar collapse button («): remembers your choice on this browser
+    (function () {
+      const KEY = 'rt-side-min', btn = document.getElementById('sideToggle');
+      let min = false; try { min = localStorage.getItem(KEY) === '1'; } catch (e) {}
+      const apply = () => {
+        document.documentElement.classList.toggle('side-min', min);
+        btn.textContent = min ? '»' : '«';
+        btn.title = min ? 'Expand sidebar' : 'Collapse sidebar'; btn.setAttribute('aria-label', btn.title);
+      };
+      document.querySelectorAll('.side .nav a, .side .adminlink').forEach(a => a.title = a.textContent.trim());
+      apply();
+      btn.addEventListener('click', () => {
+        min = !min; apply();
+        try { localStorage.setItem(KEY, min ? '1' : '0'); } catch (e) {}
+        setTimeout(() => { if (typeof map !== 'undefined' && map.invalidateSize) map.invalidateSize(); window.dispatchEvent(new Event('resize')); }, 250);
+      });
+    })();
   </script>
 </body>
 </html>
