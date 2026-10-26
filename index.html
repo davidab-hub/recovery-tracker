@@ -19,33 +19,33 @@
 
     /* App layout: dark sidebar + content (same as the dashboard) */
     .app { display: flex; min-height: 100vh; }
-    .side { width: 280px; flex-shrink: 0; background: var(--side); color: #fff; display: flex; flex-direction: column;
+    .side { width: 220px; flex-shrink: 0; background: var(--side); color: #fff; display: flex; flex-direction: column;
             position: sticky; top: 0; height: 100vh; z-index: 1000; }
-    .side .collapse { text-align: right; padding: 14px 18px; color: var(--side-text); font-size: 18px; border-bottom: 1px solid #262930; }
-    .brandrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px; border-bottom: 1px solid #262930; }
-    .logo { width: 50px; height: 50px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center;
+    .side .collapse { text-align: right; padding: 10px 14px; color: var(--side-text); font-size: 15px; border-bottom: 1px solid #262930; }
+    .brandrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #262930; }
+    .logo { width: 38px; height: 38px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center;
             justify-content: center; text-align: center; font-size: 8px; font-weight: 800; line-height: 1.1; letter-spacing: .03em; overflow: hidden; flex-shrink: 0; }
     .logo img { width: 100%; height: 100%; object-fit: cover; }
-    .brandname { font-size: 17px; font-weight: 700; }
+    .brandname { font-size: 14px; font-weight: 700; }
     .brandname span { color: var(--brand); }
-    .navsec { padding: 18px 0 4px 20px; font-size: 12px; font-weight: 700; letter-spacing: .12em; color: #6b717c; }
-    .nav a { display: flex; align-items: center; gap: 14px; padding: 12px 20px; color: var(--side-text); text-decoration: none; font-size: 16px;
+    .navsec { padding: 12px 0 4px 16px; font-size: 10.5px; font-weight: 700; letter-spacing: .12em; color: #6b717c; }
+    .nav a { display: flex; align-items: center; gap: 10px; padding: 8px 16px; color: var(--side-text); text-decoration: none; font-size: 13.5px;
              border-left: 3px solid transparent; }
     .nav a:hover { background: var(--side-2); color: #fff; }
     .nav a.active { background: var(--brand-tint); color: #fff; font-weight: 700; border-left-color: var(--brand); }
-    .nav svg { width: 20px; height: 20px; flex-shrink: 0; }
-    .side .foot { margin-top: auto; border-top: 1px solid #262930; padding: 14px 18px; font-size: 13px; color: var(--side-text); }
+    .nav svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .side .foot { margin-top: auto; border-top: 1px solid #262930; padding: 10px 14px; font-size: 12px; color: var(--side-text); }
     #authBox { display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid #262930; }
     #authBox .who { color: #d1d5db; word-break: break-all; }
-    #authBox button { width: 100%; padding: 9px; background: transparent; border: 1px solid #3a3d44; color: var(--brand); font-size: 14px; font-weight: 600; }
+    #authBox button { width: 100%; padding: 6px; background: transparent; border: 1px solid #3a3d44; color: var(--brand); font-size: 12.5px; font-weight: 600; }
     #authBox button:hover { background: var(--side-2); }
     .content { flex: 1; min-width: 0; }
-    main { max-width: 1400px; margin: 0 auto; padding: 8px 40px 40px; }
-    .tabs-top { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin: 0 0 24px; padding-top: 24px; }
-    .tabs-top a { padding: 12px 20px; font-size: 18px; font-weight: 600; color: #4b5563; text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+    main { max-width: 1400px; margin: 0 auto; padding: 4px 24px 28px; }
+    .tabs-top { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin: 0 0 14px; padding-top: 12px; }
+    .tabs-top a { padding: 8px 14px; font-size: 14.5px; font-weight: 600; color: #4b5563; text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; }
     .tabs-top a.active { color: var(--brand); border-bottom-color: var(--brand); }
-    .page-title { margin: 0; font-size: 28px; font-weight: 800; }
-    .page-sub { margin: 6px 0 24px; color: var(--muted); font-size: 16px; }
+    .page-title { margin: 0; font-size: 21px; font-weight: 800; }
+    .page-sub { margin: 3px 0 14px; color: var(--muted); font-size: 13px; }
     .menu-btn { display: none; }
     @media (max-width: 900px) {
       .app { flex-direction: column; }
@@ -57,15 +57,15 @@
       main { padding: 8px 16px 32px; }
     }
 
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px; }
-    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
-    .stat .label { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-    .stat .value { font-size: 34px; font-weight: 800; margin-top: 6px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+    .stat .label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .stat .value { font-size: 24px; font-weight: 800; margin-top: 2px; }
 
-    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px;
-               background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; }
-    .toolbar input[type=search], .toolbar select { padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px;
-                                       font-size: 15px; background: #fff; min-width: 0; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px;
+               background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; }
+    .toolbar input[type=search], .toolbar select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px;
+                                       font-size: 13px; background: #fff; min-width: 0; }
     .toolbar input[type=search] { flex: 1 1 200px; }
     .toolbar label.check { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
 
@@ -74,8 +74,8 @@
     .tabs button.active { background: var(--accent); color: #fff; }
 
     .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    th, td { padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
     th { background: #f0f2f5; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
     tbody tr { cursor: pointer; }
     tbody tr:hover { background: #f8f9fb; }
@@ -83,7 +83,7 @@
     tr.recovered td { color: var(--muted); }
 
     #mapWrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-    #map { height: 520px; width: 100%; }
+    #map { height: 440px; width: 100%; }
     .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 10px 12px; font-size: 12px; color: var(--muted);
               border-top: 1px solid var(--border); }
     .legend span { display: inline-flex; align-items: center; gap: 6px; }
@@ -97,7 +97,7 @@
     .muted { color: var(--muted); }
     a.call { color: var(--accent); font-weight: 600; text-decoration: none; }
     button { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent);
-             color: #fff; font-size: 13px; cursor: pointer; font-family: inherit; }
+             color: #fff; font-size: 12px; cursor: pointer; font-family: inherit; }
     button.secondary { background: #fff; color: var(--accent); }
     button.green { background: var(--ok); border-color: var(--ok); }
     .rowBtns { display: flex; gap: 6px; }
