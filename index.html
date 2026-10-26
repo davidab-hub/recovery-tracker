@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recovery Tracker</title>
+  <style>
+    :root {
+      --bg: #f5f6f8; --card: #ffffff; --text: #1d2433; --muted: #6b7280;
+      --border: #e3e6eb; --accent: #1f4e78; --accent-text: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+           background: var(--bg); color: var(--text); }
+    header { background: var(--accent); color: var(--accent-text); padding: 16px; }
+    header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+    header p  { margin: 4px 0 0; font-size: 13px; opacity: .85; }
+    main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+    .stat .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+    .stat .value { font-size: 26px; font-weight: 700; margin-top: 4px; }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .toolbar input, .toolbar select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+                                       font-size: 14px; background: #fff; min-width: 0; }
+    .toolbar input { flex: 1 1 200px; }
+
+    .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { background: #f0f2f5; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+    tr:last-child td { border-bottom: none; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #fff; }
+    .muted { color: var(--muted); }
+    a.call { color: var(--accent); font-weight: 600; text-decoration: none; }
+    button { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent);
+             color: #fff; font-size: 13px; cursor: pointer; }
+    button.secondary { background: #fff; color: var(--accent); }
+
+    dialog { border: none; border-radius: 12px; padding: 20px; width: min(420px, 92vw); }
+    dialog::backdrop { background: rgba(0,0,0,.4); }
+    dialog h2 { margin: 0 0 12px; font-size: 18px; }
+    dialog label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+    dialog select, dialog input, dialog textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+                                                  border-radius: 8px; font-size: 14px; font-family: inherit; }
+    .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .error { color: #c00000; font-size: 13px; margin-top: 8px; min-height: 1em; }
+    #status { font-size: 13px; color: var(--muted); margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Recovery Tracker</h1>
+    <p>Learning project · Supabase + GitHub · sample data only</p>
+  </header>
+
+  <main>
+    <!-- Summary numbers, filled in by JavaScript below -->
+    <section class="stats">
+      <div class="stat"><div class="label">Bikes in recovery</div><div class="value" id="statBikes">–</div></div>
+      <div class="stat"><div class="label">Avg days in MFR</div><div class="value" id="statAge">–</div></div>
+      <div class="stat"><div class="label">Never called</div><div class="value" id="statNever">–</div></div>
+      <div class="stat"><div class="label">Calls today</div><div class="value" id="statToday">–</div></div>
+    </section>
+
+    <section class="toolbar">
+      <input id="search" type="search" placeholder="Search reg number or rider">
+      <select id="cityFilter"><option value="">All cities</option></select>
+    </section>
+
+    <div id="status">Loading…</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Reg number</th><th>City / hub</th><th>Age</th><th>Rider</th>
+            <th>Phone</th><th>Last outcome</th><th>Calls</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Pop-up form for logging a call -->
+  <dialog id="logDialog">
+    <form id="logForm" method="dialog">
+      <h2>Log a call · <span id="dlgReg"></span></h2>
+      <label for="outcome">Outcome</label>
+      <select id="outcome" required>
+        <option>Will Renew</option><option>Not Renewing</option><option>No Answer</option>
+        <option>Switched Off</option><option>Recovered</option>
+      </select>
+      <label for="agent">Your name</label>
+      <input id="agent" maxlength="60" placeholder="Agent A">
+      <label for="notes">Notes (optional)</label>
+      <textarea id="notes" rows="3" maxlength="500" placeholder="Will renew by evening"></textarea>
+      <div class="error" id="formError"></div>
+      <div class="actions">
+        <button type="button" class="secondary" id="cancelBtn">Cancel</button>
+        <button type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Supabase JavaScript library (pinned version) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+    // 1. CONNECT TO SUPABASE
+    // The URL and publishable key come from Supabase > Project Settings > API.
+    // The publishable key is safe to put in a web page: what it can do is
+    // controlled by the Row Level Security policies on each table.
+    const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Same age colours as the AppSheet map pins
+    function ageColour(days) {
+      if (days < 1)   return ['#2E7D32', '0-1 days'];
+      if (days < 2)   return ['#1565C0', '1-2 days'];
+      if (days < 3)   return ['#B8860B', '2-3 days'];
+      if (days < 4)   return ['#6D4C41', '3-4 days'];
+      if (days < 5)   return ['#F57C00', '4-5 days'];
+      if (days <= 10) return ['#D32F2F', '5-10 days'];
+      return ['#000000', '10+ days'];
+    }
+
+    let allBikes = [];
+    let selectedBike = null;
+
+    // 2. READ DATA: select rows from the bike_overview view
+    async function loadBikes() {
+      document.getElementById('status').textContent = 'Loading…';
+      const { data, error } = await db
+        .from('bike_overview')
+        .select('*')
+        .order('age_days', { ascending: false });
+
+      if (error) {
+        document.getElementById('status').textContent = 'Could not load data: ' + error.message;
+        return;
+      }
+      allBikes = data;
+      fillCityFilter();
+      render();
+      loadStats();
+    }
+
+    async function loadStats() {
+      // Count today's calls straight from the call_logs table
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      const { count } = await db
+        .from('call_logs')
+        .select('*', { count: 'exact', head: true })
+        .gte('called_at', start.toISOString());
+
+      const n = allBikes.length;
+      const avg = n ? (allBikes.reduce((s, b) => s + b.age_days, 0) / n).toFixed(1) : '0';
+      document.getElementById('statBikes').textContent = n;
+      document.getElementById('statAge').textContent = avg;
+      document.getElementById('statNever').textContent = allBikes.filter(b => b.total_calls === 0).length;
+      document.getElementById('statToday').textContent = count ?? 0;
+    }
+
+    function fillCityFilter() {
+      const sel = document.getElementById('cityFilter');
+      const current = sel.value;
+      const cities = [...new Set(allBikes.map(b => b.city))].sort();
+      sel.innerHTML = '<option value="">All cities</option>' +
+        cities.map(c => `<option>${escapeHtml(c)}</option>`).join('');
+      sel.value = current;
+    }
+
+    function render() {
+      const q = document.getElementById('search').value.trim().toLowerCase();
+      const city = document.getElementById('cityFilter').value;
+      const rows = allBikes.filter(b =>
+        (!city || b.city === city) &&
+        (!q || b.reg_number.toLowerCase().includes(q) || (b.rider_name || '').toLowerCase().includes(q))
+      );
+
+      document.getElementById('status').textContent = `${rows.length} bike${rows.length === 1 ? '' : 's'}`;
+      document.getElementById('rows').innerHTML = rows.map(b => {
+        const [colour, label] = ageColour(b.age_days);
+        const last = b.last_outcome
+          ? `${escapeHtml(b.last_outcome)} <span class="muted">· ${escapeHtml(b.last_agent)}, ${timeAgo(b.last_called_at)}</span>`
+          : '<span class="muted">Not called yet</span>';
+        return `<tr>
+          <td><strong>${escapeHtml(b.reg_number)}</strong></td>
+          <td>${escapeHtml(b.city)} <span class="muted">· ${escapeHtml(b.hub || '')}</span></td>
+          <td><span class="badge" style="background:${colour}">${label}</span></td>
+          <td>${escapeHtml(b.rider_name || '')}</td>
+          <td><a class="call" href="tel:${escapeHtml(b.rider_phone || '')}">${escapeHtml(b.rider_phone || '')}</a></td>
+          <td>${last}</td>
+          <td>${b.total_calls}</td>
+          <td><button data-id="${b.id}" class="logBtn">Log call</button></td>
+        </tr>`;
+      }).join('');
+
+      document.querySelectorAll('.logBtn').forEach(btn =>
+        btn.addEventListener('click', () => openDialog(Number(btn.dataset.id))));
+    }
+
+    // 3. WRITE DATA: insert a new row into call_logs
+    function openDialog(bikeId) {
+      selectedBike = allBikes.find(b => b.id === bikeId);
+      document.getElementById('dlgReg').textContent = selectedBike.reg_number;
+      document.getElementById('notes').value = '';
+      document.getElementById('formError').textContent = '';
+      document.getElementById('logDialog').showModal();
+    }
+
+    document.getElementById('logForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const agent = document.getElementById('agent').value.trim();
+      const errBox = document.getElementById('formError');
+      if (!agent) { errBox.textContent = 'Enter your name first.'; return; }
+
+      const { error } = await db.from('call_logs').insert({
+        bike_id: selectedBike.id,
+        outcome: document.getElementById('outcome').value,
+        agent: agent,
+        notes: document.getElementById('notes').value.trim() || null
+      });
+
+      if (error) { errBox.textContent = 'Could not save: ' + error.message; return; }
+      document.getElementById('logDialog').close();
+      loadBikes();
+    });
+
+    document.getElementById('cancelBtn').addEventListener('click', () => document.getElementById('logDialog').close());
+    document.getElementById('agent').addEventListener('input', () => document.getElementById('formError').textContent = '');
+    document.getElementById('search').addEventListener('input', render);
+    document.getElementById('cityFilter').addEventListener('change', render);
+
+    // Small helpers
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function timeAgo(iso) {
+      const mins = Math.round((Date.now() - new Date(iso)) / 60000);
+      if (mins < 60) return `${mins} min ago`;
+      const hrs = Math.round(mins / 60);
+      if (hrs < 24) return `${hrs} h ago`;
+      return `${Math.round(hrs / 24)} d ago`;
+    }
+
+    loadBikes();
+  </script>
+</body>
+</html>
