@@ -4,7 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Recovery Tracker</title>
+  <!-- Leaflet: free, open-source map library (pinned version) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
+    /* Map / table switch */
+    .tabs { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fff; }
+    .tabs button { border: none; border-radius: 0; background: #fff; color: var(--accent); padding: 8px 14px; }
+    .tabs button.active { background: var(--accent); color: #fff; }
+    #mapWrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    #map { height: 520px; width: 100%; }
+    .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 10px 12px; font-size: 12px; color: var(--muted);
+              border-top: 1px solid var(--border); }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,.2); }
+    .pop h3 { margin: 0 0 4px; font-size: 15px; }
+    .pop p { margin: 2px 0; font-size: 13px; }
+    .pop button { margin-top: 8px; }
+    .hidden { display: none; }
+    @media (max-width: 600px) { #map { height: 420px; } }
     :root {
       --bg: #f5f6f8; --card: #ffffff; --text: #1d2433; --muted: #6b7280;
       --border: #e3e6eb; --accent: #1f4e78; --accent-text: #ffffff;
@@ -69,11 +86,29 @@
     <section class="toolbar">
       <input id="search" type="search" placeholder="Search reg number or rider">
       <select id="cityFilter"><option value="">All cities</option></select>
+      <div class="tabs" role="group" aria-label="View">
+        <button type="button" id="mapTab" class="active">Map</button>
+        <button type="button" id="tableTab">Table</button>
+      </div>
     </section>
 
     <div id="status">Loading…</div>
 
-    <div class="table-wrap">
+    <!-- Map view: one coloured pin per bike -->
+    <div id="mapWrap">
+      <div id="map"></div>
+      <div class="legend">
+        <span><i style="background:#2E7D32"></i>0-1 days</span>
+        <span><i style="background:#1565C0"></i>1-2 days</span>
+        <span><i style="background:#B8860B"></i>2-3 days</span>
+        <span><i style="background:#6D4C41"></i>3-4 days</span>
+        <span><i style="background:#F57C00"></i>4-5 days</span>
+        <span><i style="background:#D32F2F"></i>5-10 days</span>
+        <span><i style="background:#000000"></i>10+ days</span>
+      </div>
+    </div>
+
+    <div class="table-wrap hidden" id="tableWrap">
       <table>
         <thead>
           <tr>
@@ -107,6 +142,8 @@
     </form>
   </dialog>
 
+  <!-- Leaflet map library (pinned version) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- Supabase JavaScript library (pinned version) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script>
@@ -201,9 +238,66 @@
         </tr>`;
       }).join('');
 
-      document.querySelectorAll('.logBtn').forEach(btn =>
-        btn.addEventListener('click', () => openDialog(Number(btn.dataset.id))));
+      drawPins(rows);
     }
+
+    // 4. MAP VIEW: Leaflet map with OpenStreetMap tiles
+    const map = L.map('map').setView([20.5937, 78.9629], 5);   // centre of India
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    const pinLayer = L.layerGroup().addTo(map);
+    let firstFit = true;
+
+    function drawPins(rows) {
+      pinLayer.clearLayers();
+      const points = [];
+      rows.forEach(b => {
+        if (b.latitude == null || b.longitude == null) return;   // skip bikes with no location
+        const [colour, label] = ageColour(b.age_days);
+        const last = b.last_outcome
+          ? `${escapeHtml(b.last_outcome)} · ${escapeHtml(b.last_agent)}, ${timeAgo(b.last_called_at)}`
+          : 'Not called yet';
+        L.circleMarker([b.latitude, b.longitude], {
+          radius: 9, color: '#ffffff', weight: 2, fillColor: colour, fillOpacity: 0.95
+        })
+          .bindPopup(`<div class="pop">
+              <h3>${escapeHtml(b.reg_number)}</h3>
+              <p>${escapeHtml(b.city)} · ${escapeHtml(b.hub || '')} · <strong>${label}</strong></p>
+              <p>${escapeHtml(b.rider_name || '')} · <a class="call" href="tel:${escapeHtml(b.rider_phone || '')}">${escapeHtml(b.rider_phone || '')}</a></p>
+              <p style="color:#6b7280">${last}</p>
+              <button class="logBtn" data-id="${b.id}">Log call</button>
+            </div>`)
+          .addTo(pinLayer);
+        points.push([b.latitude, b.longitude]);
+      });
+      // Zoom to fit the visible pins (on first load and whenever the filter changes)
+      if (points.length && (firstFit || filterChanged)) {
+        map.fitBounds(points, { padding: [40, 40], maxZoom: 13 });
+        firstFit = false;
+      }
+      filterChanged = false;
+    }
+    let filterChanged = false;
+
+    // Map / table switch
+    function showView(view) {
+      const isMap = view === 'map';
+      document.getElementById('mapWrap').classList.toggle('hidden', !isMap);
+      document.getElementById('tableWrap').classList.toggle('hidden', isMap);
+      document.getElementById('mapTab').classList.toggle('active', isMap);
+      document.getElementById('tableTab').classList.toggle('active', !isMap);
+      if (isMap) map.invalidateSize();   // Leaflet needs this after being hidden
+    }
+    document.getElementById('mapTab').addEventListener('click', () => showView('map'));
+    document.getElementById('tableTab').addEventListener('click', () => showView('table'));
+
+    // One click handler for every "Log call" button (table rows and map pop-ups)
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.logBtn');
+      if (btn) { map.closePopup(); openDialog(Number(btn.dataset.id)); }
+    });
 
     // 3. WRITE DATA: insert a new row into call_logs
     function openDialog(bikeId) {
@@ -234,8 +328,8 @@
 
     document.getElementById('cancelBtn').addEventListener('click', () => document.getElementById('logDialog').close());
     document.getElementById('agent').addEventListener('input', () => document.getElementById('formError').textContent = '');
-    document.getElementById('search').addEventListener('input', render);
-    document.getElementById('cityFilter').addEventListener('change', render);
+    document.getElementById('search').addEventListener('input', () => { filterChanged = true; render(); });
+    document.getElementById('cityFilter').addEventListener('change', () => { filterChanged = true; render(); });
 
     // Small helpers
     function escapeHtml(s) {
