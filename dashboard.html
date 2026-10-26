@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recovery Dashboard</title>
+  <style>
+    :root {
+      --page: #f5f6f8; --surface: #fcfcfb; --card: #ffffff; --text: #0b0b0b; --text-2: #52514e; --muted: #898781;
+      --border: #e3e6eb; --grid: #e1e0d9; --axis: #c3c2b7; --accent: #1f4e78;
+      --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4;
+      --good: #006300; --critical: #d03b3b;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--page); color: var(--text); }
+    header { background: var(--accent); color: #fff; padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+    header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+    header p { margin: 2px 0 0; font-size: 13px; opacity: .85; }
+    header a { color: #fff; font-size: 14px; }
+    main { max-width: 1200px; margin: 0 auto; padding: 16px; }
+
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+    .filters select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: #fff; }
+    .filters .updated { margin-left: auto; font-size: 12px; color: var(--muted); }
+
+    h2 { font-size: 15px; font-weight: 600; margin: 24px 0 10px; color: var(--text-2); text-transform: uppercase; letter-spacing: .04em; }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+    .tile { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+    .tile .label { font-size: 12px; color: var(--text-2); text-transform: uppercase; letter-spacing: .03em; }
+    .tile .value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+    .tile .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 12px; }
+    @media (max-width: 500px) { .grid2 { grid-template-columns: 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; min-width: 0; }
+    .card h3 { margin: 0 0 2px; font-size: 15px; font-weight: 600; }
+    .card .note { margin: 0 0 10px; font-size: 12px; color: var(--muted); }
+    .chart { position: relative; height: 280px; }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { font-size: 11px; color: var(--text-2); text-transform: uppercase; letter-spacing: .03em; background: #f5f6f8; }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tr:last-child td { border-bottom: none; }
+    .good { color: var(--good); font-weight: 600; }
+    .bad { color: var(--critical); font-weight: 600; }
+    #status { font-size: 13px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Recovery Dashboard</h1>
+      <p>Learning project · sample data only · days run midnight to midnight IST</p>
+    </div>
+    <a href="./">← Back to tracker</a>
+  </header>
+
+  <main>
+    <!-- Filters apply to every number and chart on the page -->
+    <section class="filters">
+      <select id="cityFilter" aria-label="City"><option value="">All cities</option></select>
+      <select id="hubFilter" aria-label="Hub"><option value="">All hubs</option></select>
+      <select id="rangeFilter" aria-label="Period">
+        <option value="7">Last 7 days</option>
+        <option value="14">Last 14 days</option>
+        <option value="30" selected>Last 30 days</option>
+      </select>
+      <span class="updated" id="status">Loading…</span>
+    </section>
+
+    <h2>Today</h2>
+    <section class="tiles">
+      <div class="tile"><div class="label">In recovery now</div><div class="value" id="kInRecovery">–</div><div class="sub" id="kInRecoverySub"></div></div>
+      <div class="tile"><div class="label">Avg days in MFR</div><div class="value" id="kAvgAge">–</div><div class="sub" id="kAvgAgeSub"></div></div>
+      <div class="tile"><div class="label">Never called</div><div class="value" id="kNever">–</div><div class="sub">bikes in recovery with 0 calls</div></div>
+      <div class="tile"><div class="label">Today's inflow</div><div class="value" id="kInflow">–</div><div class="sub" id="kInflowSub"></div></div>
+      <div class="tile"><div class="label">Recovered today</div><div class="value" id="kRecovered">–</div><div class="sub" id="kRecoveredSub"></div></div>
+      <div class="tile"><div class="label">Calls today</div><div class="value" id="kCalls">–</div><div class="sub" id="kCallsSub"></div></div>
+      <div class="tile"><div class="label">Active agents today</div><div class="value" id="kAgents">–</div><div class="sub">logged at least one call</div></div>
+    </section>
+
+    <h2>Trends</h2>
+    <section class="grid2">
+      <div class="card">
+        <h3>New MFR bikes vs recovered, per day</h3>
+        <p class="note">Inflow = bikes marked for recovery that day · Recovered = bikes closed that day</p>
+        <div class="chart"><canvas id="trendChart" aria-label="Line chart of daily inflow and recoveries"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Calls per day</h3>
+        <p class="note">All call outcomes logged by agents</p>
+        <div class="chart"><canvas id="callsChart" aria-label="Bar chart of calls per day"></canvas></div>
+      </div>
+    </section>
+
+    <h2>Agent performance</h2>
+    <section class="grid2">
+      <div class="card">
+        <h3>Calls by agent and outcome</h3>
+        <p class="note" id="agentNote"></p>
+        <div class="chart" id="agentChartBox"><canvas id="agentChart" aria-label="Stacked bar chart of calls per agent by outcome"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Agent table</h3>
+        <p class="note">Recovery rate = recovered ÷ calls in the period</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Agent</th><th class="num">Today</th><th class="num">Calls</th><th class="num">Recovered</th>
+              <th class="num">Will renew</th><th class="num">Not reached</th><th class="num">Recovery rate</th></tr></thead>
+            <tbody id="agentRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <h2>Where the bikes are</h2>
+    <section class="grid2">
+      <div class="card">
+        <h3>Bikes in recovery by age</h3>
+        <p class="note">How long bikes have been marked for recovery</p>
+        <div class="chart"><canvas id="ageChart" aria-label="Bar chart of bikes in recovery by age bucket"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Bikes in recovery by city and age</h3>
+        <p class="note">Darker blue = older · hover a bar for the numbers</p>
+        <div class="chart"><canvas id="cityChart" aria-label="Stacked bar chart of bikes in recovery per city by age"></canvas></div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:12px">
+      <h3>Hub table</h3>
+      <p class="note">Sorted by bikes in recovery · oldest = days since the oldest open bike was marked</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Hub</th><th>City</th><th class="num">In recovery</th><th class="num">Avg days</th><th class="num">Oldest (days)</th>
+            <th class="num">Over 10 days</th><th class="num">Never called</th><th class="num">Recovered in period</th></tr></thead>
+          <tbody id="hubRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+    // Same Supabase project and public key as the tracker page
+    const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const $ = (id) => document.getElementById(id);
+    const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+    // ---- Colours (validated reference palette) ----
+    const C = { s1: css('--s1'), s2: css('--s2'), s3: css('--s3'), s4: css('--s4'), s5: css('--s5'),
+                grid: css('--grid'), axis: css('--axis'), muted: css('--muted'), text2: css('--text-2') };
+    // Fixed order: an outcome keeps its colour whatever the filters show
+    const OUTCOMES = ['Recovered', 'Will Renew', 'No Answer', 'Switched Off', 'Not Renewing'];
+    const OUTCOME_COLOUR = { 'Recovered': C.s1, 'Will Renew': C.s2, 'No Answer': C.s3, 'Switched Off': C.s4, 'Not Renewing': C.s5 };
+    // Age buckets are ordered, so they use one blue ramp (light = new, dark = old)
+    const AGE_BUCKETS = ['0-1 days', '1-2 days', '2-3 days', '3-4 days', '4-5 days', '5-10 days', '10+ days'];
+    // For the stacked city chart the 7 buckets are grouped into 4 bands so each shade is clearly different
+    const AGE_BANDS = [
+      { label: '0-2 days',  test: d => d < 2 },
+      { label: '2-5 days',  test: d => d >= 2 && d < 5 },
+      { label: '5-10 days', test: d => d >= 5 && d <= 10 },
+      { label: '10+ days',  test: d => d > 10 }
+    ];
+    const AGE_RAMP = ['#86b6ef', '#3987e5', '#1c5cab', '#0d366b'];
+
+    Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = C.text2;
+    Chart.defaults.plugins.tooltip.backgroundColor = '#ffffff';
+    Chart.defaults.plugins.tooltip.titleColor = '#0b0b0b';
+    Chart.defaults.plugins.tooltip.bodyColor = '#52514e';
+    Chart.defaults.plugins.tooltip.borderColor = 'rgba(11,11,11,0.12)';
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.boxWidth = 8;
+
+    // ---- Helpers ----
+    const IST = 5.5 * 3600 * 1000;
+    const istDay = (iso) => new Date(new Date(iso).getTime() + IST).toISOString().slice(0, 10);
+    const todayIst = istDay(new Date().toISOString());
+    function lastDays(n) {
+      const out = []; const base = Date.parse(todayIst + 'T00:00:00Z');
+      for (let i = n - 1; i >= 0; i--) out.push(new Date(base - i * 86400000).toISOString().slice(0, 10));
+      return out;
+    }
+    const fmtDay = (d) => new Date(d + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    function bucket(days) {
+      if (days < 1) return '0-1 days'; if (days < 2) return '1-2 days'; if (days < 3) return '2-3 days';
+      if (days < 4) return '3-4 days'; if (days < 5) return '4-5 days'; if (days <= 10) return '5-10 days'; return '10+ days';
+    }
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const count = (arr, fn) => arr.reduce((n, x) => n + (fn(x) ? 1 : 0), 0);
+
+    const axes = (stacked = false, horizontal = false) => {
+      const valueAxis = { beginAtZero: true, stacked, ticks: { precision: 0, color: C.muted }, grid: { color: C.grid }, border: { display: false } };
+      const catAxis = { stacked, ticks: { color: C.muted, maxRotation: 0, autoSkipPadding: 12 }, grid: { display: false }, border: { color: C.axis } };
+      return horizontal ? { x: valueAxis, y: catAxis } : { x: catAxis, y: valueAxis };
+    };
+    const charts = {};
+    function draw(id, config) {
+      if (charts[id]) charts[id].destroy();
+      charts[id] = new Chart($(id), config);
+    }
+
+    // ---- Data ----
+    let bikes = [], calls = [];
+
+    async function load() {
+      $('status').textContent = 'Loading…';
+      const since = new Date(Date.parse(lastDays(30)[0] + 'T00:00:00Z') - IST).toISOString();
+      const [b, c] = await Promise.all([
+        db.from('bike_overview').select('id, reg_number, city, hub, age_days, total_calls, status, mfr_since, recovered_at'),
+        db.from('call_logs').select('bike_id, outcome, agent, called_at').gte('called_at', since)
+      ]);
+      if (b.error || c.error) { $('status').textContent = 'Could not load data: ' + (b.error || c.error).message; return; }
+      bikes = b.data; calls = c.data;
+      fillFilters();
+      render();
+      $('status').textContent = 'Updated ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function fillFilters() {
+      const citySel = $('cityFilter'), hubSel = $('hubFilter');
+      const city = citySel.value, hub = hubSel.value;
+      const cities = [...new Set(bikes.map(b => b.city))].sort();
+      citySel.innerHTML = '<option value="">All cities</option>' + cities.map(c => `<option>${esc(c)}</option>`).join('');
+      citySel.value = cities.includes(city) ? city : '';
+      const hubs = [...new Set(bikes.filter(b => !citySel.value || b.city === citySel.value).map(b => b.hub).filter(Boolean))].sort();
+      hubSel.innerHTML = '<option value="">All hubs</option>' + hubs.map(h => `<option>${esc(h)}</option>`).join('');
+      hubSel.value = hubs.includes(hub) ? hub : '';
+    }
+
+    function render() {
+      const city = $('cityFilter').value, hub = $('hubFilter').value, range = Number($('rangeFilter').value);
+      const days = lastDays(range), first = days[0], periodDays = range;
+      const inScope = (b) => b && (!city || b.city === city) && (!hub || b.hub === hub);
+
+      const bikeById = new Map(bikes.map(b => [b.id, b]));
+      const B = bikes.filter(inScope);
+      const open = B.filter(b => b.status !== 'recovered');
+      const K = calls.filter(c => inScope(bikeById.get(c.bike_id)) && istDay(c.called_at) >= first);
+
+      // Per-day series
+      const inflowBy = {}, recBy = {}, callsBy = {};
+      days.forEach(d => { inflowBy[d] = 0; recBy[d] = 0; callsBy[d] = 0; });
+      B.forEach(b => {
+        const d1 = istDay(b.mfr_since); if (d1 in inflowBy) inflowBy[d1]++;
+        if (b.recovered_at) { const d2 = istDay(b.recovered_at); if (d2 in recBy) recBy[d2]++; }
+      });
+      K.forEach(c => { const d = istDay(c.called_at); if (d in callsBy) callsBy[d]++; });
+      const pastDays = days.slice(0, -1);
+      const avg = (o) => pastDays.length ? (pastDays.reduce((s, d) => s + o[d], 0) / pastDays.length) : 0;
+
+      // ---- KPI tiles ----
+      const callsToday = callsBy[todayIst] || 0;
+      $('kInRecovery').textContent = open.length;
+      $('kInRecoverySub').textContent = `${count(open, b => b.age_days > 10)} over 10 days`;
+      $('kAvgAge').textContent = open.length ? (open.reduce((s, b) => s + b.age_days, 0) / open.length).toFixed(1) : '0';
+      $('kAvgAgeSub').textContent = open.length ? `oldest ${Math.max(...open.map(b => b.age_days))} days` : '';
+      $('kNever').textContent = count(open, b => b.total_calls === 0);
+      $('kInflow').textContent = inflowBy[todayIst] || 0;
+      $('kInflowSub').textContent = `avg ${avg(inflowBy).toFixed(1)}/day, last ${periodDays} days`;
+      $('kRecovered').textContent = recBy[todayIst] || 0;
+      $('kRecoveredSub').textContent = `avg ${avg(recBy).toFixed(1)}/day, last ${periodDays} days`;
+      $('kCalls').textContent = callsToday;
+      $('kCallsSub').textContent = `avg ${avg(callsBy).toFixed(1)}/day, last ${periodDays} days`;
+      $('kAgents').textContent = new Set(K.filter(c => istDay(c.called_at) === todayIst).map(c => c.agent)).size;
+
+      // ---- Trend: inflow vs recovered (two series, one axis) ----
+      const labels = days.map(fmtDay);
+      draw('trendChart', {
+        type: 'line',
+        data: { labels, datasets: [
+          { label: 'New MFR (inflow)', data: days.map(d => inflowBy[d]), borderColor: C.s1, backgroundColor: C.s1,
+            borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, tension: 0 },
+          { label: 'Recovered', data: days.map(d => recBy[d]), borderColor: C.s2, backgroundColor: C.s2,
+            borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, tension: 0 }
+        ] },
+        options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { position: 'top', align: 'start' } }, scales: axes() }
+      });
+
+      // ---- Calls per day (single series, no legend) ----
+      draw('callsChart', {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Calls', data: days.map(d => callsBy[d]), backgroundColor: C.s1,
+          borderRadius: 4, borderSkipped: 'start', maxBarThickness: 18 }] },
+        options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: axes() }
+      });
+
+      // ---- Agents ----
+      const agents = {};
+      K.forEach(c => {
+        const a = agents[c.agent] ||= { name: c.agent, total: 0, today: 0, byOutcome: {} };
+        a.total++; if (istDay(c.called_at) === todayIst) a.today++;
+        a.byOutcome[c.outcome] = (a.byOutcome[c.outcome] || 0) + 1;
+      });
+      const agentList = Object.values(agents).sort((x, y) => y.total - x.total);
+      $('agentNote').textContent = `Last ${periodDays} days · ${K.length} calls by ${agentList.length} agents`;
+      $('agentChartBox').style.height = Math.max(220, agentList.length * 34 + 80) + 'px';
+      draw('agentChart', {
+        type: 'bar',
+        data: { labels: agentList.map(a => a.name),
+          datasets: OUTCOMES.map(o => ({ label: o, data: agentList.map(a => a.byOutcome[o] || 0),
+            backgroundColor: OUTCOME_COLOUR[o], borderColor: '#ffffff', borderWidth: { right: 2 }, borderSkipped: false,
+            maxBarThickness: 22 })) },
+        options: { indexAxis: 'y', maintainAspectRatio: false,
+          plugins: { legend: { position: 'top', align: 'start' } }, scales: axes(true, true) }
+      });
+      $('agentRows').innerHTML = agentList.length ? agentList.map(a => {
+        const rec = a.byOutcome['Recovered'] || 0, rate = a.total ? rec / a.total : 0;
+        return `<tr><td>${esc(a.name)}</td><td class="num">${a.today}</td><td class="num"><strong>${a.total}</strong></td>
+          <td class="num">${rec}</td><td class="num">${a.byOutcome['Will Renew'] || 0}</td>
+          <td class="num">${(a.byOutcome['No Answer'] || 0) + (a.byOutcome['Switched Off'] || 0)}</td>
+          <td class="num ${rate >= 0.3 ? 'good' : ''}">${Math.round(rate * 100)}%</td></tr>`;
+      }).join('') : '<tr><td colspan="7" style="color:var(--muted)">No calls in this period.</td></tr>';
+
+      // ---- Age buckets (single series) ----
+      const ageCounts = AGE_BUCKETS.map(k => count(open, b => bucket(b.age_days) === k));
+      draw('ageChart', {
+        type: 'bar',
+        data: { labels: AGE_BUCKETS, datasets: [{ label: 'Bikes in recovery', data: ageCounts, backgroundColor: C.s1,
+          borderRadius: 4, borderSkipped: 'start', maxBarThickness: 36 }] },
+        options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: axes() }
+      });
+
+      // ---- City x age (stacked, ordinal blue ramp) ----
+      const cities = [...new Set(open.map(b => b.city))].sort();
+      draw('cityChart', {
+        type: 'bar',
+        data: { labels: cities,
+          datasets: AGE_BANDS.map((band, i) => ({ label: band.label, data: cities.map(ct => count(open, b => b.city === ct && band.test(b.age_days))),
+            backgroundColor: AGE_RAMP[i], borderColor: '#ffffff', borderWidth: { top: 2 }, borderSkipped: false, maxBarThickness: 56 })) },
+        options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { position: 'top', align: 'start' } }, scales: axes(true) }
+      });
+
+      // ---- Hub table ----
+      const hubs = {};
+      B.forEach(b => {
+        const h = hubs[b.hub || '(no hub)'] ||= { hub: b.hub || '(no hub)', city: b.city, open: [], recovered: 0 };
+        if (b.status !== 'recovered') h.open.push(b);
+        else if (b.recovered_at && istDay(b.recovered_at) >= first) h.recovered++;
+      });
+      const hubList = Object.values(hubs).sort((x, y) => y.open.length - x.open.length || x.hub.localeCompare(y.hub));
+      $('hubRows').innerHTML = hubList.map(h => {
+        const n = h.open.length;
+        const avgAge = n ? (h.open.reduce((s, b) => s + b.age_days, 0) / n).toFixed(1) : '–';
+        const oldest = n ? Math.max(...h.open.map(b => b.age_days)) : '–';
+        const over10 = count(h.open, b => b.age_days > 10);
+        return `<tr><td>${esc(h.hub)}</td><td>${esc(h.city)}</td><td class="num"><strong>${n}</strong></td>
+          <td class="num">${avgAge}</td><td class="num">${oldest}</td>
+          <td class="num ${over10 ? 'bad' : ''}">${over10}</td><td class="num">${count(h.open, b => b.total_calls === 0)}</td>
+          <td class="num">${h.recovered}</td></tr>`;
+      }).join('') || '<tr><td colspan="8" style="color:var(--muted)">No bikes for this filter.</td></tr>';
+    }
+
+    $('cityFilter').addEventListener('change', () => { $('hubFilter').value = ''; fillFilters(); render(); });
+    $('hubFilter').addEventListener('change', render);
+    $('rangeFilter').addEventListener('change', render);
+
+    // Live: refresh when calls or bikes change
+    let t = null;
+    db.channel('dashboard-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'call_logs' }, () => { clearTimeout(t); t = setTimeout(load, 500); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bikes' }, () => { clearTimeout(t); t = setTimeout(load, 500); })
+      .subscribe();
+
+    load();
+  </script>
+</body>
+</html>
