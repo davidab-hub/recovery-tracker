@@ -57,6 +57,30 @@
     td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
     tr:last-child td { border-bottom: none; }
     .bad { color: var(--red); font-weight: 600; }
+    /* Count strip at the top of each panel */
+    .counts { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+    .count { background: #f5f6f8; border-radius: 10px; padding: 8px 12px; min-width: 92px; }
+    .count .n { font-size: 22px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .count .t { font-size: 12px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+    .count .t i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    button.count { border: 1px solid transparent; text-align: left; font-family: inherit; color: inherit; cursor: pointer; }
+    button.count:hover, button.count:focus-visible { border-color: #93c5fd; background: #eef4ff; outline: none; }
+    /* Clickable KPI cards */
+    .cards .card { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+    .cards .card:hover, .cards .card:focus-visible { border-color: #93c5fd; box-shadow: 0 0 0 3px #dbeafe; outline: none; }
+    .cards .card .more { font-size: 12px; color: var(--blue); margin-top: 8px; opacity: 0; transition: opacity .15s; }
+    .cards .card:hover .more, .cards .card:focus-visible .more { opacity: 1; }
+    .panel.flash { box-shadow: 0 0 0 3px #93c5fd; transition: box-shadow .3s; }
+    /* Details pop-up */
+    dialog#detail { border: none; border-radius: 14px; padding: 0; width: min(900px, 94vw); max-height: 86vh; }
+    dialog#detail::backdrop { background: rgba(0,0,0,.4); }
+    .dhead { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+    .dhead h2 { margin: 0; font-size: 18px; flex: 1; }
+    .dhead .big { font-size: 26px; font-weight: 800; }
+    .dbody { padding: 0 18px 16px; max-height: 64vh; overflow: auto; }
+    .dbody p { color: var(--muted); font-size: 13px; }
+    .btn-light { background: #fff; border: 1px solid var(--border); color: var(--text); }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -106,21 +130,25 @@
       <div class="panel">
         <h3>Inflow vs outflow, per day</h3>
         <p class="note">Inflow = bikes marked for recovery · Outflow = recovered or renewed</p>
+        <div class="counts" id="trendCounts"></div>
         <div class="chart"><canvas id="trendChart" aria-label="Line chart of daily inflow and outflow"></canvas></div>
       </div>
       <div class="panel">
         <h3>Recovered bikes moved to hub, per day</h3>
         <p class="note">By transport</p>
+        <div class="counts" id="hubCounts"></div>
         <div class="chart"><canvas id="hubChart" aria-label="Stacked bar chart of hub moves per day by transport"></canvas></div>
       </div>
       <div class="panel">
         <h3>Agent activity by outcome</h3>
         <p class="note" id="agentNote"></p>
+        <div class="counts" id="agentCounts"></div>
         <div class="chart" id="agentChartBox"><canvas id="agentChart" aria-label="Stacked bar chart of agent actions by outcome"></canvas></div>
       </div>
       <div class="panel">
         <h3>Agent table</h3>
         <p class="note">Recovered, renewed and moved to hub in the period</p>
+        <div class="counts" id="agentTableCounts"></div>
         <div class="table-wrap">
           <table>
             <thead><tr><th>Agent</th><th class="num">Today</th><th class="num">Calls</th><th class="num">Recovered</th>
@@ -132,17 +160,20 @@
       <div class="panel">
         <h3>MFR bikes by age</h3>
         <p class="note">Days since marked for recovery</p>
+        <div class="counts" id="ageCounts"></div>
         <div class="chart"><canvas id="ageChart" aria-label="Bar chart of MFR bikes by age bucket"></canvas></div>
       </div>
       <div class="panel">
         <h3>MFR bikes by city and age</h3>
-        <p class="note">Darker blue = older · hover a bar for the numbers</p>
+        <p class="note">Darker blue = older · total shown on each bar</p>
+        <div class="counts" id="cityCounts"></div>
         <div class="chart"><canvas id="cityChart" aria-label="Stacked bar chart of MFR bikes per city by age"></canvas></div>
       </div>
     </section>
     <section class="panel" style="margin-top:16px">
       <h3>Hub table</h3>
       <p class="note">Sorted by MFR bikes</p>
+      <div class="counts" id="hubTableCounts"></div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Hub</th><th>City</th><th class="num">Total bikes</th><th class="num">MFR</th><th class="num">MFR %</th>
@@ -152,6 +183,24 @@
       </div>
     </section>
   </main>
+
+  <!-- Details pop-up: opens when a card or a count is clicked -->
+  <dialog id="detail">
+    <div class="dhead">
+      <h2 id="dTitle"></h2>
+      <span class="big" id="dCount"></span>
+      <button class="btn btn-light" id="dCsv" type="button">⬇ Download CSV</button>
+      <button class="btn btn-light" id="dChart" type="button">Go to chart</button>
+      <button class="btn btn-sync" id="dClose" type="button">Close</button>
+    </div>
+    <div class="dbody">
+      <p id="dNote"></p>
+      <input id="dSearch" type="search" placeholder="Search reg number, hub, agent…"
+             style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:10px">
+      <p id="dShown" style="margin:0 0 6px"></p>
+      <div class="table-wrap"><table><thead id="dHead"></thead><tbody id="dRows"></tbody></table></div>
+    </div>
+  </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -201,12 +250,123 @@
     Chart.defaults.plugins.legend.labels.usePointStyle = true;
     Chart.defaults.plugins.legend.labels.boxWidth = 8;
     const axes = (stacked = false, horizontal = false) => {
-      const v = { beginAtZero: true, stacked, ticks: { precision: 0, color: C.muted }, grid: { color: C.grid }, border: { display: false } };
+      const v = { beginAtZero: true, stacked, grace: '12%', ticks: { precision: 0, color: C.muted }, grid: { color: C.grid }, border: { display: false } };
       const c = { stacked, ticks: { color: C.muted, maxRotation: 0, autoSkipPadding: 12 }, grid: { display: false }, border: { color: C.axis } };
       return horizontal ? { x: v, y: c } : { x: c, y: v };
     };
+    // Prints counts on the charts: 'total' = sum per bar (stacked or single), 'last' = latest value of each line
+    Chart.register({
+      id: 'valueLabels',
+      afterDatasetsDraw(chart, _args, opts) {
+        if (!opts || !opts.mode) return;
+        const { ctx } = chart, horizontal = chart.options.indexAxis === 'y';
+        ctx.save();
+        ctx.font = '600 11px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+        ctx.fillStyle = '#374151';
+        const visible = chart.data.datasets.map((_, i) => i).filter(i => chart.isDatasetVisible(i));
+        if (opts.mode === 'last') {
+          visible.forEach(i => {
+            const ds = chart.data.datasets[i], n = ds.data.length - 1, el = chart.getDatasetMeta(i).data[n];
+            if (!el) return;
+            ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+            ctx.fillText(`${ds.label} ${ds.data[n]}`, el.x - 4, el.y - 4);
+          });
+        } else {
+          chart.data.labels.forEach((_, idx) => {
+            let total = 0, edge = null, mid = null;
+            visible.forEach(i => {
+              const v = Number(chart.data.datasets[i].data[idx]) || 0, el = chart.getDatasetMeta(i).data[idx];
+              if (!el) return;
+              total += v;
+              if (horizontal) { edge = edge === null ? el.x : Math.max(edge, el.x); mid = el.y; }
+              else { edge = edge === null ? el.y : Math.min(edge, el.y); mid = el.x; }
+            });
+            if (!total || edge === null) return;
+            if (horizontal) { ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(total, edge + 6, mid); }
+            else { ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(total, mid, edge - 4); }
+          });
+        }
+        ctx.restore();
+      }
+    });
+
     const charts = {};
     function draw(id, config) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart($(id), config); }
+
+    // ---- Count strips and the details pop-up ----
+    const DETAILS = {};      // key -> { title, note, kind: 'bike' | 'call', rows, target }
+    function chips(id, items) {
+      $(id).innerHTML = items.map(it => {
+        const dot = it.color ? `<i style="background:${it.color}"></i>` : '';
+        const inner = `<div class="n">${num(it.n)}</div><div class="t">${dot}${esc(it.t)}</div>`;
+        return it.key ? `<button type="button" class="count" data-key="${esc(it.key)}" title="Show details">${inner}</button>`
+                      : `<div class="count">${inner}</div>`;
+      }).join('');
+    }
+    const latestPerBike = (rows) => {
+      const m = new Map();
+      rows.forEach(c => { const p = m.get(c.bike_id); if (!p || p.called_at < c.called_at) m.set(c.bike_id, c); });
+      return [...m.values()].sort((a, b) => (a.called_at < b.called_at ? 1 : -1));
+    };
+    const fmtTime = (iso) => new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const statusText = (b) => b.police_case ? b.police_case
+      : ({ active: 'Active', in_recovery: 'MFR', recovered: 'Recovered', at_hub: 'At hub' }[b.status] || b.status);
+
+    // Every details list is turned into plain rows (header + cells), used for the table, search and CSV
+    let current = null;   // { title, header, rows: [[...cells]] }
+    function detailTable(d) {
+      const byId = new Map(bikes.map(b => [b.id, b]));
+      if (d.kind === 'bike') return {
+        header: ['Reg number', 'City', 'Hub', 'Model', 'Status', 'Days in MFR', 'Calls'], numeric: [5, 6],
+        rows: d.rows.map(b => [b.reg_number, b.city, b.hub || '', b.model || '', statusText(b),
+                               b.status === 'active' ? '' : b.age_days, b.total_calls]) };
+      return {
+        header: ['Time', 'Reg number', 'City', 'Hub', 'Action', 'Moved by', 'Agent'], numeric: [],
+        rows: d.rows.map(c => { const b = byId.get(c.bike_id) || {};
+          return [fmtTime(c.called_at), b.reg_number || '', b.city || '', b.hub || '', c.outcome, c.moved_by || '', c.agent]; }) };
+    }
+    function showDetailRows() {
+      const q = $('dSearch').value.trim().toLowerCase();
+      const rows = q ? current.rows.filter(r => r.join(' ').toLowerCase().includes(q)) : current.rows;
+      $('dShown').textContent = q ? `${rows.length} of ${current.rows.length} match` : '';
+      $('dRows').innerHTML = rows.slice(0, 500).map(r => '<tr>' + r.map((v, i) =>
+        `<td class="${current.numeric.includes(i) ? 'num' : ''}">${i === (current.header[0] === 'Time' ? 1 : 0) ? '<strong>' + esc(v) + '</strong>' : esc(v)}</td>`).join('') + '</tr>').join('')
+        || `<tr><td colspan="${current.header.length}" style="color:var(--muted)">Nothing to show.</td></tr>`;
+      if (rows.length > 500) $('dShown').textContent = `Showing 500 of ${rows.length} · download the CSV for all`;
+    }
+    function openDetail(key) {
+      const d = DETAILS[key]; if (!d) return;
+      current = { title: d.title, ...detailTable(d) };
+      $('dTitle').textContent = d.title;
+      $('dCount').textContent = num(d.rows.length);
+      $('dNote').textContent = d.note || '';
+      $('dHead').innerHTML = '<tr>' + current.header.map((h, i) => `<th class="${current.numeric.includes(i) ? 'num' : ''}">${esc(h)}</th>`).join('') + '</tr>';
+      $('dSearch').value = '';
+      showDetailRows();
+      $('dChart').classList.toggle('hidden', !d.target);
+      $('dChart').dataset.target = d.target || '';
+      $('detail').showModal();
+    }
+    // Download the list (all rows, or only the ones matching the search) as a CSV that opens in Excel
+    function downloadCsv() {
+      if (!current) return;
+      const q = $('dSearch').value.trim().toLowerCase();
+      const rows = q ? current.rows.filter(r => r.join(' ').toLowerCase().includes(q)) : current.rows;
+      const cell = (v) => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+      const filters = [$('cityFilter').value, $('hubFilter').value, $('modelFilter').value].filter(Boolean).join(' ');
+      const csv = '﻿' + [current.header, ...rows].map(r => r.map(cell).join(',')).join('\r\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      a.download = `${current.title}${filters ? ' ' + filters : ''} ${today}.csv`.replace(/[^\w\-. ]+/g, '').replace(/\s+/g, '_');
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+    function goToChart(targetId) {
+      const panel = $(targetId) && $(targetId).closest('.panel');
+      if (!panel) return;
+      panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      panel.classList.add('flash'); setTimeout(() => panel.classList.remove('flash'), 1600);
+    }
 
     // ---- Data ----
     let bikes = [], calls = [];
@@ -292,23 +452,70 @@
       $('kPolice').textContent = count(B, b => b.police_case === 'Police Station');
       $('kFir').textContent = count(B, b => b.police_case === 'FIR Filed');
 
-      // ---- Details (period filter) ----
+      // ---- What each card and count opens when clicked ----
       const range = Number($('rangeFilter').value), days = lastDays(range), first = days[0], labels = days.map(fmtDay);
+      const todayCalls = (pred) => latestPerBike(withDay.filter(c => c.day === today && pred(c)));
+      const periodCalls = (pred) => latestPerBike(withDay.filter(c => c.day >= first && pred(c)));
+      const byAge = (arr) => [...arr].sort((a, b) => b.age_days - a.age_days);
+      const isOut = (c) => c.outcome === 'Recovered' || c.outcome === 'Renewed';
+      const isHub = (c) => c.outcome === 'Moved to Hub';
+      const period = `last ${range} days`;
+      Object.keys(DETAILS).forEach(k => delete DETAILS[k]);
+      Object.assign(DETAILS, {
+        total:     { title: 'Total bikes', kind: 'bike', rows: [...B].sort((a, b) => a.reg_number.localeCompare(b.reg_number)), target: 'hubRows' },
+        mfr:       { title: 'Bikes MFR', note: 'Oldest first. Police / FIR cases are not included.', kind: 'bike', rows: byAge(mfr), target: 'ageChart' },
+        mfrPct:    { title: 'Bikes MFR (used for MFR %)', note: `${mfr.length} of ${B.length} bikes.`, kind: 'bike', rows: byAge(mfr), target: 'cityChart' },
+        inflow:    { title: "Today's inflow", note: 'Bikes marked for recovery today (from 7 AM).', kind: 'bike',
+                     rows: byAge(B.filter(b => !b.police_case && opDay(b.mfr_since) === today)), target: 'trendChart' },
+        outflow:   { title: "Today's outflow", note: 'Bikes recovered or renewed today.', kind: 'call', rows: todayCalls(isOut), target: 'trendChart' },
+        recovered: { title: 'Recovered today', kind: 'call', rows: todayCalls(c => c.outcome === 'Recovered'), target: 'agentChart' },
+        agents:    { title: 'Agent actions today', note: 'Every bike an agent recovered, renewed or moved to hub today.', kind: 'call',
+                     rows: todayCalls(c => isOut(c) || isHub(c)), target: 'agentChart' },
+        active:    { title: 'Moved to active today', note: 'Riders who renewed.', kind: 'call', rows: todayCalls(c => c.outcome === 'Renewed'), target: 'agentChart' },
+        hub:       { title: 'Moved to hub today', kind: 'call', rows: todayCalls(isHub), target: 'hubChart' },
+        truck:     { title: 'Moved by Own Truck today', kind: 'call', rows: todayCalls(c => isHub(c) && c.moved_by === 'Own Truck'), target: 'hubChart' },
+        porter:    { title: 'Moved by Porter today', kind: 'call', rows: todayCalls(c => isHub(c) && c.moved_by === 'Porter'), target: 'hubChart' },
+        police:    { title: 'Police station bikes', kind: 'bike', rows: byAge(B.filter(b => b.police_case === 'Police Station')), target: null },
+        fir:       { title: 'FIR registered bikes', kind: 'bike', rows: byAge(B.filter(b => b.police_case === 'FIR Filed')), target: null },
+        inflowP:   { title: `Inflow · ${period}`, kind: 'bike', rows: byAge(B.filter(b => !b.police_case && opDay(b.mfr_since) >= first)), target: 'trendChart' },
+        outflowP:  { title: `Outflow · ${period}`, kind: 'call', rows: periodCalls(isOut), target: 'trendChart' },
+        recP:      { title: `Recovered · ${period}`, kind: 'call', rows: periodCalls(c => c.outcome === 'Recovered'), target: 'agentChart' },
+        renewP:    { title: `Renewed · ${period}`, kind: 'call', rows: periodCalls(c => c.outcome === 'Renewed'), target: 'agentChart' },
+        actionsP:  { title: `All agent actions · ${period}`, kind: 'call',
+                     rows: withDay.filter(c => c.day >= first).sort((a, b) => (a.called_at < b.called_at ? 1 : -1)), target: 'agentChart' },
+        hubP:      { title: `Moved to hub · ${period}`, kind: 'call', rows: periodCalls(isHub), target: 'hubChart' },
+        truckP:    { title: `Own Truck · ${period}`, kind: 'call', rows: periodCalls(c => isHub(c) && c.moved_by === 'Own Truck'), target: 'hubChart' },
+        porterP:   { title: `Porter · ${period}`, kind: 'call', rows: periodCalls(c => isHub(c) && c.moved_by === 'Porter'), target: 'hubChart' },
+        over10:    { title: 'MFR bikes over 10 days', kind: 'bike', rows: byAge(mfr.filter(b => b.age_days > 10)), target: 'ageChart' },
+        never:     { title: 'MFR bikes never called', kind: 'bike', rows: byAge(mfr.filter(b => b.total_calls === 0)), target: 'ageChart' }
+      });
+
+      // ---- Details (period filter) ----
       draw('trendChart', {
         type: 'line',
         data: { labels, datasets: [
           { label: 'Inflow', data: days.map(d => on(inflowSets, d)), borderColor: C.s1, backgroundColor: C.s1, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5 },
           { label: 'Outflow', data: days.map(d => on(outflowSets, d)), borderColor: C.s2, backgroundColor: C.s2, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5 }] },
-        options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-          plugins: { legend: { position: 'top', align: 'start' } }, scales: axes() }
+        options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 18 } },
+          plugins: { legend: { position: 'top', align: 'start' }, valueLabels: { mode: 'last' } }, scales: axes() }
       });
+      const sumP = (m) => days.reduce((s, d) => s + on(m, d), 0);
+      const inP = DETAILS.inflowP.rows.length, outP = DETAILS.outflowP.rows.length;
+      chips('trendCounts', [
+        { n: inP, t: 'Inflow', color: C.s1, key: 'inflowP' },
+        { n: outP, t: 'Outflow', color: C.s2, key: 'outflowP' },
+        { n: inP - outP, t: inP >= outP ? 'Net added to MFR' : 'Net reduced MFR' }]);
+      chips('hubCounts', [
+        { n: sumP(truckSets), t: 'Own Truck', color: C.s1, key: 'truckP' },
+        { n: sumP(porterSets), t: 'Porter', color: C.s2, key: 'porterP' },
+        { n: sumP(hubSets), t: 'Total moved', key: 'hubP' }]);
       draw('hubChart', {
         type: 'bar',
         data: { labels, datasets: [
           { label: 'Own Truck', data: days.map(d => on(truckSets, d)), backgroundColor: C.s1, borderColor: '#fff', borderWidth: { top: 2 }, borderSkipped: false, maxBarThickness: 18 },
           { label: 'Porter', data: days.map(d => on(porterSets, d)), backgroundColor: C.s2, borderColor: '#fff', borderWidth: { top: 2 }, borderSkipped: false, maxBarThickness: 18 }] },
-        options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-          plugins: { legend: { position: 'top', align: 'start' } }, scales: axes(true) }
+        options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 18 } },
+          plugins: { legend: { position: 'top', align: 'start' }, valueLabels: { mode: 'total' } }, scales: axes(true) }
       });
 
       const P = withDay.filter(c => c.day >= first);
@@ -324,8 +531,17 @@
         type: 'bar',
         data: { labels: list.map(a => a.name), datasets: OUTCOMES.map(o => ({ label: o, data: list.map(a => a.by[o] || 0),
           backgroundColor: OUTCOME_COLOUR[o], borderColor: '#fff', borderWidth: { right: 2 }, borderSkipped: false, maxBarThickness: 22 })) },
-        options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { position: 'top', align: 'start' } }, scales: axes(true, true) }
+        options: { indexAxis: 'y', maintainAspectRatio: false, layout: { padding: { right: 28 } },
+          plugins: { legend: { position: 'top', align: 'start' }, valueLabels: { mode: 'total' } }, scales: axes(true, true) }
       });
+      chips('agentCounts', [
+        { n: P.length, t: 'Actions', key: 'actionsP' },
+        { n: list.length, t: 'Agents' },
+        { n: DETAILS.recP.rows.length, t: 'Recovered', color: C.s1, key: 'recP' }]);
+      chips('agentTableCounts', [
+        { n: DETAILS.recP.rows.length, t: 'Recovered', key: 'recP' },
+        { n: DETAILS.renewP.rows.length, t: 'Renewed', key: 'renewP' },
+        { n: DETAILS.hubP.rows.length, t: 'To hub', key: 'hubP' }]);
       $('agentRows').innerHTML = list.map(a => `<tr><td>${esc(a.name)}</td><td class="num">${a.today}</td><td class="num"><strong>${a.total}</strong></td>
           <td class="num">${a.by['Recovered'] || 0}</td><td class="num">${a.by['Renewed'] || 0}</td><td class="num">${a.by['Moved to Hub'] || 0}</td>
           <td class="num">${(a.by['No Answer'] || 0) + (a.by['Switched Off'] || 0)}</td></tr>`).join('')
@@ -335,16 +551,23 @@
         type: 'bar',
         data: { labels: AGE_BUCKETS, datasets: [{ label: 'MFR bikes', data: AGE_BUCKETS.map(k => count(mfr, b => bucket(b.age_days) === k)),
           backgroundColor: C.s1, borderRadius: 4, borderSkipped: 'start', maxBarThickness: 36 }] },
-        options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: axes() }
+        options: { maintainAspectRatio: false, layout: { padding: { top: 18 } },
+          plugins: { legend: { display: false }, valueLabels: { mode: 'total' } }, scales: axes() }
       });
+      chips('ageCounts', [
+        { n: mfr.length, t: 'MFR bikes', key: 'mfr' },
+        { n: DETAILS.over10.rows.length, t: 'Over 10 days', key: 'over10' },
+        { n: DETAILS.never.rows.length, t: 'Never called', key: 'never' }]);
       const cities = [...new Set(mfr.map(b => b.city))].sort();
+      cities.forEach(ct => { DETAILS['city:' + ct] = { title: `MFR bikes · ${ct}`, kind: 'bike', rows: byAge(mfr.filter(b => b.city === ct)), target: 'cityChart' }; });
+      chips('cityCounts', cities.map(ct => ({ n: DETAILS['city:' + ct].rows.length, t: ct, key: 'city:' + ct })));
       draw('cityChart', {
         type: 'bar',
         data: { labels: cities, datasets: AGE_BANDS.map((band, i) => ({ label: band.label,
           data: cities.map(ct => count(mfr, b => b.city === ct && band.test(b.age_days))),
           backgroundColor: AGE_RAMP[i], borderColor: '#fff', borderWidth: { top: 2 }, borderSkipped: false, maxBarThickness: 56 })) },
-        options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-          plugins: { legend: { position: 'top', align: 'start' } }, scales: axes(true) }
+        options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 18 } },
+          plugins: { legend: { position: 'top', align: 'start' }, valueLabels: { mode: 'total' } }, scales: axes(true) }
       });
 
       const hubs = {};
@@ -359,6 +582,11 @@
           <td class="num ${over ? 'bad' : ''}">${over}</td><td class="num">${count(h.mfr, b => b.total_calls === 0)}</td>
           <td class="num">${h.rec}</td></tr>`;
       }).join('') || '<tr><td colspan="9" style="color:var(--muted)">No bikes for this filter.</td></tr>';
+      chips('hubTableCounts', [
+        { n: Object.keys(hubs).length, t: 'Hubs' },
+        { n: B.length, t: 'Total bikes', key: 'total' },
+        { n: mfr.length, t: 'MFR bikes', key: 'mfr' },
+        { n: DETAILS.over10.rows.length, t: 'Over 10 days', key: 'over10' }]);
     }
 
     // ---- Controls ----
@@ -370,6 +598,27 @@
       $('cityFilter').value = ''; $('hubFilter').value = ''; $('modelFilter').value = ''; fillFilters(); render();
     });
     $('syncBtn').addEventListener('click', load);
+
+    // Clicking a KPI card or a count opens its details
+    const CARD_KEYS = ['total', 'mfr', 'mfrPct', 'inflow', 'outflow', 'recovered', 'agents', 'active', 'hub', 'truck', 'porter', 'police', 'fir'];
+    document.querySelectorAll('.cards .card').forEach((card, i) => {
+      card.dataset.key = CARD_KEYS[i];
+      card.tabIndex = 0;
+      card.setAttribute('role', 'button');
+      card.insertAdjacentHTML('beforeend', '<div class="more">View details →</div>');
+    });
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest('.cards .card, button.count');
+      if (el && el.dataset.key) openDetail(el.dataset.key);
+    });
+    document.addEventListener('keydown', (e) => {
+      const el = e.target.closest && e.target.closest('.cards .card');
+      if (el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openDetail(el.dataset.key); }
+    });
+    $('dClose').addEventListener('click', () => $('detail').close());
+    $('dSearch').addEventListener('input', showDetailRows);
+    $('dCsv').addEventListener('click', downloadCsv);
+    $('dChart').addEventListener('click', () => { const t = $('dChart').dataset.target; $('detail').close(); goToChart(t); });
 
     // Live: re-sync when calls or bikes change
     let t = null;
