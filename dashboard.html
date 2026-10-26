@@ -6,14 +6,61 @@
   <title>Recovery Dashboard</title>
   <style>
     :root {
-      --page: #f3f4f7; --card: #ffffff; --text: #111827; --text-2: #4b5563; --muted: #6b7280;
+      /* Bounce brand */
+      --brand: #e3262b; --brand-dark: #b91c21; --brand-tint: #3a1517; --side: #16181d; --side-2: #1f2228; --side-text: #9aa0aa;
+      --page: #f4f5f8; --card: #ffffff; --text: #111827; --text-2: #4b5563; --muted: #6b7280;
       --border: #e5e7eb; --grid: #e1e0d9; --axis: #c3c2b7;
-      --red: #dc2626; --blue: #2563eb; --green: #16a34a; --orange: #d97706; --dark: #1f2937;
+      --red: #e3262b; --blue: #2563eb; --green: #16a34a; --orange: #d97706; --dark: #1f2937;
       --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6;
     }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--page); color: var(--text); }
-    main { max-width: 1400px; margin: 0 auto; padding: 16px; }
+
+    /* App layout: dark sidebar + content */
+    .app { display: flex; min-height: 100vh; }
+    .side { width: 280px; flex-shrink: 0; background: var(--side); color: #fff; display: flex; flex-direction: column;
+            position: sticky; top: 0; height: 100vh; }
+    .side .collapse { text-align: right; padding: 14px 18px; color: var(--side-text); font-size: 18px; border-bottom: 1px solid #262930; }
+    .brandrow { display: flex; align-items: center; gap: 12px; padding: 18px; border-bottom: 1px solid #262930; }
+    .logo { width: 50px; height: 50px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center;
+            justify-content: center; text-align: center; font-size: 8px; font-weight: 800; line-height: 1.1; letter-spacing: .03em; overflow: hidden; flex-shrink: 0; }
+    .logo img { width: 100%; height: 100%; object-fit: cover; }
+    .brandname { font-size: 17px; font-weight: 700; }
+    .brandname span { color: var(--brand); }
+    .navsec { padding: 18px 0 4px 20px; font-size: 12px; font-weight: 700; letter-spacing: .12em; color: #6b717c; }
+    .nav a { display: flex; align-items: center; gap: 14px; padding: 12px 20px; color: var(--side-text); text-decoration: none; font-size: 16px;
+             border-left: 3px solid transparent; }
+    .nav a:hover { background: var(--side-2); color: #fff; }
+    .nav a.active { background: var(--brand-tint); color: #fff; font-weight: 700; border-left-color: var(--brand); }
+    .nav svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .side .foot { margin-top: auto; border-top: 1px solid #262930; padding: 14px 18px; font-size: 13px; color: var(--side-text); }
+    .side .foot .live { display: flex; align-items: center; gap: 8px; }
+    .side .foot .live i { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block; }
+    .content { flex: 1; min-width: 0; }
+    main { max-width: 1520px; margin: 0 auto; padding: 8px 40px 40px; }
+    .tabs-top { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin: 0 0 24px; padding-top: 24px; }
+    .tabs-top a { padding: 12px 20px; font-size: 18px; font-weight: 600; color: var(--text-2); text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+    .tabs-top a.active { color: var(--brand); border-bottom-color: var(--brand); }
+    .page-title { margin: 0; font-size: 28px; font-weight: 800; }
+    .page-sub { margin: 6px 0 24px; color: var(--muted); font-size: 16px; }
+    .menu-btn { display: none; }
+    @media (max-width: 900px) {
+      .app { flex-direction: column; }
+      .side { width: 100%; height: auto; position: static; }
+      .side .collapse, .side .foot, .navsec { display: none; }
+      .side .nav { display: none; }
+      .side.open .nav { display: block; }
+      .brandrow { justify-content: space-between; padding: 12px 16px; }
+      .menu-btn { display: inline-block; background: none; border: 1px solid #3a3d44; color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 18px; }
+      main { padding: 8px 16px 32px; }
+    }
+    /* Show / hide pills for chart lines (brand red when on) */
+    .pills { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0 12px; }
+    .pill { border: 1.5px solid var(--brand); background: var(--brand); color: #fff; border-radius: 999px; padding: 7px 18px;
+            font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; }
+    .pill i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; border: 1.5px solid #fff; }
+    .pill.off { background: #fff; color: var(--text-2); border-color: var(--border); }
+    .pill.off i { border-color: transparent; }
 
     /* Top filter bar (matches the design) */
     .bar { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px;
@@ -84,7 +131,38 @@
   </style>
 </head>
 <body>
+ <div class="app">
+  <!-- Sidebar -->
+  <aside class="side" id="side">
+    <div class="collapse" aria-hidden="true">«</div>
+    <div class="brandrow">
+      <div style="display:flex;align-items:center;gap:12px">
+        <!-- Upload your logo to the repo as logo.png and it shows here automatically -->
+        <div class="logo"><img src="logo.png" alt="Bounce" onerror="this.parentNode.textContent = 'BOUNCE DAILY'"></div>
+        <div class="brandname">Bounce <span>Recovery Info</span></div>
+      </div>
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu">☰</button>
+    </div>
+    <nav class="nav">
+      <div class="navsec">NAVIGATION</div>
+      <a href="./"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Recovery Tracker</a>
+      <div class="navsec">ANALYTICS</div>
+      <a href="dashboard.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Recovery Dashboard</a>
+    </nav>
+    <div class="foot">
+      <div class="live"><i></i>Live · Supabase</div>
+    </div>
+  </aside>
+
+  <div class="content">
   <main>
+    <nav class="tabs-top">
+      <a href="dashboard.html" class="active">Recovery Dashboard</a>
+      <a href="./">Recovery Tracker</a>
+    </nav>
+    <h1 class="page-title">Recovery Dashboard</h1>
+    <p class="page-sub">Bikes marked for recovery — live from Supabase (sample data)</p>
+
     <!-- Filter bar -->
     <section class="bar">
       <label for="cityFilter">City</label>
@@ -94,7 +172,6 @@
       <label for="modelFilter">Model</label>
       <select id="modelFilter"><option value="">All Models</option></select>
       <span class="spacer"></span>
-      <a href="./">Tracker</a>
       <button class="btn btn-clear" id="clearBtn" type="button">Clear</button>
       <button class="btn btn-sync" id="syncBtn" type="button">↻ Sync</button>
       <span class="synced" id="synced"><i></i><span>Loading…</span></span>
@@ -131,6 +208,7 @@
         <h3>Inflow vs outflow, per day</h3>
         <p class="note">Inflow = bikes marked for recovery · Outflow = recovered or renewed</p>
         <div class="counts" id="trendCounts"></div>
+        <div class="pills" id="trendPills"></div>
         <div class="chart"><canvas id="trendChart" aria-label="Line chart of daily inflow and outflow"></canvas></div>
       </div>
       <div class="panel">
@@ -183,6 +261,8 @@
       </div>
     </section>
   </main>
+  </div>
+ </div>
 
   <!-- Details pop-up: opens when a card or a count is clicked -->
   <dialog id="detail">
@@ -267,12 +347,14 @@
         ctx.fillStyle = '#374151';
         const visible = chart.data.datasets.map((_, i) => i).filter(i => chart.isDatasetVisible(i));
         if (opts.mode === 'last') {
-          visible.forEach(i => {
+          // Latest value of each visible line, nudged apart so labels never overlap
+          const items = visible.map(i => {
             const ds = chart.data.datasets[i], n = ds.data.length - 1, el = chart.getDatasetMeta(i).data[n];
-            if (!el) return;
-            ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
-            ctx.fillText(`${ds.label} ${ds.data[n]}`, el.x - 4, el.y - 4);
-          });
+            return el ? { text: `${ds.label} ${ds.data[n]}`, x: el.x, y: el.y - 6 } : null;
+          }).filter(Boolean).sort((a, b) => a.y - b.y);
+          for (let k = 1; k < items.length; k++) if (items[k].y - items[k - 1].y < 14) items[k].y = items[k - 1].y + 14;
+          ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+          items.forEach(it => ctx.fillText(it.text, it.x - 4, it.y));
         } else {
           chart.data.labels.forEach((_, idx) => {
             let total = 0, edge = null, mid = null;
@@ -293,6 +375,7 @@
     });
 
     const charts = {};
+    const trendHidden = new Set();   // lines the user switched off with the pills
     function draw(id, config) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart($(id), config); }
 
     // ---- Count strips and the details pop-up ----
@@ -514,10 +597,19 @@
         type: 'line',
         data: { labels, datasets: [
           { label: 'Inflow', data: days.map(d => on(inflowSets, d)), borderColor: C.s1, backgroundColor: C.s1, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5 },
-          { label: 'Outflow', data: days.map(d => on(outflowSets, d)), borderColor: C.s2, backgroundColor: C.s2, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5 }] },
+          { label: 'Outflow', data: days.map(d => on(outflowSets, d)), borderColor: C.s2, backgroundColor: C.s2, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5 },
+          { label: 'Net reduction', data: days.map(d => on(outflowSets, d) - on(inflowSets, d)), borderColor: C.s3, backgroundColor: C.s3,
+            borderWidth: 2, borderDash: [5, 4], pointRadius: 0, pointHoverRadius: 5 }] },
         options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 18 } },
-          plugins: { legend: { position: 'top', align: 'start' }, valueLabels: { mode: 'last' } }, scales: axes() }
+          plugins: { legend: { display: false }, valueLabels: { mode: 'last' } }, scales: axes() }
       });
+      // Pills above the chart show / hide each line (they also act as the legend)
+      const tc = charts.trendChart;
+      tc.data.datasets.forEach((ds, i) => tc.setDatasetVisibility(i, !trendHidden.has(ds.label)));
+      tc.update('none');
+      $('trendPills').innerHTML = tc.data.datasets.map((ds, i) =>
+        `<button type="button" class="pill ${trendHidden.has(ds.label) ? 'off' : ''}" data-i="${i}" aria-pressed="${!trendHidden.has(ds.label)}">
+           <i style="background:${ds.borderColor}"></i>${esc(ds.label)}</button>`).join('');
       const sumP = (m) => days.reduce((s, d) => s + on(m, d), 0);
       const inP = DETAILS.inflowP.rows.length, outP = DETAILS.outflowP.rows.length;
       chips('trendCounts', [
@@ -617,6 +709,15 @@
       $('cityFilter').value = ''; $('hubFilter').value = ''; $('modelFilter').value = ''; fillFilters(); render();
     });
     $('syncBtn').addEventListener('click', load);
+    $('menuBtn').addEventListener('click', () => $('side').classList.toggle('open'));
+    $('trendPills').addEventListener('click', (e) => {
+      const p = e.target.closest('.pill'); if (!p) return;
+      const tc = charts.trendChart, i = Number(p.dataset.i), label = tc.data.datasets[i].label;
+      const show = !tc.isDatasetVisible(i);
+      tc.setDatasetVisibility(i, show); tc.update();
+      show ? trendHidden.delete(label) : trendHidden.add(label);
+      p.classList.toggle('off', !show); p.setAttribute('aria-pressed', show);
+    });
 
     // Clicking a KPI card or a count opens its details
     const CARD_KEYS = ['total', 'mfr', 'mfrPct', 'inflow', 'outflow', 'recovered', 'agents', 'active', 'hub', 'truck', 'porter', 'police', 'fir'];
