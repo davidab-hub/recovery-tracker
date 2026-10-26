@@ -8,28 +8,64 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     :root {
-      --bg: #f5f6f8; --card: #ffffff; --text: #1d2433; --muted: #6b7280;
-      --border: #e3e6eb; --accent: #1f4e78; --accent-text: #ffffff; --ok: #2e7d32; --bad: #c00000;
+      /* Bounce brand (same as the dashboard) */
+      --brand: #e3262b; --brand-tint: #3a1517; --side: #16181d; --side-2: #1f2228; --side-text: #9aa0aa;
+      --bg: #f4f5f8; --card: #ffffff; --text: #111827; --muted: #6b7280;
+      --border: #e5e7eb; --accent: #e3262b; --accent-text: #ffffff; --ok: #16a34a; --bad: #c00000;
     }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
            background: var(--bg); color: var(--text); }
-    header { background: var(--accent); color: var(--accent-text); padding: 12px 16px;
-             display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
-    header h1 { margin: 0; font-size: 20px; font-weight: 600; }
-    header p  { margin: 2px 0 0; font-size: 13px; opacity: .85; }
-    #authBox { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-    #authBox button { border-color: #fff; }
-    main { max-width: 1100px; margin: 0 auto; padding: 16px; }
 
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
-    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
-    .stat .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
-    .stat .value { font-size: 26px; font-weight: 700; margin-top: 4px; }
+    /* App layout: dark sidebar + content (same as the dashboard) */
+    .app { display: flex; min-height: 100vh; }
+    .side { width: 280px; flex-shrink: 0; background: var(--side); color: #fff; display: flex; flex-direction: column;
+            position: sticky; top: 0; height: 100vh; z-index: 1000; }
+    .side .collapse { text-align: right; padding: 14px 18px; color: var(--side-text); font-size: 18px; border-bottom: 1px solid #262930; }
+    .brandrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px; border-bottom: 1px solid #262930; }
+    .logo { width: 50px; height: 50px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center;
+            justify-content: center; text-align: center; font-size: 8px; font-weight: 800; line-height: 1.1; letter-spacing: .03em; overflow: hidden; flex-shrink: 0; }
+    .logo img { width: 100%; height: 100%; object-fit: cover; }
+    .brandname { font-size: 17px; font-weight: 700; }
+    .brandname span { color: var(--brand); }
+    .navsec { padding: 18px 0 4px 20px; font-size: 12px; font-weight: 700; letter-spacing: .12em; color: #6b717c; }
+    .nav a { display: flex; align-items: center; gap: 14px; padding: 12px 20px; color: var(--side-text); text-decoration: none; font-size: 16px;
+             border-left: 3px solid transparent; }
+    .nav a:hover { background: var(--side-2); color: #fff; }
+    .nav a.active { background: var(--brand-tint); color: #fff; font-weight: 700; border-left-color: var(--brand); }
+    .nav svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .side .foot { margin-top: auto; border-top: 1px solid #262930; padding: 14px 18px; font-size: 13px; color: var(--side-text); }
+    #authBox { display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid #262930; }
+    #authBox .who { color: #d1d5db; word-break: break-all; }
+    #authBox button { width: 100%; padding: 9px; background: transparent; border: 1px solid #3a3d44; color: var(--brand); font-size: 14px; font-weight: 600; }
+    #authBox button:hover { background: var(--side-2); }
+    .content { flex: 1; min-width: 0; }
+    main { max-width: 1400px; margin: 0 auto; padding: 8px 40px 40px; }
+    .tabs-top { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin: 0 0 24px; padding-top: 24px; }
+    .tabs-top a { padding: 12px 20px; font-size: 18px; font-weight: 600; color: #4b5563; text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+    .tabs-top a.active { color: var(--brand); border-bottom-color: var(--brand); }
+    .page-title { margin: 0; font-size: 28px; font-weight: 800; }
+    .page-sub { margin: 6px 0 24px; color: var(--muted); font-size: 16px; }
+    .menu-btn { display: none; }
+    @media (max-width: 900px) {
+      .app { flex-direction: column; }
+      .side { width: 100%; height: auto; position: static; }
+      .side .collapse, .navsec, .side .nav, .side .foot { display: none; }
+      .side.open .nav, .side.open .foot { display: block; }
+      .brandrow { padding: 12px 16px; }
+      .menu-btn { display: inline-block; background: none; border: 1px solid #3a3d44; color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 18px; }
+      main { padding: 8px 16px 32px; }
+    }
 
-    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
-    .toolbar input[type=search], .toolbar select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
-                                       font-size: 14px; background: #fff; min-width: 0; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+    .stat .label { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .stat .value { font-size: 34px; font-weight: 800; margin-top: 6px; }
+
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px;
+               background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; }
+    .toolbar input[type=search], .toolbar select { padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px;
+                                       font-size: 15px; background: #fff; min-width: 0; }
     .toolbar input[type=search] { flex: 1 1 200px; }
     .toolbar label.check { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
 
@@ -81,7 +117,7 @@
     .history .when { font-size: 12px; color: var(--muted); }
     .hidden { display: none !important; }
     @media (max-width: 600px) { #map { height: 420px; } }
-    .live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; opacity: .9; }
+    .live { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--side-text); }
     .live i { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; display: inline-block; }
     .live.on i { background: #4ade80; }
     #leaderWrap td.num, #leaderWrap th.num { text-align: right; }
@@ -94,17 +130,39 @@
   </style>
 </head>
 <body>
-  <header>
-    <div>
-      <h1>Recovery Tracker</h1>
-      <p>Learning project · Supabase + GitHub · sample data only · <span class="live" id="liveDot"><i></i><span>Connecting…</span></span>
-         · <a href="dashboard.html" style="color:#fff">Dashboard →</a></p>
+ <div class="app">
+  <!-- Sidebar (same as the dashboard) -->
+  <aside class="side" id="side">
+    <div class="collapse" aria-hidden="true">«</div>
+    <div class="brandrow">
+      <div style="display:flex;align-items:center;gap:12px">
+        <!-- Upload your logo to the repo as logo.png and it shows here automatically -->
+        <div class="logo"><img src="logo.png" alt="Bounce" onerror="this.parentNode.textContent = 'BOUNCE DAILY'"></div>
+        <div class="brandname">Bounce <span>Recovery Info</span></div>
+      </div>
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu">☰</button>
     </div>
-    <!-- Sign in / sign out, filled in by JavaScript -->
-    <div id="authBox"></div>
-  </header>
+    <nav class="nav">
+      <div class="navsec">NAVIGATION</div>
+      <a href="./" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Recovery Tracker</a>
+      <div class="navsec">ANALYTICS</div>
+      <a href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Recovery Dashboard</a>
+    </nav>
+    <div class="foot">
+      <!-- Sign in / sign out, filled in by JavaScript -->
+      <div id="authBox"></div>
+      <span class="live" id="liveDot"><i></i><span>Connecting…</span></span>
+    </div>
+  </aside>
 
+  <div class="content">
   <main>
+    <nav class="tabs-top">
+      <a href="dashboard.html">Recovery Dashboard</a>
+      <a href="./" class="active">Recovery Tracker</a>
+    </nav>
+    <h1 class="page-title">Recovery Tracker</h1>
+    <p class="page-sub">Bikes marked for recovery — call riders, log outcomes, move bikes to hub</p>
     <section class="stats">
       <div class="stat"><div class="label">In recovery</div><div class="value" id="statBikes">–</div></div>
       <div class="stat"><div class="label">Avg days in MFR</div><div class="value" id="statAge">–</div></div>
@@ -167,6 +225,8 @@
       </table>
     </div>
   </main>
+  </div>
+ </div>
 
   <!-- Sign in / sign up -->
   <dialog id="authDialog">
@@ -274,11 +334,11 @@
       $('uploadBtn').classList.toggle('hidden', !currentUser);   // only signed-in agents can upload
       const box = $('authBox');
       if (currentUser) {
-        box.innerHTML = `<span>Signed in as <strong>${escapeHtml(currentUser.email)}</strong></span>
-                         <button class="secondary" id="signOutBtn">Sign out</button>`;
+        box.innerHTML = `<span class="who">${escapeHtml(currentUser.email)}</span>
+                         <button type="button" id="signOutBtn">Sign Out</button>`;
         $('signOutBtn').onclick = () => db.auth.signOut();
       } else {
-        box.innerHTML = `<span>Sign in to log calls</span><button class="secondary" id="signInBtn">Sign in</button>`;
+        box.innerHTML = `<span class="who">Sign in to log calls</span><button type="button" id="signInBtn">Sign In</button>`;
         $('signInBtn').onclick = () => openAuth();
       }
     }
@@ -500,8 +560,9 @@
       .subscribe((state) => {
         const on = state === 'SUBSCRIBED';
         $('liveDot').classList.toggle('on', on);
-        $('liveDot').querySelector('span').textContent = on ? 'Live' : 'Offline';
+        $('liveDot').querySelector('span').textContent = on ? 'Live · Supabase' : 'Offline';
       });
+    $('menuBtn').addEventListener('click', () => { $('side').classList.toggle('open'); setTimeout(() => map.invalidateSize(), 50); });
 
     // ---------------------------------------------------------------
     // CSV UPLOAD: add new bikes (signed-in agents only)
