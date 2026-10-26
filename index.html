@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recovery Tracker</title>
+  <!-- Leaflet: free, open-source map library (pinned version) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    /* Map / table switch */
+    .tabs { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fff; }
+    .tabs button { border: none; border-radius: 0; background: #fff; color: var(--accent); padding: 8px 14px; }
+    .tabs button.active { background: var(--accent); color: #fff; }
+    #mapWrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    #map { height: 520px; width: 100%; }
+    .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 10px 12px; font-size: 12px; color: var(--muted);
+              border-top: 1px solid var(--border); }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,.2); }
+    .pop h3 { margin: 0 0 4px; font-size: 15px; }
+    .pop p { margin: 2px 0; font-size: 13px; }
+    .pop button { margin-top: 8px; }
+    .hidden { display: none; }
+    @media (max-width: 600px) { #map { height: 420px; } }
+    :root {
+      --bg: #f5f6f8; --card: #ffffff; --text: #1d2433; --muted: #6b7280;
+      --border: #e3e6eb; --accent: #1f4e78; --accent-text: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+           background: var(--bg); color: var(--text); }
+    header { background: var(--accent); color: var(--accent-text); padding: 16px; }
+    header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+    header p  { margin: 4px 0 0; font-size: 13px; opacity: .85; }
+    main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+    .stat .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+    .stat .value { font-size: 26px; font-weight: 700; margin-top: 4px; }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .toolbar input, .toolbar select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+                                       font-size: 14px; background: #fff; min-width: 0; }
+    .toolbar input { flex: 1 1 200px; }
+
+    .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { background: #f0f2f5; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+    tr:last-child td { border-bottom: none; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #fff; }
+    .muted { color: var(--muted); }
+    a.call { color: var(--accent); font-weight: 600; text-decoration: none; }
+    button { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent);
+             color: #fff; font-size: 13px; cursor: pointer; }
+    button.secondary { background: #fff; color: var(--accent); }
+
+    dialog { border: none; border-radius: 12px; padding: 20px; width: min(420px, 92vw); }
+    dialog::backdrop { background: rgba(0,0,0,.4); }
+    dialog h2 { margin: 0 0 12px; font-size: 18px; }
+    dialog label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+    dialog select, dialog input, dialog textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+                                                  border-radius: 8px; font-size: 14px; font-family: inherit; }
+    .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .error { color: #c00000; font-size: 13px; margin-top: 8px; min-height: 1em; }
+    #status { font-size: 13px; color: var(--muted); margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Recovery Tracker</h1>
+    <p>Learning project · Supabase + GitHub · sample data only</p>
+  </header>
+
+  <main>
+    <!-- Summary numbers, filled in by JavaScript below -->
+    <section class="stats">
+      <div class="stat"><div class="label">Bikes in recovery</div><div class="value" id="statBikes">–</div></div>
+      <div class="stat"><div class="label">Avg days in MFR</div><div class="value" id="statAge">–</div></div>
+      <div class="stat"><div class="label">Never called</div><div class="value" id="statNever">–</div></div>
+      <div class="stat"><div class="label">Calls today</div><div class="value" id="statToday">–</div></div>
+    </section>
+
+    <section class="toolbar">
+      <input id="search" type="search" placeholder="Search reg number or rider">
+      <select id="cityFilter"><option value="">All cities</option></select>
+      <div class="tabs" role="group" aria-label="View">
+        <button type="button" id="mapTab" class="active">Map</button>
+        <button type="button" id="tableTab">Table</button>
+      </div>
+    </section>
+
+    <div id="status">Loading…</div>
+
+    <!-- Map view: one coloured pin per bike -->
+    <div id="mapWrap">
+      <div id="map"></div>
+      <div class="legend">
+        <span><i style="background:#2E7D32"></i>0-1 days</span>
+        <span><i style="background:#1565C0"></i>1-2 days</span>
+        <span><i style="background:#B8860B"></i>2-3 days</span>
+        <span><i style="background:#6D4C41"></i>3-4 days</span>
+        <span><i style="background:#F57C00"></i>4-5 days</span>
+        <span><i style="background:#D32F2F"></i>5-10 days</span>
+        <span><i style="background:#000000"></i>10+ days</span>
+      </div>
+    </div>
+
+    <div class="table-wrap hidden" id="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Reg number</th><th>City / hub</th><th>Age</th><th>Rider</th>
+            <th>Phone</th><th>Last outcome</th><th>Calls</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Pop-up form for logging a call -->
+  <dialog id="logDialog">
+    <form id="logForm" method="dialog">
+      <h2>Log a call · <span id="dlgReg"></span></h2>
+      <label for="outcome">Outcome</label>
+      <select id="outcome" required>
+        <option>Will Renew</option><option>Not Renewing</option><option>No Answer</option>
+        <option>Switched Off</option><option>Recovered</option>
+      </select>
+      <label for="agent">Your name</label>
+      <input id="agent" maxlength="60" placeholder="Agent A">
+      <label for="notes">Notes (optional)</label>
+      <textarea id="notes" rows="3" maxlength="500" placeholder="Will renew by evening"></textarea>
+      <div class="error" id="formError"></div>
+      <div class="actions">
+        <button type="button" class="secondary" id="cancelBtn">Cancel</button>
+        <button type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Leaflet map library (pinned version) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Supabase JavaScript library (pinned version) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+    // 1. CONNECT TO SUPABASE
+    // The URL and publishable key come from Supabase > Project Settings > API.
+    // The publishable key is safe to put in a web page: what it can do is
+    // controlled by the Row Level Security policies on each table.
+    const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Same age colours as the AppSheet map pins
+    function ageColour(days) {
+      if (days < 1)   return ['#2E7D32', '0-1 days'];
+      if (days < 2)   return ['#1565C0', '1-2 days'];
+      if (days < 3)   return ['#B8860B', '2-3 days'];
+      if (days < 4)   return ['#6D4C41', '3-4 days'];
+      if (days < 5)   return ['#F57C00', '4-5 days'];
+      if (days <= 10) return ['#D32F2F', '5-10 days'];
+      return ['#000000', '10+ days'];
+    }
+
+    let allBikes = [];
+    let selectedBike = null;
+
+    // 2. READ DATA: select rows from the bike_overview view
+    async function loadBikes() {
+      document.getElementById('status').textContent = 'Loading…';
+      const { data, error } = await db
+        .from('bike_overview')
+        .select('*')
+        .order('age_days', { ascending: false });
+
+      if (error) {
+        document.getElementById('status').textContent = 'Could not load data: ' + error.message;
+        return;
+      }
+      allBikes = data;
+      fillCityFilter();
+      render();
+      loadStats();
+    }
+
+    async function loadStats() {
+      // Count today's calls straight from the call_logs table
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      const { count } = await db
+        .from('call_logs')
+        .select('*', { count: 'exact', head: true })
+        .gte('called_at', start.toISOString());
+
+      const n = allBikes.length;
+      const avg = n ? (allBikes.reduce((s, b) => s + b.age_days, 0) / n).toFixed(1) : '0';
+      document.getElementById('statBikes').textContent = n;
+      document.getElementById('statAge').textContent = avg;
+      document.getElementById('statNever').textContent = allBikes.filter(b => b.total_calls === 0).length;
+      document.getElementById('statToday').textContent = count ?? 0;
+    }
+
+    function fillCityFilter() {
+      const sel = document.getElementById('cityFilter');
+      const current = sel.value;
+      const cities = [...new Set(allBikes.map(b => b.city))].sort();
+      sel.innerHTML = '<option value="">All cities</option>' +
+        cities.map(c => `<option>${escapeHtml(c)}</option>`).join('');
+      sel.value = current;
+    }
+
+    function render() {
+      const q = document.getElementById('search').value.trim().toLowerCase();
+      const city = document.getElementById('cityFilter').value;
+      const rows = allBikes.filter(b =>
+        (!city || b.city === city) &&
+        (!q || b.reg_number.toLowerCase().includes(q) || (b.rider_name || '').toLowerCase().includes(q))
+      );
+
+      document.getElementById('status').textContent = `${rows.length} bike${rows.length === 1 ? '' : 's'}`;
+      document.getElementById('rows').innerHTML = rows.map(b => {
+        const [colour, label] = ageColour(b.age_days);
+        const last = b.last_outcome
+          ? `${escapeHtml(b.last_outcome)} <span class="muted">· ${escapeHtml(b.last_agent)}, ${timeAgo(b.last_called_at)}</span>`
+          : '<span class="muted">Not called yet</span>';
+        return `<tr>
+          <td><strong>${escapeHtml(b.reg_number)}</strong></td>
+          <td>${escapeHtml(b.city)} <span class="muted">· ${escapeHtml(b.hub || '')}</span></td>
+          <td><span class="badge" style="background:${colour}">${label}</span></td>
+          <td>${escapeHtml(b.rider_name || '')}</td>
+          <td><a class="call" href="tel:${escapeHtml(b.rider_phone || '')}">${escapeHtml(b.rider_phone || '')}</a></td>
+          <td>${last}</td>
+          <td>${b.total_calls}</td>
+          <td><button data-id="${b.id}" class="logBtn">Log call</button></td>
+        </tr>`;
+      }).join('');
+
+      drawPins(rows);
+    }
+
+    // 4. MAP VIEW: Leaflet map with OpenStreetMap tiles
+    const map = L.map('map').setView([20.5937, 78.9629], 5);   // centre of India
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    const pinLayer = L.layerGroup().addTo(map);
+    window.addEventListener('resize', () => map.invalidateSize());
+    let firstFit = true;
+
+    function drawPins(rows) {
+      pinLayer.clearLayers();
+      const points = [];
+      rows.forEach(b => {
+        if (b.latitude == null || b.longitude == null) return;   // skip bikes with no location
+        const [colour, label] = ageColour(b.age_days);
+        const last = b.last_outcome
+          ? `${escapeHtml(b.last_outcome)} · ${escapeHtml(b.last_agent)}, ${timeAgo(b.last_called_at)}`
+          : 'Not called yet';
+        L.circleMarker([b.latitude, b.longitude], {
+          radius: 9, color: '#ffffff', weight: 2, fillColor: colour, fillOpacity: 0.95
+        })
+          .bindPopup(`<div class="pop">
+              <h3>${escapeHtml(b.reg_number)}</h3>
+              <p>${escapeHtml(b.city)} · ${escapeHtml(b.hub || '')} · <strong>${label}</strong></p>
+              <p>${escapeHtml(b.rider_name || '')} · <a class="call" href="tel:${escapeHtml(b.rider_phone || '')}">${escapeHtml(b.rider_phone || '')}</a></p>
+              <p style="color:#6b7280">${last}</p>
+              <button class="logBtn" data-id="${b.id}">Log call</button>
+            </div>`)
+          .addTo(pinLayer);
+        points.push([b.latitude, b.longitude]);
+      });
+      // Zoom to fit the visible pins (on first load and whenever the filter changes)
+      if (points.length && (firstFit || filterChanged)) {
+        // Wait a moment so the map knows its real size before zooming
+        setTimeout(() => {
+          map.invalidateSize();
+          map.fitBounds(points, { padding: [40, 40], maxZoom: 13 });
+        }, 150);
+        firstFit = false;
+      }
+      filterChanged = false;
+    }
+    let filterChanged = false;
+
+    // Map / table switch
+    function showView(view) {
+      const isMap = view === 'map';
+      document.getElementById('mapWrap').classList.toggle('hidden', !isMap);
+      document.getElementById('tableWrap').classList.toggle('hidden', isMap);
+      document.getElementById('mapTab').classList.toggle('active', isMap);
+      document.getElementById('tableTab').classList.toggle('active', !isMap);
+      if (isMap) map.invalidateSize();   // Leaflet needs this after being hidden
+    }
+    document.getElementById('mapTab').addEventListener('click', () => showView('map'));
+    document.getElementById('tableTab').addEventListener('click', () => showView('table'));
+
+    // One click handler for every "Log call" button (table rows and map pop-ups)
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.logBtn');
+      if (btn) { map.closePopup(); openDialog(Number(btn.dataset.id)); }
+    });
+
+    // 3. WRITE DATA: insert a new row into call_logs
+    function openDialog(bikeId) {
+      selectedBike = allBikes.find(b => b.id === bikeId);
+      document.getElementById('dlgReg').textContent = selectedBike.reg_number;
+      document.getElementById('notes').value = '';
+      document.getElementById('formError').textContent = '';
+      document.getElementById('logDialog').showModal();
+    }
+
+    document.getElementById('logForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const agent = document.getElementById('agent').value.trim();
+      const errBox = document.getElementById('formError');
+      if (!agent) { errBox.textContent = 'Enter your name first.'; return; }
+
+      const { error } = await db.from('call_logs').insert({
+        bike_id: selectedBike.id,
+        outcome: document.getElementById('outcome').value,
+        agent: agent,
+        notes: document.getElementById('notes').value.trim() || null
+      });
+
+      if (error) { errBox.textContent = 'Could not save: ' + error.message; return; }
+      document.getElementById('logDialog').close();
+      loadBikes();
+    });
+
+    document.getElementById('cancelBtn').addEventListener('click', () => document.getElementById('logDialog').close());
+    document.getElementById('agent').addEventListener('input', () => document.getElementById('formError').textContent = '');
+    document.getElementById('search').addEventListener('input', () => { filterChanged = true; render(); });
+    document.getElementById('cityFilter').addEventListener('change', () => { filterChanged = true; render(); });
+
+    // Small helpers
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function timeAgo(iso) {
+      const mins = Math.round((Date.now() - new Date(iso)) / 60000);
+      if (mins < 60) return `${mins} min ago`;
+      const hrs = Math.round(mins / 60);
+      if (hrs < 24) return `${hrs} h ago`;
+      return `${Math.round(hrs / 24)} d ago`;
+    }
+
+    loadBikes();
+  </script>
+</body>
+</html>
