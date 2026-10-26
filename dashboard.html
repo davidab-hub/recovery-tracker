@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Recovery Dashboard</title>
+  <script>try { document.documentElement.dataset.theme = localStorage.getItem('rt-theme') || 'dark'; } catch (e) { document.documentElement.dataset.theme = 'dark'; }</script>
   <style>
     :root {
       /* Bounce brand */
@@ -11,8 +12,58 @@
       --page: #f4f5f8; --card: #ffffff; --text: #111827; --text-2: #4b5563; --muted: #6b7280;
       --border: #e5e7eb; --grid: #e1e0d9; --axis: #c3c2b7;
       --red: #e3262b; --blue: #2563eb; --green: #16a34a; --orange: #d97706; --dark: #1f2937;
+      --input: #ffffff; --soft: #f5f6f8; --hover: #eef4ff; --ring: #93c5fd; --label: #374151; --tip: #ffffff; --tip-text: #111827;
       --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6;
     }
+
+    /* ===== Themes: switch with the buttons at the top right ===== */
+    html[data-theme="dark"] {
+      --page: #0b1020; --card: #121a2f; --text: #e8ecf5; --text-2: #b4bdd0; --muted: #8590a8;
+      --border: #222c47; --grid: rgba(255,255,255,.07); --axis: #2f3a58; --dark: #2a3452;
+      --input: #0e1528; --soft: #18213a; --hover: #1d2848; --ring: #4f7ddb; --label: #dfe5f2; --tip: #1a2340; --tip-text: #e8ecf5;
+      --side: #080c18; --side-2: #121a2f; --brand-tint: #3a1219;
+      --s1: #4c95ef; --s2: #f07a45; --s3: #2cc28c; --s4: #f2b31b; --s5: #ef8fb3; --s6: #4fb84f; --s7: #8b7cf0;
+      --blue: #5b9df5; --green: #34d399; --orange: #f59e0b;
+    }
+    html[data-theme="dark"] .card, html[data-theme="dark"] .panel, html[data-theme="dark"] .bar {
+      background: linear-gradient(180deg, #141d34, #10172b); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+    html[data-theme="dark"] .cards .card { border-top: 2px solid var(--k); }
+    html[data-theme="dark"] .cards .card .value { text-shadow: 0 0 18px color-mix(in srgb, var(--k) 55%, transparent); }
+    html[data-theme="dark"] .card .ico { box-shadow: 0 0 14px color-mix(in srgb, var(--k) 45%, transparent); }
+    html[data-theme="dark"] .page-title { color: #fff; }
+
+    html[data-theme="gradient"] .cards .card { background: linear-gradient(135deg, var(--k), color-mix(in srgb, var(--k) 62%, #1a0a2e));
+      border: none; color: #fff; box-shadow: 0 6px 18px color-mix(in srgb, var(--k) 35%, transparent); }
+    html[data-theme="gradient"] .cards .card .label, html[data-theme="gradient"] .cards .card .sub,
+    html[data-theme="gradient"] .cards .card .value, html[data-theme="gradient"] .cards .card .more { color: #fff !important; }
+    html[data-theme="gradient"] .cards .card .label, html[data-theme="gradient"] .cards .card .sub { opacity: .88; }
+    html[data-theme="gradient"] .card .ico { background: rgba(255,255,255,.22) !important; color: #fff !important; }
+    html[data-theme="gradient"] .card .delta { background: rgba(255,255,255,.22) !important; color: #fff !important; }
+    html[data-theme="gradient"] .card .meter { background: rgba(255,255,255,.25); }
+    html[data-theme="gradient"] .panel { box-shadow: 0 4px 14px rgba(17,24,39,.06); border-color: transparent; }
+
+    html[data-theme="light"] .cards .card, html[data-theme="light"] .panel { box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
+
+    /* Card extras: icon badge, change vs yesterday, sparkline, meter */
+    .card .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .card .ico { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      color: var(--k); background: color-mix(in srgb, var(--k) 14%, transparent); }
+    .card .ico svg { width: 16px; height: 16px; }
+    .card .vrow { display: flex; align-items: baseline; gap: 8px; }
+    .card .value { color: var(--k) !important; }
+    html[data-theme="light"] .card .value, html:not([data-theme]) .card .value { color: var(--text) !important; }
+    .card .delta { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px; white-space: nowrap; }
+    .delta.good { color: #15803d; background: rgba(22,163,74,.12); } .delta.bad { color: #c81e1e; background: rgba(227,38,43,.12); }
+    .delta.flat { color: var(--muted); background: var(--soft); }
+    html[data-theme="dark"] .delta.good { color: #4ade80; } html[data-theme="dark"] .delta.bad { color: #ff7b7f; }
+    .card canvas.spark { display: block; width: 100%; height: 30px; margin-top: 6px; }
+    .card .meter { height: 6px; border-radius: 999px; background: var(--soft); margin-top: 8px; overflow: hidden; display: flex; }
+    .card .meter span { display: block; height: 100%; }
+    .themes { display: inline-flex; background: var(--soft); border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px; margin-left: auto; align-self: center; }
+    .themes button { border: none; background: transparent; color: var(--text-2); font: 600 12px inherit; font-family: inherit; padding: 4px 12px; border-radius: 999px; cursor: pointer; }
+    .themes button.on { background: var(--brand); color: #fff; }
+    .tabs-top { align-items: flex-end; flex-wrap: wrap; }
+    @media (max-width: 600px) { .themes { margin: 6px 0 8px; } }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--page); color: var(--text); }
 
@@ -59,7 +110,7 @@
     .pill { border: 1.5px solid var(--brand); background: var(--brand); color: #fff; border-radius: 999px; padding: 4px 12px;
             font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; }
     .pill i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; border: 1.5px solid #fff; }
-    .pill.off { background: #fff; color: var(--text-2); border-color: var(--border); }
+    .pill.off { background: var(--input); color: var(--text-2); border-color: var(--border); }
     .pill.off i { border-color: transparent; }
 
     /* Top filter bar (matches the design) */
@@ -67,7 +118,7 @@
            display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 14px; }
     .bar label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
     .bar select { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;
-                  background: #fff; color: var(--text); min-width: 120px; }
+                  background: var(--input); color: var(--text); min-width: 120px; }
     .bar .spacer { flex: 1; }
     .btn { border: none; border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
     .btn-clear { background: var(--red); color: #fff; }
@@ -90,7 +141,7 @@
     /* Detail section below the cards */
     .section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 20px 0 8px; }
     .section-head h2 { margin: 0; font-size: 13px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .05em; }
-    .section-head select { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: #fff; }
+    .section-head select { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: var(--input); color: var(--text); }
     .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 10px; }
     @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .bar select { min-width: 0; flex: 1 1 120px; } }
     .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; min-width: 0; }
@@ -100,33 +151,33 @@
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
     th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
-    th { font-size: 11px; color: var(--text-2); text-transform: uppercase; letter-spacing: .03em; background: #f5f6f8; }
+    th { font-size: 11px; color: var(--text-2); text-transform: uppercase; letter-spacing: .03em; background: var(--soft); }
     td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
     tr:last-child td { border-bottom: none; }
     .bad { color: var(--red); font-weight: 600; }
     /* Count strip at the top of each panel */
     .counts { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
-    .count { background: #f5f6f8; border-radius: 8px; padding: 5px 10px; min-width: 76px; }
+    .count { background: var(--soft); border-radius: 8px; padding: 5px 10px; min-width: 76px; }
     .count .n { font-size: 17px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
     .count .t { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
     .count .t i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
     button.count { border: 1px solid transparent; text-align: left; font-family: inherit; color: inherit; cursor: pointer; }
-    button.count:hover, button.count:focus-visible { border-color: #93c5fd; background: #eef4ff; outline: none; }
+    button.count:hover, button.count:focus-visible { border-color: var(--ring); background: var(--hover); outline: none; }
     /* Clickable KPI cards */
-    .cards .card { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
-    .cards .card:hover, .cards .card:focus-visible { border-color: #93c5fd; box-shadow: 0 0 0 3px #dbeafe; outline: none; }
+    .cards .card { cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
+    .cards .card:hover, .cards .card:focus-visible { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 35%, transparent); outline: none; transform: translateY(-1px); }
     .cards .card .more { font-size: 11px; color: var(--blue); margin-top: 4px; opacity: 0; transition: opacity .15s; }
     .cards .card:hover .more, .cards .card:focus-visible .more { opacity: 1; }
-    .panel.flash { box-shadow: 0 0 0 3px #93c5fd; transition: box-shadow .3s; }
+    .panel.flash { box-shadow: 0 0 0 3px var(--ring); transition: box-shadow .3s; }
     /* Details pop-up */
-    dialog#detail { border: none; border-radius: 14px; padding: 0; width: min(900px, 94vw); max-height: 86vh; }
+    dialog#detail { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 14px; padding: 0; width: min(900px, 94vw); max-height: 86vh; }
     dialog#detail::backdrop { background: rgba(0,0,0,.4); }
     .dhead { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
     .dhead h2 { margin: 0; font-size: 16px; flex: 1; }
     .dhead .big { font-size: 22px; font-weight: 800; }
     .dbody { padding: 0 18px 16px; max-height: 64vh; overflow: auto; }
     .dbody p { color: var(--muted); font-size: 13px; }
-    .btn-light { background: #fff; border: 1px solid var(--border); color: var(--text); }
+    .btn-light { background: var(--input); border: 1px solid var(--border); color: var(--text); }
     .hidden { display: none !important; }
   </style>
 </head>
@@ -159,6 +210,9 @@
     <nav class="tabs-top">
       <a href="dashboard.html" class="active">Recovery Dashboard</a>
       <a href="./">Recovery Tracker</a>
+      <div class="themes" id="themes" role="group" aria-label="Theme">
+        <button type="button" data-t="dark">Dark</button><button type="button" data-t="light">Light</button><button type="button" data-t="gradient">Gradient</button>
+      </div>
     </nav>
     <h1 class="page-title">Recovery Dashboard</h1>
     <p class="page-sub">Bikes marked for recovery — live from Supabase (sample data)</p>
@@ -247,6 +301,18 @@
         <div class="counts" id="cityCounts"></div>
         <div class="chart"><canvas id="cityChart" aria-label="Stacked bar chart of MFR bikes per city by age"></canvas></div>
       </div>
+      <div class="panel">
+        <h3>Fleet status</h3>
+        <p class="note">Where every bike is right now</p>
+        <div class="counts" id="fleetCounts"></div>
+        <div class="chart"><canvas id="fleetChart" aria-label="Donut chart of bikes by status"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Call outcomes</h3>
+        <p class="note" id="outcomeNote"></p>
+        <div class="counts" id="outcomeCounts"></div>
+        <div class="chart"><canvas id="outcomeChart" aria-label="Donut chart of call outcomes"></canvas></div>
+      </div>
     </section>
     <section class="panel" style="margin-top:16px">
       <h3>Hub table</h3>
@@ -276,7 +342,7 @@
     <div class="dbody">
       <p id="dNote"></p>
       <input id="dSearch" type="search" placeholder="Search reg number, hub, agent…"
-             style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:10px">
+             style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:10px;background:var(--input);color:var(--text)">
       <p id="dShown" style="margin:0 0 6px"></p>
       <div class="table-wrap"><table><thead id="dHead"></thead><tbody id="dRows"></tbody></table></div>
     </div>
@@ -309,11 +375,16 @@
     const num = (n) => Number(n).toLocaleString('en-IN');
 
     // ---- Chart styling (validated palette, fixed outcome order) ----
-    const C = { s1: css('--s1'), s2: css('--s2'), s3: css('--s3'), s4: css('--s4'), s5: css('--s5'), s6: css('--s6'), s7: css('--s7'),
-                grid: css('--grid'), axis: css('--axis'), muted: css('--muted') };
+    const C = {};
     const OUTCOMES = ['Recovered', 'Renewed', 'Moved to Hub', 'Will Renew', 'No Answer', 'Switched Off', 'Not Renewing'];
-    const OUTCOME_COLOUR = { 'Recovered': C.s1, 'Renewed': C.s2, 'Moved to Hub': C.s3, 'Will Renew': C.s4,
-                             'No Answer': C.s5, 'Switched Off': C.s6, 'Not Renewing': C.s7 };
+    const OUTCOME_COLOUR = {};
+    function readColours() {
+      ['s1','s2','s3','s4','s5','s6','s7','grid','axis','muted','card','label','tip','tip-text','text','border','red','blue','green','orange','brand']
+        .forEach(k => C[k.replace('-', '_')] = css('--' + k));
+      OUTCOMES.forEach((o, i) => OUTCOME_COLOUR[o] = C['s' + (i + 1)]);
+      Chart.defaults.color = C.muted;
+      Object.assign(Chart.defaults.plugins.tooltip, { backgroundColor: C.tip, titleColor: C.tip_text, bodyColor: C.tip_text, borderColor: C.border });
+    }
     const AGE_BUCKETS = ['0-1 days', '1-2 days', '2-3 days', '3-4 days', '4-5 days', '5-10 days', '10+ days'];
     const AGE_BANDS = [
       { label: '0-2 days', test: d => d < 2 }, { label: '2-5 days', test: d => d >= 2 && d < 5 },
@@ -326,9 +397,8 @@
 
     Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
     Chart.defaults.font.size = 11;
-    Chart.defaults.color = '#4b5563';
-    Object.assign(Chart.defaults.plugins.tooltip, { backgroundColor: '#ffffff', titleColor: '#111827', bodyColor: '#4b5563',
-      borderColor: 'rgba(17,24,39,0.12)', borderWidth: 1, padding: 10 });
+    Object.assign(Chart.defaults.plugins.tooltip, { borderWidth: 1, padding: 10 });
+    readColours();
     Chart.defaults.plugins.legend.labels.usePointStyle = true;
     Chart.defaults.plugins.legend.labels.boxWidth = 8;
     const axes = (stacked = false, horizontal = false) => {
@@ -344,7 +414,7 @@
         const { ctx } = chart, horizontal = chart.options.indexAxis === 'y';
         ctx.save();
         ctx.font = '600 11px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
-        ctx.fillStyle = '#374151';
+        ctx.fillStyle = C.label;
         const visible = chart.data.datasets.map((_, i) => i).filter(i => chart.isDatasetVisible(i));
         if (opts.mode === 'last') {
           // Latest value of each visible line, nudged apart so labels never overlap
@@ -373,6 +443,44 @@
         ctx.restore();
       }
     });
+
+    const fade = (hex, a = 0.14) => /^#[0-9a-f]{6}$/i.test(hex) ? hex + Math.round(a * 255).toString(16).padStart(2, '0') : hex;
+    // Donut: prints the total in the middle
+    Chart.register({ id: 'centerText', afterDatasetsDraw(chart, _a, opts) {
+      if (!opts || opts.text == null) return;
+      const { ctx, chartArea: a } = chart, x = (a.left + a.right) / 2, y = (a.top + a.bottom) / 2;
+      ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = C.text;
+      ctx.font = '800 22px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif'; ctx.textBaseline = 'bottom'; ctx.fillText(opts.text, x, y + 6);
+      ctx.font = '500 11px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif'; ctx.fillStyle = C.muted; ctx.textBaseline = 'top'; ctx.fillText(opts.sub || '', x, y + 8);
+      ctx.restore(); } });
+    // Tiny line chart inside a KPI card
+    function spark(card, data) {
+      let cv = card.querySelector('canvas.spark');
+      if (!cv) { cv = document.createElement('canvas'); cv.className = 'spark'; card.querySelector('.more').before(cv); }
+      const dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 150, h = 30;
+      cv.width = w * dpr; cv.height = h * dpr;
+      const g = cv.getContext('2d'); g.scale(dpr, dpr); g.clearRect(0, 0, w, h);
+      const max = Math.max(1, ...data), step = w / Math.max(1, data.length - 1);
+      const pts = data.map((v, i) => [i * step, h - 3 - (v / max) * (h - 8)]);
+      const col = document.documentElement.dataset.theme === 'gradient' ? '#ffffff' : getComputedStyle(card).getPropertyValue('--k').trim();
+      const grad = g.createLinearGradient(0, 0, 0, h); grad.addColorStop(0, col + '55'); grad.addColorStop(1, col + '00');
+      g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y));
+      g.lineTo(w, h); g.lineTo(0, h); g.closePath(); g.fillStyle = col.startsWith('#') && col.length === 7 ? grad : 'transparent'; g.fill();
+      g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y));
+      g.strokeStyle = col; g.lineWidth = 1.8; g.lineJoin = 'round'; g.stroke();
+      const [lx, ly] = pts[pts.length - 1]; g.beginPath(); g.arc(lx - 1, ly, 2.5, 0, 7); g.fillStyle = col; g.fill();
+    }
+    function delta(card, todayN, yestN, upIsGood) {
+      const el = card.querySelector('.delta'), d = todayN - yestN;
+      el.textContent = d === 0 ? '= yday' : (d > 0 ? '▲ ' : '▼ ') + Math.abs(d) + ' vs yday';
+      el.className = 'delta ' + (d === 0 ? 'flat' : (d > 0) === upIsGood ? 'good' : 'bad');
+    }
+    function meter(card, parts) {
+      let m = card.querySelector('.meter');
+      if (!m) { m = document.createElement('div'); m.className = 'meter'; card.querySelector('.more').before(m); }
+      const tot = parts.reduce((a, p) => a + p.n, 0) || 1;
+      m.innerHTML = parts.map(p => `<span style="width:${100 * p.n / tot}%;background:${p.c}" title="${esc(p.t)}: ${p.n}"></span>`).join('');
+    }
 
     const charts = {};
     const trendHidden = new Set();   // lines the user switched off with the pills
@@ -554,6 +662,24 @@
       $('kPolice').textContent = count(B, b => b.police_case === 'Police Station');
       $('kFir').textContent = count(B, b => b.police_case === 'FIR Filed');
 
+      // ---- Card extras: 14-day sparkline + change vs yesterday, meters ----
+      const d14 = lastDays(14), yday = d14[d14.length - 2];
+      const agentSets = perDay(withDay.filter(c => ['Recovered', 'Renewed', 'Moved to Hub'].includes(c.outcome)), c => c.agent);
+      const card = (k) => document.querySelector(`.cards .card[data-key="${k}"]`);
+      [['inflow', inflowSets, false], ['outflow', outflowSets, true], ['recovered', recSets, true], ['agents', agentSets, true],
+       ['active', renewSets, true], ['hub', hubSets, true], ['truck', truckSets, true], ['porter', porterSets, true]].forEach(([k, m, good]) => {
+        spark(card(k), d14.map(d => on(m, d))); delta(card(k), on(m, today), on(m, yday), good);
+      });
+      const cTxt = C.text;
+      meter(card('total'), [
+        { t: 'Active', n: count(B, b => b.status === 'active' && !b.police_case), c: C.s3 },
+        { t: 'MFR', n: mfr.length, c: C.red },
+        { t: 'Recovered', n: count(B, b => b.status === 'recovered' && !b.police_case), c: C.s2 },
+        { t: 'At hub', n: count(B, b => b.status === 'at_hub' && !b.police_case), c: C.s1 },
+        { t: 'Police / FIR', n: count(B, b => b.police_case), c: C.muted }]);
+      meter(card('mfr'), AGE_BANDS.map((band, i) => ({ t: band.label, n: count(mfr, b => band.test(b.age_days)), c: AGE_RAMP[i] })));
+      meter(card('mfrPct'), [{ t: 'MFR', n: mfr.length, c: C.s5 }, { t: 'Other', n: Math.max(0, B.length - mfr.length), c: 'transparent' }]);
+
       // ---- What each card and count opens when clicked ----
       const range = Number($('rangeFilter').value), days = lastDays(range), first = days[0], labels = days.map(fmtDay);
       const todayCalls = (pred) => latestPerBike(withDay.filter(c => c.day === today && pred(c)));
@@ -596,9 +722,9 @@
       draw('trendChart', {
         type: 'line',
         data: { labels, datasets: [
-          { label: 'Inflow', data: days.map(d => on(inflowSets, d)), borderColor: C.s1, backgroundColor: C.s1, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5 },
-          { label: 'Outflow', data: days.map(d => on(outflowSets, d)), borderColor: C.s2, backgroundColor: C.s2, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5 },
-          { label: 'Net reduction', data: days.map(d => on(outflowSets, d) - on(inflowSets, d)), borderColor: C.s3, backgroundColor: C.s3,
+          { label: 'Inflow', data: days.map(d => on(inflowSets, d)), borderColor: C.s1, backgroundColor: fade(C.s1), fill: 'origin', tension: .35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5 },
+          { label: 'Outflow', data: days.map(d => on(outflowSets, d)), borderColor: C.s2, backgroundColor: fade(C.s2), fill: 'origin', tension: .35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5 },
+          { label: 'Net reduction', data: days.map(d => on(outflowSets, d) - on(inflowSets, d)), borderColor: C.s3, backgroundColor: C.s3, tension: .35,
             borderWidth: 2, borderDash: [5, 4], pointRadius: 0, pointHoverRadius: 5 }] },
         options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 18 } },
           plugins: { legend: { display: false }, valueLabels: { mode: 'last' } }, scales: axes() }
@@ -623,8 +749,8 @@
       draw('hubChart', {
         type: 'bar',
         data: { labels, datasets: [
-          { label: 'Own Truck', data: days.map(d => on(truckSets, d)), backgroundColor: C.s1, borderColor: '#fff', borderWidth: { top: 2 }, borderSkipped: false, maxBarThickness: 18 },
-          { label: 'Porter', data: days.map(d => on(porterSets, d)), backgroundColor: C.s2, borderColor: '#fff', borderWidth: { top: 2 }, borderSkipped: false, maxBarThickness: 18 }] },
+          { label: 'Own Truck', data: days.map(d => on(truckSets, d)), backgroundColor: C.s1, borderColor: C.card, borderWidth: { top: 2 }, borderSkipped: false, maxBarThickness: 18 },
+          { label: 'Porter', data: days.map(d => on(porterSets, d)), backgroundColor: C.s2, borderColor: C.card, borderWidth: { top: 2 }, borderSkipped: false, maxBarThickness: 18 }] },
         options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 18 } },
           plugins: { legend: { position: 'top', align: 'start' }, valueLabels: { mode: 'total' } }, scales: axes(true) }
       });
@@ -641,7 +767,7 @@
       draw('agentChart', {
         type: 'bar',
         data: { labels: list.map(a => a.name), datasets: OUTCOMES.map(o => ({ label: o, data: list.map(a => a.by[o] || 0),
-          backgroundColor: OUTCOME_COLOUR[o], borderColor: '#fff', borderWidth: { right: 2 }, borderSkipped: false, maxBarThickness: 22 })) },
+          backgroundColor: OUTCOME_COLOUR[o], borderColor: C.card, borderWidth: { right: 2 }, borderSkipped: false, maxBarThickness: 22 })) },
         options: { indexAxis: 'y', maintainAspectRatio: false, layout: { padding: { right: 28 } },
           plugins: { legend: { position: 'top', align: 'start' }, valueLabels: { mode: 'total' } }, scales: axes(true, true) }
       });
@@ -661,7 +787,7 @@
       draw('ageChart', {
         type: 'bar',
         data: { labels: AGE_BUCKETS, datasets: [{ label: 'MFR bikes', data: AGE_BUCKETS.map(k => count(mfr, b => bucket(b.age_days) === k)),
-          backgroundColor: C.s1, borderRadius: 4, borderSkipped: 'start', maxBarThickness: 36 }] },
+          backgroundColor: AGE_BUCKETS.map((_, i) => i < 5 ? C.s1 : C.red), borderRadius: 6, borderSkipped: 'start', maxBarThickness: 36 }] },
         options: { maintainAspectRatio: false, layout: { padding: { top: 18 } },
           plugins: { legend: { display: false }, valueLabels: { mode: 'total' } }, scales: axes() }
       });
@@ -676,7 +802,7 @@
         type: 'bar',
         data: { labels: cities, datasets: AGE_BANDS.map((band, i) => ({ label: band.label,
           data: cities.map(ct => count(mfr, b => b.city === ct && band.test(b.age_days))),
-          backgroundColor: AGE_RAMP[i], borderColor: '#fff', borderWidth: { top: 2 }, borderSkipped: false, maxBarThickness: 56 })) },
+          backgroundColor: AGE_RAMP[i], borderColor: C.card, borderWidth: { top: 2 }, borderSkipped: false, maxBarThickness: 56 })) },
         options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 18 } },
           plugins: { legend: { position: 'top', align: 'start' }, valueLabels: { mode: 'total' } }, scales: axes(true) }
       });
@@ -698,6 +824,28 @@
         { n: B.length, t: 'Total bikes', key: 'total' },
         { n: mfr.length, t: 'MFR bikes', key: 'mfr' },
         { n: DETAILS.over10.rows.length, t: 'Over 10 days', key: 'over10' }]);
+
+      // ---- Donuts ----
+      const FLEET = [
+        { t: 'Active', c: C.s3, f: b => b.status === 'active' && !b.police_case },
+        { t: 'MFR', c: C.red, f: b => isMfr(b) },
+        { t: 'Recovered', c: C.s2, f: b => b.status === 'recovered' && !b.police_case },
+        { t: 'At hub', c: C.s1, f: b => b.status === 'at_hub' && !b.police_case },
+        { t: 'Police / FIR', c: C.s7, f: b => !!b.police_case }];
+      FLEET.forEach(x => { DETAILS['st:' + x.t] = { title: `${x.t} bikes`, kind: 'bike', rows: byAge(B.filter(x.f)), target: 'fleetChart' }; });
+      const donut = (id, labels, data, colors, text, sub) => draw(id, { type: 'doughnut',
+        data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: C.card, borderWidth: 2, hoverOffset: 6 }] },
+        options: { maintainAspectRatio: false, cutout: '68%',
+          plugins: { legend: { position: 'right', labels: { padding: 12 } }, centerText: { text, sub } } } });
+      donut('fleetChart', FLEET.map(x => x.t), FLEET.map(x => DETAILS['st:' + x.t].rows.length), FLEET.map(x => x.c), num(B.length), 'bikes');
+      chips('fleetCounts', FLEET.slice(0, 4).map(x => ({ n: DETAILS['st:' + x.t].rows.length, t: x.t, color: x.c, key: 'st:' + x.t })));
+      const oc = OUTCOMES.map(o => count(P, c => c.outcome === o));
+      $('outcomeNote').textContent = `All calls and actions · last ${range} days`;
+      donut('outcomeChart', OUTCOMES, oc, OUTCOMES.map(o => OUTCOME_COLOUR[o]), num(P.length), 'actions');
+      chips('outcomeCounts', [
+        { n: P.length, t: 'Actions', key: 'actionsP' },
+        { n: oc[0], t: 'Recovered', color: C.s1, key: 'recP' },
+        { n: oc[4] + oc[5], t: 'Not reached' }]);
     }
 
     // ---- Controls ----
@@ -720,13 +868,46 @@
     });
 
     // Clicking a KPI card or a count opens its details
+    const CARD_LOOK = [
+      ['var(--s7)', '<circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17h6l3-7h3M15 10l-2-4h-3"/>'],
+      ['var(--brand)', '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>'],
+      ['var(--s5)', '<path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/>'],
+      ['var(--s1)', '<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 20h16"/>'],
+      ['var(--s3)', '<path d="M12 21V9M7 14l5-5 5 5"/><path d="M4 4h16"/>'],
+      ['var(--s2)', '<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>'],
+      ['#0891b2', '<circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2.5.6 4 2.8 4 6"/>'],
+      ['var(--s6)', '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>'],
+      ['var(--s4)', '<path d="M3 21V9l9-6 9 6v12"/><path d="M8 21v-7h8v7"/>'],
+      ['var(--s1)', '<path d="M2 6h12v10H2zM14 10h4l3 3v3h-7"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>'],
+      ['var(--s2)', '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>'],
+      ['#b91c1c', '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'],
+      ['#7c3aed', '<path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h8M9 17h6"/>']];
     const CARD_KEYS = ['total', 'mfr', 'mfrPct', 'inflow', 'outflow', 'recovered', 'agents', 'active', 'hub', 'truck', 'porter', 'police', 'fir'];
     document.querySelectorAll('.cards .card').forEach((card, i) => {
       card.dataset.key = CARD_KEYS[i];
       card.tabIndex = 0;
       card.setAttribute('role', 'button');
       card.insertAdjacentHTML('beforeend', '<div class="more">View details →</div>');
+      const [accent, icon] = CARD_LOOK[i];
+      card.style.setProperty('--k', accent);
+      const label = card.querySelector('.label'), value = card.querySelector('.value');
+      const top = document.createElement('div'); top.className = 'top'; label.before(top); top.append(label);
+      top.insertAdjacentHTML('beforeend', `<span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg></span>`);
+      const vrow = document.createElement('div'); vrow.className = 'vrow'; value.before(vrow); vrow.append(value);
+      if (['inflow', 'outflow', 'recovered', 'agents', 'active', 'hub', 'truck', 'porter'].includes(card.dataset.key))
+        vrow.insertAdjacentHTML('beforeend', '<span class="delta flat"></span>');
     });
+
+    // ---- Theme switch (Dark / Light / Gradient), remembered on this browser ----
+    function setTheme(t) {
+      document.documentElement.dataset.theme = t;
+      try { localStorage.setItem('rt-theme', t); } catch (e) {}
+      document.querySelectorAll('#themes button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+      readColours();
+      if (bikes.length) render();
+    }
+    $('themes').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setTheme(b.dataset.t); });
+    setTheme(document.documentElement.dataset.theme || 'dark');
     document.addEventListener('click', (e) => {
       const el = e.target.closest('.cards .card, button.count');
       if (el && el.dataset.key) openDetail(el.dataset.key);
