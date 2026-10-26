@@ -228,6 +228,9 @@
       html.side-min .side .foot { padding: 10px 8px; }
       html.side-min .adminlink { margin: 0; }
     }
+    .period-note { background: var(--s4); color: var(--s3); border-radius: 10px; padding: 8px 12px; font-size: 13px; margin: 0 0 10px; }
+    .bar .range { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+    .bar input[type=date] { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--input); color: var(--text); font-family: inherit; }
   </style>
 </head>
 <body>
@@ -282,16 +285,22 @@
       <select id="hubFilter"><option value="">All Hubs</option></select>
       <label for="periodFilter">Period</label>
       <select id="periodFilter">
-        <option value="all">Whole month</option>
+        <option value="today">Today</option>
         <option value="7">Last 7 days</option>
-        <option value="1">Latest day</option>
+        <option value="15">Last 15 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="custom">Pick dates…</option>
       </select>
+      <span class="range hidden" id="rangeBox">
+        <input type="date" id="fromDate" aria-label="From date"><span>to</span><input type="date" id="toDate" aria-label="To date">
+      </span>
       <span class="spacer"></span>
       <button class="btn btn-clear" id="clearBtn" type="button">Clear</button>
       <button class="btn btn-sync" id="syncBtn" type="button">↻ Sync</button>
       <span class="synced" id="synced"><i></i><span>Loading…</span></span>
     </section>
 
+    <p class="period-note hidden" id="periodNote"></p>
     <section class="cards">
       <div class="card"><div class="label">Total QCs</div><div class="value" id="kTotal">–</div><div class="sub" id="kTotalSub"></div></div>
       <div class="card"><div class="label">Approved</div><div class="value" id="kAppr">–</div><div class="sub" id="kApprSub"></div></div>
@@ -472,7 +481,7 @@
     }
     function delta(card, todayN, yestN, upIsGood) {
       const el = card.querySelector('.delta'), d = todayN - yestN;
-      el.textContent = d === 0 ? '= prev day' : (d > 0 ? '▲ ' : '▼ ') + Math.abs(d) + ' vs prev day';
+      el.textContent = d === 0 ? '= yday' : (d > 0 ? '▲ ' : '▼ ') + Math.abs(d) + ' vs yday';
       el.className = 'delta ' + (d === 0 ? 'flat' : (d > 0) === upIsGood ? 'good' : 'bad');
     }
     function meter(card, parts) {
@@ -526,7 +535,7 @@
       if (!current) return;
       const q = $('dSearch').value.trim().toLowerCase();
       const rows = q ? current.rows.filter(r => r.join(' ').toLowerCase().includes(q)) : current.rows;
-      const filters = [$('cityFilter').value, $('hubFilter').value, $('periodFilter').selectedOptions[0].text].filter(Boolean).join(' · ');
+      const filters = [$('cityFilter').value, $('hubFilter').value, $('periodFilter').value === 'custom' ? `${$('fromDate').value} to ${$('toDate').value}` : $('periodFilter').selectedOptions[0].text].filter(Boolean).join(' · ');
       const data = [current.header, ...rows.map(r => r.map((v, i) => current.numeric.includes(i) && v !== '' && !isNaN(Number(v)) ? Number(v) : v))];
       const ws = XLSX.utils.aoa_to_sheet(data);
       ws['!cols'] = current.header.map((h, i) => ({ wch: Math.min(50, Math.max(h.length, ...data.slice(1).map(r => String(r[i] ?? '').length)) + 2) }));
@@ -580,11 +589,23 @@
     function render() {
       if (!qcs.length) return;
       const allDays = [...new Set(qcs.map(q => q.day))].sort(), lastDay = allDays[allDays.length - 1];
-      const period = $('periodFilter').value;
-      const from = period === 'all' ? allDays[0] : new Date(Date.parse(lastDay) - (Number(period) - 1) * 864e5).toISOString().slice(0, 10);
-      const days = daysBetween(from, lastDay), labels = days.map(fmtDay);
+      // Periods count back from today (IST), like the Recovery Dashboard
+      const today = istDay(new Date().toISOString()), period = $('periodFilter').value;
+      const back = (n) => new Date(Date.parse(today) - n * 864e5).toISOString().slice(0, 10);
+      let from, to = today;
+      if (period === 'custom') {
+        // Your own date range (if "to" is before "from", they're swapped)
+        from = $('fromDate').value || allDays[0]; to = $('toDate').value || today;
+        if (from > to) [from, to] = [to, from];
+      } else from = period === 'today' ? today : back(Number(period) - 1);
+      const yday = back(1);
+      const days = daysBetween(from, to), labels = days.map(fmtDay);
       const city = $('cityFilter').value, hub = $('hubFilter').value;
-      const Q = qcs.filter(q => q.day >= from && (!city || q.city === city) && (!hub || q.hub === hub));
+      const base = qcs.filter(q => (!city || q.city === city) && (!hub || q.hub === hub));   // all dates, for trends
+      const Q = base.filter(q => q.day >= from && q.day <= to);
+      const pName = period === 'custom' ? `${fmtDay(from)} – ${fmtDay(to)}` : $('periodFilter').selectedOptions[0].text.toLowerCase();
+      $('periodNote').classList.toggle('hidden', Q.length > 0);
+      $('periodNote').innerHTML = `No QCs for <strong>${esc(pName)}</strong>${city || hub ? ' with these filters' : ''}. The latest QC data is from <strong>${fmtDay(lastDay)}</strong> — load newer QC data into Supabase to see it here.`;
       const ids = new Set(Q.map(q => q.id));
       const M = mistakes.filter(m => ids.has(m.qc_id));
       const RES = { APPROVED: C.s2, REJECTED: C.s1, HOLD: C.s7 };
@@ -607,11 +628,10 @@
 
       // ---- Cards ----
       const dayN = (arr, d) => count(arr, q => q.day === d);
-      const prev = allDays[allDays.length - 2];
       $('kTotal').textContent = num(Q.length);
-      $('kTotalSub').textContent = `${dayN(Q, lastDay)} on ${fmtDay(lastDay)}`;
+      $('kTotalSub').textContent = `${dayN(base, today)} today · ${dayN(base, yday)} yesterday`;
       $('kAppr').textContent = num(ok.length); $('kApprSub').textContent = `${pct(ok.length, Q.length)} of QCs`;
-      $('kRej').textContent = num(rej.length); $('kRejSub').textContent = `${dayN(rej, lastDay)} on ${fmtDay(lastDay)}`;
+      $('kRej').textContent = num(rej.length); $('kRejSub').textContent = `${count(base, q => q.day === today && q.result === 'REJECTED')} today`;
       $('kPct').textContent = pct(rej.length, Q.length);
       $('kHold').textContent = num(hold.length);
       $('kTech').textContent = num(techs.filter(t => t.name !== 'Not recorded').length);
@@ -621,12 +641,12 @@
       $('kTop').textContent = misList[0] ? misList[0][0] : '–';
       $('kTopSub').textContent = misList[0] ? `${misList[0][1]} QCs · ${pct(misList[0][1], rej.length + hold.length)} of rejections` : '';
       const card = (k) => document.querySelector(`.cards .card[data-key="${k}"]`);
-      const series = (arr) => days.length > 1 ? days.map(d => dayN(arr, d)) : allDays.slice(-14).map(d => dayN(arr, d));
-      if (prev) {
-        spark(card('total'), series(Q)); delta(card('total'), dayN(Q, lastDay), dayN(Q, prev), true);
-        spark(card('appr'), series(ok)); delta(card('appr'), dayN(ok, lastDay), dayN(ok, prev), true);
-        spark(card('rej'), series(rej)); delta(card('rej'), dayN(rej, lastDay), dayN(rej, prev), false);
-      }
+      // Small trend lines: the period's days (at least the last 14), plus today vs yesterday
+      const trendDays = days.length >= 14 ? days : daysBetween(back(13), today);
+      const of = (r) => r ? base.filter(q => q.result === r) : base;
+      [['total', null, true], ['appr', 'APPROVED', true], ['rej', 'REJECTED', false]].forEach(([k, r, good]) => {
+        const a = of(r); spark(card(k), trendDays.map(d => dayN(a, d))); delta(card(k), dayN(a, today), dayN(a, yday), good);
+      });
       meter(card('pct'), [{ t: 'Rejected', n: rej.length, c: C.s1 }, { t: 'Hold', n: hold.length, c: C.s7 }, { t: 'Approved', n: ok.length, c: C.s4 }]);
       meter(card('mis'), misList.slice(0, 5).map(([k, v], i) => ({ t: k, n: v, c: [C.s3, C.s5, C.s1, C.s6, C.s2][i] })));
 
@@ -735,8 +755,17 @@
     // ---- Controls ----
     $('cityFilter').addEventListener('change', () => { $('hubFilter').value = ''; fillFilters(); render(); });
     $('hubFilter').addEventListener('change', render);
-    $('periodFilter').addEventListener('change', render);
-    $('clearBtn').addEventListener('click', () => { $('cityFilter').value = ''; $('hubFilter').value = ''; $('periodFilter').value = 'all'; fillFilters(); render(); });
+    $('periodFilter').addEventListener('change', () => {
+      const custom = $('periodFilter').value === 'custom';
+      $('rangeBox').classList.toggle('hidden', !custom);
+      if (custom && !$('fromDate').value) {   // start with the last 30 days, then let them change it
+        const t = istDay(new Date().toISOString());
+        $('toDate').value = t; $('fromDate').value = new Date(Date.parse(t) - 29 * 864e5).toISOString().slice(0, 10);
+      }
+      render();
+    });
+    ['fromDate', 'toDate'].forEach(id => $(id).addEventListener('change', render));
+    $('clearBtn').addEventListener('click', () => { $('cityFilter').value = ''; $('hubFilter').value = ''; $('periodFilter').value = '30'; $('rangeBox').classList.add('hidden'); $('fromDate').value = ''; $('toDate').value = ''; fillFilters(); render(); });
     $('syncBtn').addEventListener('click', load);
     $('menuBtn').addEventListener('click', () => $('side').classList.toggle('open'));
     const CARD_KEYS = ['total', 'appr', 'rej', 'pct', 'hold', 'tech', 'mis', 'top'];
