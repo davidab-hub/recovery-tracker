@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recovery Tracker</title>
+  <!-- Leaflet: free, open-source map library (pinned version) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root {
+      /* Bounce brand (same as the dashboard) */
+      --brand: #e3262b; --brand-tint: #3a1517; --side: #16181d; --side-2: #1f2228; --side-text: #9aa0aa;
+      /* Dark theme (same as the dashboard) */
+      --bg: #fff8f7; --card: #ffffff; --text: #2a1d1e; --muted: #8a7778; --text-2: #5b4a4b;
+      --border: #f7e6e3; --accent: #f24236; --accent-text: #ffffff; --ok: #16a34a; --bad: #c00000;
+      --input: #ffffff; --soft: #fff1ef; --hover: #fde4e2; --blue: #f68179;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+           background: var(--bg); color: var(--text); }
+
+    /* App layout: dark sidebar + content (same as the dashboard) */
+    .app { display: flex; min-height: 100vh; }
+    .side { width: 220px; flex-shrink: 0; background: var(--side); color: #fff; display: flex; flex-direction: column;
+            position: sticky; top: 0; height: 100vh; z-index: 1000; }
+    .side .collapse { text-align: right; padding: 10px 14px; color: var(--side-text); font-size: 15px; border-bottom: 1px solid #262930; }
+    .brandrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #262930; }
+    .logo { width: 38px; height: 38px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center;
+            justify-content: center; text-align: center; font-size: 8px; font-weight: 800; line-height: 1.1; letter-spacing: .03em; overflow: hidden; flex-shrink: 0; }
+    .logo img { width: 100%; height: 100%; object-fit: cover; }
+    .brandname { font-size: 14px; font-weight: 700; }
+    .brandname span { color: var(--brand); }
+    .navsec { padding: 12px 0 4px 16px; font-size: 10.5px; font-weight: 700; letter-spacing: .12em; color: #6b717c; }
+    .nav a { display: flex; align-items: center; gap: 10px; padding: 8px 16px; color: var(--side-text); text-decoration: none; font-size: 13.5px;
+             border-left: 3px solid transparent; }
+    .nav a:hover { background: var(--side-2); color: #fff; }
+    .nav a.active { background: var(--brand-tint); color: #fff; font-weight: 700; border-left-color: var(--brand); }
+    .nav svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .side .foot { margin-top: auto; border-top: 1px solid #262930; padding: 10px 14px; font-size: 12px; color: var(--side-text); }
+    #authBox { display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid #262930; }
+    #authBox .who { color: #d1d5db; word-break: break-all; }
+    #authBox button { width: 100%; padding: 6px; background: transparent; border: 1px solid #3a3d44; color: var(--brand); font-size: 12.5px; font-weight: 600; }
+    #authBox button:hover { background: var(--side-2); }
+    .content { flex: 1; min-width: 0; }
+    main { max-width: 1400px; margin: 0 auto; padding: 4px 24px 28px; }
+    .tabs-top { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin: 0 0 14px; padding-top: 12px; }
+    .tabs-top a { padding: 8px 14px; font-size: 14.5px; font-weight: 600; color: var(--text-2); text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+    .tabs-top a.active { color: var(--brand); border-bottom-color: var(--brand); }
+    .page-title { color: var(--text); margin: 0; font-size: 21px; font-weight: 800; }
+    .page-sub { margin: 3px 0 14px; color: var(--muted); font-size: 13px; }
+    .menu-btn { display: none; }
+    @media (max-width: 900px) {
+      .app { flex-direction: column; }
+      .side { width: 100%; height: auto; position: static; }
+      .side .collapse, .navsec, .side .nav, .side .foot { display: none; }
+      .side.open .nav, .side.open .foot { display: block; }
+      .brandrow { padding: 12px 16px; }
+      .menu-btn { display: inline-block; background: none; border: 1px solid #3a3d44; color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 18px; }
+      main { padding: 8px 16px 32px; }
+    }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-top: 2px solid var(--k, var(--brand));
+            border-radius: 10px; padding: 10px 14px; box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
+    .stat { --k: #f68179; }
+    .stat .label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .stat .value { font-size: 24px; font-weight: 800; margin-top: 2px; color: var(--text) !important; }
+
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px;
+               background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
+    .toolbar input[type=search], .toolbar select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px;
+                                       font-size: 13px; background: var(--input); color: var(--text); min-width: 0; }
+    .toolbar input[type=search] { flex: 1 1 200px; }
+    .toolbar label.check { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+
+    .tabs { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--input); }
+    .tabs button { border: none; border-radius: 0; background: var(--input); color: var(--accent); padding: 8px 14px; }
+    .tabs button.active { background: var(--accent); color: #fff; }
+
+    .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    th, td { padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { background: var(--soft); font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+    tbody tr { cursor: pointer; }
+    tbody tr:hover { background: var(--hover); }
+    tr:last-child td { border-bottom: none; }
+    tr.recovered td { color: var(--muted); }
+
+    .table-wrap, #mapWrap { box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
+    .legend i[style*='#000000'] { border-color: #8590a8; }
+    #mapWrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    #map { height: 440px; width: 100%; }
+    .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 10px 12px; font-size: 12px; color: var(--muted);
+              border-top: 1px solid var(--border); }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,.2); }
+    .pop h3 { margin: 0 0 4px; font-size: 15px; }
+    .pop p { margin: 2px 0; font-size: 13px; }
+    .pop .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #fff; }
+    .badge.done { background: rgba(52,211,153,.15); color: var(--ok); }
+    .muted { color: var(--muted); }
+    a.call { color: var(--accent); font-weight: 600; text-decoration: none; }
+    button { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent);
+             color: #fff; font-size: 12px; cursor: pointer; font-family: inherit; }
+    button.secondary { background: transparent; color: var(--accent); }
+    button.green { background: #16a34a; border-color: #16a34a; }
+    .badge[style*='#000000'], .badge[style*='#000'] { box-shadow: 0 0 0 1px #8590a8 inset; }
+    .rowBtns { display: flex; gap: 6px; }
+
+    dialog { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 20px; width: min(440px, 92vw); }
+    dialog::backdrop { background: rgba(0,0,0,.4); }
+    dialog h2 { margin: 0 0 12px; font-size: 18px; }
+    dialog label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+    dialog select, dialog input, dialog textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+                                                  border-radius: 8px; font-size: 14px; font-family: inherit; background: var(--input); color: var(--text); }
+    .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .error { color: var(--bad); font-size: 13px; margin-top: 8px; min-height: 1em; }
+    .note { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    #status { font-size: 13px; color: var(--muted); margin: 8px 0; }
+    .history { list-style: none; padding: 0; margin: 0; max-height: 50vh; overflow-y: auto; }
+    .history li { border-left: 3px solid var(--accent); padding: 6px 10px; margin-bottom: 8px; background: var(--soft); border-radius: 0 6px 6px 0; }
+    .history .when { font-size: 12px; color: var(--muted); }
+    .hidden { display: none !important; }
+    @media (max-width: 600px) { #map { height: 420px; } }
+    .live { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--side-text); }
+    .live i { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; display: inline-block; }
+    .live.on i { background: #4ade80; }
+    #leaderWrap td.num, #leaderWrap th.num { text-align: right; }
+    .rank { display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 50%;
+            background: var(--soft); font-weight: 700; font-size: 12px; margin-right: 8px; }
+    .rank.r1 { background: #fde68a; color: #111; } .rank.r2 { background: #e5e7eb; color: #111; } .rank.r3 { background: #fed7aa; color: #111; }
+    .preview { font-size: 13px; margin-top: 10px; }
+    .preview ul { margin: 6px 0 0; padding-left: 18px; color: var(--bad); max-height: 120px; overflow-y: auto; }
+    a.link { color: var(--accent); font-size: 13px; }
+  </style>
+</head>
+<body>
+ <div class="app">
+  <!-- Sidebar (same as the dashboard) -->
+  <aside class="side" id="side">
+    <div class="collapse" aria-hidden="true">«</div>
+    <div class="brandrow">
+      <div style="display:flex;align-items:center;gap:12px">
+        <!-- Upload your logo to the repo as logo.png and it shows here automatically -->
+        <div class="logo"><img src="logo.png" alt="Bounce" onerror="this.parentNode.textContent = 'BOUNCE DAILY'"></div>
+        <div class="brandname">Bounce <span>Recovery Info</span></div>
+      </div>
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu">☰</button>
+    </div>
+    <nav class="nav">
+      <div class="navsec">NAVIGATION</div>
+      <a href="tracker.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Recovery Tracker</a>
+      <div class="navsec">ANALYTICS</div>
+      <a href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Recovery Dashboard</a>
+    </nav>
+    <div class="foot">
+      <!-- Sign in / sign out, filled in by JavaScript -->
+      <div id="authBox"></div>
+      <span class="live" id="liveDot"><i></i><span>Connecting…</span></span>
+    </div>
+  </aside>
+
+  <div class="content">
+  <main>
+    <nav class="tabs-top">
+      <a href="dashboard.html">Recovery Dashboard</a>
+      <a href="tracker.html" class="active">Recovery Tracker</a>
+    </nav>
+    <h1 class="page-title">Recovery Tracker</h1>
+    <p class="page-sub">Bikes marked for recovery — call riders, log outcomes, move bikes to hub</p>
+    <section class="stats">
+      <div class="stat"><div class="label">In recovery</div><div class="value" id="statBikes">–</div></div>
+      <div class="stat"><div class="label">Avg days in MFR</div><div class="value" id="statAge">–</div></div>
+      <div class="stat"><div class="label">Never called</div><div class="value" id="statNever">–</div></div>
+      <div class="stat"><div class="label">Calls today</div><div class="value" id="statToday">–</div></div>
+      <div class="stat"><div class="label">Recovered</div><div class="value" id="statRecovered">–</div></div>
+    </section>
+
+    <section class="toolbar">
+      <input id="search" type="search" placeholder="Search reg number or rider">
+      <select id="cityFilter"><option value="">All cities</option></select>
+      <select id="hubFilter"><option value="">All hubs</option></select>
+      <label class="check"><input type="checkbox" id="showRecovered"> Show recovered</label>
+      <div class="tabs" role="group" aria-label="View">
+        <button type="button" id="mapTab" class="active">Map</button>
+        <button type="button" id="tableTab">Table</button>
+        <button type="button" id="leaderTab">Leaderboard</button>
+      </div>
+      <button type="button" class="secondary hidden" id="uploadBtn">Upload bikes (CSV)</button>
+    </section>
+
+    <div id="status">Loading…</div>
+
+    <!-- Map view -->
+    <div id="mapWrap">
+      <div id="map"></div>
+      <div class="legend">
+        <span><i style="background:#2E7D32"></i>0-1 days</span>
+        <span><i style="background:#1565C0"></i>1-2 days</span>
+        <span><i style="background:#B8860B"></i>2-3 days</span>
+        <span><i style="background:#6D4C41"></i>3-4 days</span>
+        <span><i style="background:#F57C00"></i>4-5 days</span>
+        <span><i style="background:#D32F2F"></i>5-10 days</span>
+        <span><i style="background:#000000"></i>10+ days</span>
+        <span><i style="background:#ffffff;border:2px solid #2E7D32"></i>Recovered</span>
+      </div>
+    </div>
+
+    <!-- Leaderboard view: today's calls per agent (from the agent_leaderboard view) -->
+    <div class="table-wrap hidden" id="leaderWrap">
+      <table>
+        <thead>
+          <tr><th>Agent</th><th class="num">Calls today</th><th class="num">Recovered</th>
+              <th class="num">Will renew</th><th class="num">Not reached</th><th>Last call</th></tr>
+        </thead>
+        <tbody id="leaderRows"><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- Table view -->
+    <div class="table-wrap hidden" id="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Reg number</th><th>City / hub</th><th>Age</th><th>Rider</th>
+            <th>Phone</th><th>Last outcome</th><th>Calls</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </main>
+  </div>
+ </div>
+
+  <!-- Sign in / sign up -->
+  <dialog id="authDialog">
+    <form id="authForm" method="dialog">
+      <h2>Agent sign in</h2>
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" placeholder="name@company.com">
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="At least 6 characters">
+      <div class="error" id="authError"></div>
+      <div class="note" id="authNote"></div>
+      <div class="actions">
+        <button type="button" class="secondary" id="authCancel">Cancel</button>
+        <button type="button" class="secondary" id="signUpBtn">Create account</button>
+        <button type="submit">Sign in</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Log a call -->
+  <dialog id="logDialog">
+    <form id="logForm" method="dialog">
+      <h2>Log a call · <span id="dlgReg"></span></h2>
+      <label for="outcome">Outcome</label>
+      <select id="outcome">
+        <option>Will Renew</option><option>Not Renewing</option><option>No Answer</option>
+        <option>Switched Off</option><option>Renewed</option><option>Recovered</option><option>Moved to Hub</option>
+      </select>
+      <div id="movedByBox" class="hidden">
+        <label for="movedBy">Moved by</label>
+        <select id="movedBy"><option>Own Truck</option><option>Porter</option></select>
+      </div>
+      <label for="notes">Notes (optional)</label>
+      <textarea id="notes" rows="3" maxlength="500" placeholder="Will renew by evening"></textarea>
+      <div class="note">Saved as <strong id="dlgAgent"></strong>. "Renewed" and "Recovered" remove the bike from the MFR list; "Moved to Hub" closes a recovered bike.</div>
+      <div class="error" id="formError"></div>
+      <div class="actions">
+        <button type="button" class="secondary" id="cancelBtn">Cancel</button>
+        <button type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Call history -->
+  <dialog id="historyDialog">
+    <h2>Call history · <span id="histReg"></span></h2>
+    <p class="muted" id="histInfo" style="margin:0 0 12px;font-size:13px"></p>
+    <ul class="history" id="histList"></ul>
+    <div class="actions">
+      <button type="button" class="secondary" id="histClose">Close</button>
+      <button type="button" id="histLog">Log call</button>
+    </div>
+  </dialog>
+
+  <!-- Upload bikes from a CSV file -->
+  <dialog id="uploadDialog">
+    <h2>Upload bikes (CSV)</h2>
+    <p class="muted" style="margin:0;font-size:13px">Columns: reg_number, city, hub, model, rider_name, rider_phone,
+      mfr_since (YYYY-MM-DD), latitude, longitude. Only reg_number and city are required.
+      Bikes already in the list are skipped.</p>
+    <p style="margin:8px 0"><a class="link" id="templateLink" download="bikes_template.csv">Download a template</a></p>
+    <label for="csvFile">CSV file</label>
+    <input id="csvFile" type="file" accept=".csv,text/csv">
+    <div class="preview" id="csvPreview"></div>
+    <div class="error" id="uploadError"></div>
+    <div class="actions">
+      <button type="button" class="secondary" id="uploadCancel">Close</button>
+      <button type="button" id="uploadGo">Upload</button>
+    </div>
+  </dialog>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+    // ---------------------------------------------------------------
+    // 1. CONNECT TO SUPABASE
+    // The public (anon) key is safe in a web page: Row Level Security
+    // decides what it can read and write.
+    // ---------------------------------------------------------------
+    const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const $ = (id) => document.getElementById(id);
+    let allBikes = [];
+    let selectedBike = null;
+    let currentUser = null;
+    let pendingOutcome = null;   // remembers what to open after signing in
+
+    // Same age colours as the AppSheet map pins
+    function ageColour(days) {
+      if (days < 1)   return ['#2E7D32', '0-1 days'];
+      if (days < 2)   return ['#1565C0', '1-2 days'];
+      if (days < 3)   return ['#B8860B', '2-3 days'];
+      if (days < 4)   return ['#6D4C41', '3-4 days'];
+      if (days < 5)   return ['#F57C00', '4-5 days'];
+      if (days <= 10) return ['#D32F2F', '5-10 days'];
+      return ['#000000', '10+ days'];
+    }
+
+    // ---------------------------------------------------------------
+    // 2. AGENT LOGIN (Supabase Auth, email + password)
+    // ---------------------------------------------------------------
+    function renderAuth() {
+      $('uploadBtn').classList.toggle('hidden', !currentUser);   // only signed-in agents can upload
+      const box = $('authBox');
+      if (currentUser) {
+        box.innerHTML = `<span class="who">${escapeHtml(currentUser.email)}</span>
+                         <button type="button" id="signOutBtn">Sign Out</button>`;
+        $('signOutBtn').onclick = () => db.auth.signOut();
+      } else {
+        box.innerHTML = `<span class="who">Sign in to log calls</span><button type="button" id="signInBtn">Sign In</button>`;
+        $('signInBtn').onclick = () => openAuth();
+      }
+    }
+
+    function openAuth(message) {
+      $('authError').textContent = '';
+      $('authNote').textContent = message || '';
+      $('authDialog').showModal();
+    }
+
+    async function signIn() {
+      const email = $('email').value.trim(), password = $('password').value;
+      if (!email || !password) { $('authError').textContent = 'Enter your email and password first.'; return; }
+      const { error } = await db.auth.signInWithPassword({ email, password });
+      if (error) { $('authError').textContent = error.message; return; }
+      $('authDialog').close();
+      if (pendingOutcome !== null && selectedBike) openLog(selectedBike.id, pendingOutcome);
+      pendingOutcome = null;
+    }
+
+    async function signUp() {
+      const email = $('email').value.trim(), password = $('password').value;
+      if (!email || password.length < 6) {
+        $('authError').textContent = 'Enter your email and a password of at least 6 characters.'; return;
+      }
+      const { data, error } = await db.auth.signUp({
+        email, password,
+        options: { emailRedirectTo: location.origin + location.pathname }
+      });
+      if (error) { $('authError').textContent = error.message; return; }
+      if (data.session) {
+        $('authDialog').close();            // email confirmation is off: signed in straight away
+      } else {
+        $('authError').textContent = '';
+        $('authNote').textContent = 'Account created. Check your email for the confirmation link, then sign in.';
+      }
+    }
+
+    $('authForm').addEventListener('submit', (e) => { e.preventDefault(); signIn(); });
+    $('signUpBtn').addEventListener('click', signUp);
+    $('authCancel').addEventListener('click', () => { pendingOutcome = null; $('authDialog').close(); });
+    ['email', 'password'].forEach(id => $(id).addEventListener('input', () => $('authError').textContent = ''));
+
+    // React to sign in / sign out (also runs once when the page loads)
+    db.auth.onAuthStateChange((_event, session) => {
+      currentUser = session ? session.user : null;
+      renderAuth();
+    });
+
+    // ---------------------------------------------------------------
+    // 3. READ DATA from the bike_overview view
+    // ---------------------------------------------------------------
+    async function loadBikes() {
+      const { data, error } = await db.from('bike_overview').select('*').order('age_days', { ascending: false });
+      if (error) { $('status').textContent = 'Could not load data: ' + error.message; return; }
+      allBikes = data;
+      fillFilters();
+      render();
+      loadStats();
+      loadLeaderboard();
+    }
+
+    // ---------------------------------------------------------------
+    // LEADERBOARD: today's calls per agent (agent_leaderboard view)
+    // ---------------------------------------------------------------
+    async function loadLeaderboard() {
+      const { data, error } = await db.from('agent_leaderboard').select('*')
+        .order('calls_today', { ascending: false }).order('recovered_today', { ascending: false });
+      if (error) { $('leaderRows').innerHTML = `<tr><td colspan="6">Could not load: ${escapeHtml(error.message)}</td></tr>`; return; }
+      $('leaderRows').innerHTML = data.length
+        ? data.map((a, i) => `<tr>
+            <td><span class="rank ${i < 3 ? 'r' + (i + 1) : ''}">${i + 1}</span>${escapeHtml(a.agent)}</td>
+            <td class="num"><strong>${a.calls_today}</strong></td>
+            <td class="num" style="color:var(--ok)">${a.recovered_today}</td>
+            <td class="num">${a.will_renew_today}</td>
+            <td class="num">${a.not_reached_today}</td>
+            <td class="muted">${timeAgo(a.last_call_at)}</td></tr>`).join('')
+        : '<tr><td colspan="6" class="muted">No calls logged yet today.</td></tr>';
+    }
+
+    async function loadStats() {
+      const start = new Date(); start.setHours(0, 0, 0, 0);
+      const { count } = await db.from('call_logs').select('*', { count: 'exact', head: true })
+                                .gte('called_at', start.toISOString());
+      const active = allBikes.filter(b => b.status === 'in_recovery' && !b.police_case);
+      const avg = active.length ? (active.reduce((s, b) => s + b.age_days, 0) / active.length).toFixed(1) : '0';
+      $('statBikes').textContent = active.length;
+      $('statAge').textContent = avg;
+      $('statNever').textContent = active.filter(b => b.total_calls === 0).length;
+      $('statToday').textContent = count ?? 0;
+      $('statRecovered').textContent = allBikes.filter(isDone).length;
+    }
+
+    // City list, and hubs for the chosen city only
+    function fillFilters() {
+      const citySel = $('cityFilter'), hubSel = $('hubFilter');
+      const city = citySel.value, hub = hubSel.value;
+      const cities = [...new Set(allBikes.map(b => b.city))].sort();
+      citySel.innerHTML = '<option value="">All cities</option>' + cities.map(c => `<option>${escapeHtml(c)}</option>`).join('');
+      citySel.value = cities.includes(city) ? city : '';
+      const hubs = [...new Set(allBikes.filter(b => !citySel.value || b.city === citySel.value).map(b => b.hub).filter(Boolean))].sort();
+      hubSel.innerHTML = '<option value="">All hubs</option>' + hubs.map(h => `<option>${escapeHtml(h)}</option>`).join('');
+      hubSel.value = hubs.includes(hub) ? hub : '';
+    }
+
+    function visibleBikes() {
+      const q = $('search').value.trim().toLowerCase();
+      const city = $('cityFilter').value, hub = $('hubFilter').value, showRec = $('showRecovered').checked;
+      return allBikes.filter(b =>
+        b.status !== 'active' &&                       // bikes with riders are not part of recovery
+        !b.police_case &&                              // police / legal cases are handled separately
+        (showRec || b.status === 'in_recovery') &&
+        (!city || b.city === city) && (!hub || b.hub === hub) &&
+        (!q || b.reg_number.toLowerCase().includes(q) || (b.rider_name || '').toLowerCase().includes(q)));
+    }
+
+    // Recovered or already at the hub = no longer in MFR
+    const isDone = (b) => b.status === 'recovered' || b.status === 'at_hub';
+    function doneLabel(b) {
+      return b.status === 'at_hub' ? `At hub${b.moved_by ? ' · ' + escapeHtml(b.moved_by) : ''}` : 'Recovered';
+    }
+    // Buttons for a bike: MFR bikes get Log call + Recovered; recovered bikes get Move to hub
+    function actionButtons(b) {
+      if (b.status === 'in_recovery') return `<button class="logBtn" data-id="${b.id}">Log call</button>
+               <button class="green recBtn" data-id="${b.id}">Recovered</button>`;
+      if (b.status === 'recovered') return `<button class="hubBtn" data-id="${b.id}">Move to hub</button>`;
+      return '';
+    }
+
+    function lastText(b) {
+      return b.last_outcome
+        ? `${escapeHtml(b.last_outcome)} <span class="muted">· ${escapeHtml(b.last_agent)}, ${timeAgo(b.last_called_at)}</span>`
+        : '<span class="muted">Not called yet</span>';
+    }
+
+    function render() {
+      const rows = visibleBikes();
+      $('status').textContent = `${rows.length} bike${rows.length === 1 ? '' : 's'}`;
+      $('rows').innerHTML = rows.map(b => {
+        const done = isDone(b);
+        const [colour, label] = ageColour(b.age_days);
+        const ageCell = done ? `<span class="badge done">${doneLabel(b)}</span>`
+                             : `<span class="badge" style="background:${colour}">${label}</span>`;
+        return `<tr data-id="${b.id}" class="${done ? 'recovered' : ''}">
+          <td><strong>${escapeHtml(b.reg_number)}</strong></td>
+          <td>${escapeHtml(b.city)} <span class="muted">· ${escapeHtml(b.hub || '')}</span></td>
+          <td>${ageCell}</td>
+          <td>${escapeHtml(b.rider_name || '')}</td>
+          <td><a class="call" href="tel:${escapeHtml(b.rider_phone || '')}">${escapeHtml(b.rider_phone || '')}</a></td>
+          <td>${lastText(b)}</td>
+          <td>${b.total_calls}</td>
+          <td><div class="rowBtns">${actionButtons(b)}</div></td>
+        </tr>`;
+      }).join('');
+      drawPins(rows);
+    }
+
+    // ---------------------------------------------------------------
+    // 4. MAP VIEW (Leaflet + OpenStreetMap)
+    // ---------------------------------------------------------------
+    const map = L.map('map').setView([20.5937, 78.9629], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    const pinLayer = L.layerGroup().addTo(map);
+    window.addEventListener('resize', () => map.invalidateSize());
+    let firstFit = true, filterChanged = false;
+
+    function drawPins(rows) {
+      pinLayer.clearLayers();
+      const points = [];
+      rows.forEach(b => {
+        if (b.latitude == null || b.longitude == null) return;
+        const done = isDone(b);
+        const [colour, label] = ageColour(b.age_days);
+        L.circleMarker([b.latitude, b.longitude], done
+            ? { radius: 8, color: '#2E7D32', weight: 3, fillColor: '#ffffff', fillOpacity: 1 }
+            : { radius: 9, color: '#ffffff', weight: 2, fillColor: colour, fillOpacity: 0.95 })
+          .bindPopup(`<div class="pop">
+              <h3>${escapeHtml(b.reg_number)}</h3>
+              <p>${escapeHtml(b.city)} · ${escapeHtml(b.hub || '')} · <strong>${done ? doneLabel(b) : label}</strong></p>
+              <p>${escapeHtml(b.rider_name || '')} · <a class="call" href="tel:${escapeHtml(b.rider_phone || '')}">${escapeHtml(b.rider_phone || '')}</a></p>
+              <p style="color:#6b7280">${lastText(b)}</p>
+              <div class="btns">
+                <button class="secondary histBtn" data-id="${b.id}">History</button>
+                ${actionButtons(b)}
+              </div>
+            </div>`)
+          .addTo(pinLayer);
+        points.push([b.latitude, b.longitude]);
+      });
+      if (points.length && (firstFit || filterChanged)) {
+        setTimeout(() => { map.invalidateSize(); map.fitBounds(points, { padding: [40, 40], maxZoom: 13 }); }, 150);
+        firstFit = false;
+      }
+      filterChanged = false;
+    }
+
+    function showView(view) {
+      ['map', 'table', 'leader'].forEach(v => {
+        $(v + 'Wrap').classList.toggle('hidden', v !== view);
+        $(v + 'Tab').classList.toggle('active', v === view);
+      });
+      if (view === 'map') map.invalidateSize();
+      if (view === 'leader') loadLeaderboard();
+    }
+    $('mapTab').addEventListener('click', () => showView('map'));
+    $('tableTab').addEventListener('click', () => showView('table'));
+    $('leaderTab').addEventListener('click', () => showView('leader'));
+
+    // ---------------------------------------------------------------
+    // LIVE UPDATES (Supabase Realtime): reload when anyone changes data
+    // ---------------------------------------------------------------
+    let reloadTimer = null;
+    function reloadSoon() { clearTimeout(reloadTimer); reloadTimer = setTimeout(loadBikes, 400); }
+    db.channel('recovery-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'call_logs' }, reloadSoon)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bikes' }, reloadSoon)
+      .subscribe((state) => {
+        const on = state === 'SUBSCRIBED';
+        $('liveDot').classList.toggle('on', on);
+        $('liveDot').querySelector('span').textContent = on ? 'Live · Supabase' : 'Offline';
+      });
+    $('menuBtn').addEventListener('click', () => { $('side').classList.toggle('open'); setTimeout(() => map.invalidateSize(), 50); });
+
+    // ---------------------------------------------------------------
+    // CSV UPLOAD: add new bikes (signed-in agents only)
+    // ---------------------------------------------------------------
+    const CSV_COLS = ['reg_number', 'city', 'hub', 'model', 'rider_name', 'rider_phone', 'mfr_since', 'latitude', 'longitude'];
+    const TEMPLATE = CSV_COLS.join(',') + '\n' +
+      'TEST0101,Bangalore,Koramangala,e1+x,Test Rider,+919000000101,2026-10-20,12.9352,77.6245\n' +
+      'TEST0102,NCR,Okhla,e1+xPRO,Test Rider Two,+919000000102,,28.5355,77.2710\n';
+    $('templateLink').href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(TEMPLATE);
+    let csvRows = [];
+
+    // Small CSV reader: handles commas and "quoted, values"
+    function parseCsv(text) {
+      const rows = []; let row = [], cell = '', q = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (q) {
+          if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+          else if (ch === '"') q = false;
+          else cell += ch;
+        } else if (ch === '"') q = true;
+        else if (ch === ',') { row.push(cell); cell = ''; }
+        else if (ch === '\n' || ch === '\r') {
+          if (ch === '\r' && text[i + 1] === '\n') i++;
+          row.push(cell); cell = '';
+          if (row.some(c => c.trim() !== '')) rows.push(row);
+          row = [];
+        } else cell += ch;
+      }
+      row.push(cell); if (row.some(c => c.trim() !== '')) rows.push(row);
+      return rows;
+    }
+
+    $('uploadBtn').addEventListener('click', () => {
+      $('csvFile').value = ''; $('csvPreview').innerHTML = ''; $('uploadError').textContent = ''; csvRows = [];
+      $('uploadDialog').showModal();
+    });
+    $('uploadCancel').addEventListener('click', () => $('uploadDialog').close());
+
+    $('csvFile').addEventListener('change', async () => {
+      $('uploadError').textContent = ''; csvRows = [];
+      const file = $('csvFile').files[0]; if (!file) return;
+      const rows = parseCsv(await file.text());
+      if (rows.length < 2) { $('uploadError').textContent = 'The file has no data rows.'; return; }
+      const head = rows[0].map(h => h.trim().toLowerCase());
+      if (!head.includes('reg_number') || !head.includes('city')) {
+        $('uploadError').textContent = 'The first row must have the column names reg_number and city.'; return;
+      }
+      const problems = [];
+      rows.slice(1).forEach((r, n) => {
+        const o = {}; head.forEach((h, i) => { if (CSV_COLS.includes(h)) o[h] = (r[i] || '').trim(); });
+        o.reg_number = (o.reg_number || '').toUpperCase().replace(/\s+/g, '');
+        const line = n + 2;
+        if (o.reg_number.length < 4 || o.reg_number.length > 20) { problems.push(`Row ${line}: reg_number missing or wrong length`); return; }
+        if (!o.city) { problems.push(`Row ${line}: city missing`); return; }
+        for (const k of ['latitude', 'longitude']) {
+          if (o[k] === '' || o[k] === undefined) { o[k] = null; continue; }
+          if (isNaN(Number(o[k]))) { problems.push(`Row ${line}: ${k} is not a number`); return; }
+          o[k] = Number(o[k]);
+        }
+        if (o.mfr_since) {
+          if (isNaN(Date.parse(o.mfr_since))) { problems.push(`Row ${line}: mfr_since is not a date`); return; }
+        } else o.mfr_since = new Date().toISOString();   // empty = now (every row must send the same columns)
+        for (const k of ['hub', 'model', 'rider_name', 'rider_phone']) if (o[k] === '') o[k] = null;
+        csvRows.push(o);
+      });
+      $('csvPreview').innerHTML = `<strong>${csvRows.length}</strong> bike${csvRows.length === 1 ? '' : 's'} ready to upload` +
+        (problems.length ? `, ${problems.length} row${problems.length === 1 ? '' : 's'} will be skipped:<ul>${problems.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>` : '.');
+    });
+
+    $('uploadGo').addEventListener('click', async () => {
+      if (!csvRows.length) { $('uploadError').textContent = 'Choose a CSV file with at least one valid row first.'; return; }
+      const { data, error } = await db.from('bikes')
+        .upsert(csvRows, { onConflict: 'reg_number', ignoreDuplicates: true })
+        .select('reg_number');
+      if (error) { $('uploadError').textContent = 'Could not upload: ' + error.message; return; }
+      const added = data ? data.length : 0;
+      $('csvPreview').innerHTML = `Added <strong>${added}</strong> new bike${added === 1 ? '' : 's'}` +
+        (csvRows.length - added ? `, skipped ${csvRows.length - added} already in the list.` : '.');
+      csvRows = []; $('csvFile').value = '';
+      loadBikes();
+    });
+
+    // ---------------------------------------------------------------
+    // 5. CALL HISTORY: read every call for one bike
+    // ---------------------------------------------------------------
+    async function openHistory(bikeId) {
+      selectedBike = allBikes.find(b => b.id === bikeId);
+      $('histReg').textContent = selectedBike.reg_number;
+      $('histInfo').textContent = `${selectedBike.rider_name || ''} · ${selectedBike.rider_phone || ''} · ` +
+        (isDone(selectedBike) ? doneLabel(selectedBike) : `${selectedBike.age_days} days in recovery`);
+      $('histLog').classList.toggle('hidden', selectedBike.status !== 'in_recovery');
+      $('histList').innerHTML = '<li class="muted">Loading…</li>';
+      $('historyDialog').showModal();
+
+      const { data, error } = await db.from('call_logs')
+        .select('outcome, notes, agent, called_at')
+        .eq('bike_id', bikeId)
+        .order('called_at', { ascending: false });
+      if (error) { $('histList').innerHTML = `<li>Could not load: ${escapeHtml(error.message)}</li>`; return; }
+      $('histList').innerHTML = data.length
+        ? data.map(c => `<li><strong>${escapeHtml(c.outcome)}</strong>${c.notes ? ' · ' + escapeHtml(c.notes) : ''}
+             <div class="when">${escapeHtml(c.agent)} · ${new Date(c.called_at).toLocaleString('en-IN')}</div></li>`).join('')
+        : '<li class="muted">No calls logged yet.</li>';
+    }
+    $('histClose').addEventListener('click', () => $('historyDialog').close());
+    $('histLog').addEventListener('click', () => { $('historyDialog').close(); openLog(selectedBike.id); });
+
+    // ---------------------------------------------------------------
+    // 6. LOG A CALL / MARK RECOVERED (insert into call_logs)
+    // A database trigger marks the bike as recovered when outcome = 'Recovered'.
+    // ---------------------------------------------------------------
+    function openLog(bikeId, outcome) {
+      selectedBike = allBikes.find(b => b.id === bikeId);
+      if (!currentUser) {
+        pendingOutcome = outcome || '';
+        openAuth('Sign in to log a call for ' + selectedBike.reg_number + '.');
+        return;
+      }
+      $('dlgReg').textContent = selectedBike.reg_number;
+      $('dlgAgent').textContent = currentUser.email;
+      $('outcome').value = outcome || 'Will Renew';
+      $('movedByBox').classList.toggle('hidden', $('outcome').value !== 'Moved to Hub');
+      $('notes').value = '';
+      $('formError').textContent = '';
+      $('logDialog').showModal();
+    }
+
+    $('logForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const outcome = $('outcome').value;
+      const recoveredOnly = ['Moved to Hub'], mfrOnly = ['Will Renew', 'Not Renewing', 'No Answer', 'Switched Off', 'Renewed', 'Recovered'];
+      if (selectedBike.status === 'recovered' && !recoveredOnly.includes(outcome)) {
+        $('formError').textContent = 'This bike is already recovered. Choose "Moved to Hub".'; return;
+      }
+      if (selectedBike.status === 'in_recovery' && !mfrOnly.includes(outcome)) {
+        $('formError').textContent = 'Mark the bike as Recovered before moving it to the hub.'; return;
+      }
+      const { error } = await db.from('call_logs').insert({
+        bike_id: selectedBike.id,
+        outcome,
+        agent: currentUser.email,
+        user_id: currentUser.id,
+        moved_by: outcome === 'Moved to Hub' ? $('movedBy').value : null,
+        notes: $('notes').value.trim() || null
+      });
+      if (error) { $('formError').textContent = 'Could not save: ' + error.message; return; }
+      $('logDialog').close();
+      loadBikes();
+    });
+    $('cancelBtn').addEventListener('click', () => $('logDialog').close());
+    $('outcome').addEventListener('change', () => {
+      $('movedByBox').classList.toggle('hidden', $('outcome').value !== 'Moved to Hub');
+      $('formError').textContent = '';
+    });
+
+    // One click handler for all buttons and table rows
+    document.addEventListener('click', (e) => {
+      const log = e.target.closest('.logBtn'), rec = e.target.closest('.recBtn'), hist = e.target.closest('.histBtn');
+      if (log)  { map.closePopup(); openLog(Number(log.dataset.id)); return; }
+      if (rec)  { map.closePopup(); openLog(Number(rec.dataset.id), 'Recovered'); return; }
+      const hubB = e.target.closest('.hubBtn');
+      if (hubB) { map.closePopup(); openLog(Number(hubB.dataset.id), 'Moved to Hub'); return; }
+      if (hist) { map.closePopup(); openHistory(Number(hist.dataset.id)); return; }
+      const row = e.target.closest('#rows tr');
+      if (row && !e.target.closest('a')) openHistory(Number(row.dataset.id));
+    });
+
+    // Filters
+    $('search').addEventListener('input', () => { filterChanged = true; render(); });
+    $('cityFilter').addEventListener('change', () => { $('hubFilter').value = ''; fillFilters(); filterChanged = true; render(); });
+    $('hubFilter').addEventListener('change', () => { filterChanged = true; render(); });
+    $('showRecovered').addEventListener('change', () => { filterChanged = true; render(); });
+
+    // Helpers
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function timeAgo(iso) {
+      const mins = Math.round((Date.now() - new Date(iso)) / 60000);
+      if (mins < 60) return `${mins} min ago`;
+      const hrs = Math.round(mins / 60);
+      if (hrs < 24) return `${hrs} h ago`;
+      return `${Math.round(hrs / 24)} d ago`;
+    }
+
+    renderAuth();
+    loadBikes();
+  </script>
+</body>
+</html>
