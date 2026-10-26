@@ -1,10 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light" data-palette="coral">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Recovery Dashboard</title>
-  <script>try { document.documentElement.dataset.theme = localStorage.getItem('rt-theme') || 'dark'; } catch (e) { document.documentElement.dataset.theme = 'dark'; }</script>
   <style>
     :root {
       /* Bounce brand */
@@ -64,6 +63,22 @@
     .themes button.on { background: var(--brand); color: #fff; }
     .tabs-top { align-items: flex-end; flex-wrap: wrap; }
     @media (max-width: 600px) { .themes { margin: 6px 0 8px; } }
+
+    /* ===== Colours: Bounce red, soft coral shades ===== */
+    :root { --a1: #86b6ef; --a2: #3987e5; --a3: #1c5cab; --a4: #0d366b; }
+    html[data-palette="coral"] {
+      --page: #fff8f7; --card: #ffffff; --border: #f7e6e3; --input: #ffffff; --soft: #fff1ef; --hover: #fde4e2; --ring: #f68179;
+      --text: #2a1d1e; --text-2: #5b4a4b; --muted: #8a7778; --label: #4a3536; --tip: #ffffff; --tip-text: #2a1d1e;
+      --grid: rgba(120,40,40,.07); --axis: #f7e6e3;
+      --s1: #f68179; --s2: #fcceca; --s3: #f02719; --s4: #feedec; --s5: #f35449; --s6: #f9aaa4; --s7: #c9190d; --red: #f35449; --dark: #f02719;
+      --a1: #fddbd9; --a2: #f89c96; --a3: #f35449; --a4: #d81b0e;
+    }
+    html[data-palette="coral"] .cards .card { --k: #f68179 !important; }
+    html[data-palette="coral"] .card .value { color: var(--text) !important; }
+    html[data-palette="coral"] .card .delta { color: #b6170c !important; background: #fde4e2 !important; }
+    html[data-palette="coral"] .pill:not(.off) { background: #f68179; border-color: #f68179; color: #861109; }
+    html[data-palette="coral"] .page-title { color: var(--text); }
+    html[data-palette="coral"] .cards .card, html[data-palette="coral"] .panel, html[data-palette="coral"] .bar { box-shadow: 0 1px 2px rgba(120,30,30,.04), 0 6px 16px rgba(120,30,30,.05); }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--page); color: var(--text); }
 
@@ -210,9 +225,6 @@
     <nav class="tabs-top">
       <a href="dashboard.html" class="active">Recovery Dashboard</a>
       <a href="./">Recovery Tracker</a>
-      <div class="themes" id="themes" role="group" aria-label="Theme">
-        <button type="button" data-t="dark">Dark</button><button type="button" data-t="light">Light</button><button type="button" data-t="gradient">Gradient</button>
-      </div>
     </nav>
     <h1 class="page-title">Recovery Dashboard</h1>
     <p class="page-sub">Bikes marked for recovery — live from Supabase (sample data)</p>
@@ -382,6 +394,7 @@
       ['s1','s2','s3','s4','s5','s6','s7','grid','axis','muted','card','label','tip','tip-text','text','border','red','blue','green','orange','brand']
         .forEach(k => C[k.replace('-', '_')] = css('--' + k));
       OUTCOMES.forEach((o, i) => OUTCOME_COLOUR[o] = C['s' + (i + 1)]);
+      AGE_RAMP.splice(0, 4, css('--a1'), css('--a2'), css('--a3'), css('--a4'));
       Chart.defaults.color = C.muted;
       Object.assign(Chart.defaults.plugins.tooltip, { backgroundColor: C.tip, titleColor: C.tip_text, bodyColor: C.tip_text, borderColor: C.border });
     }
@@ -389,7 +402,7 @@
     const AGE_BANDS = [
       { label: '0-2 days', test: d => d < 2 }, { label: '2-5 days', test: d => d >= 2 && d < 5 },
       { label: '5-10 days', test: d => d >= 5 && d <= 10 }, { label: '10+ days', test: d => d > 10 }];
-    const AGE_RAMP = ['#86b6ef', '#3987e5', '#1c5cab', '#0d366b'];
+    const AGE_RAMP = [];
     function bucket(d) {
       if (d < 1) return '0-1 days'; if (d < 2) return '1-2 days'; if (d < 3) return '2-3 days';
       if (d < 4) return '3-4 days'; if (d < 5) return '4-5 days'; if (d <= 10) return '5-10 days'; return '10+ days';
@@ -898,16 +911,7 @@
         vrow.insertAdjacentHTML('beforeend', '<span class="delta flat"></span>');
     });
 
-    // ---- Theme switch (Dark / Light / Gradient), remembered on this browser ----
-    function setTheme(t) {
-      document.documentElement.dataset.theme = t;
-      try { localStorage.setItem('rt-theme', t); } catch (e) {}
-      document.querySelectorAll('#themes button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
-      readColours();
-      if (bikes.length) render();
-    }
-    $('themes').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setTheme(b.dataset.t); });
-    setTheme(document.documentElement.dataset.theme || 'dark');
+
     document.addEventListener('click', (e) => {
       const el = e.target.closest('.cards .card, button.count');
       if (el && el.dataset.key) openDetail(el.dataset.key);

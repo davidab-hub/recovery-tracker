@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,8 +10,10 @@
     :root {
       /* Bounce brand (same as the dashboard) */
       --brand: #e3262b; --brand-tint: #3a1517; --side: #16181d; --side-2: #1f2228; --side-text: #9aa0aa;
-      --bg: #f4f5f8; --card: #ffffff; --text: #111827; --muted: #6b7280;
-      --border: #e5e7eb; --accent: #e3262b; --accent-text: #ffffff; --ok: #16a34a; --bad: #c00000;
+      /* Dark theme (same as the dashboard) */
+      --bg: #fff8f7; --card: #ffffff; --text: #2a1d1e; --muted: #8a7778; --text-2: #5b4a4b;
+      --border: #f7e6e3; --accent: #f24236; --accent-text: #ffffff; --ok: #16a34a; --bad: #c00000;
+      --input: #ffffff; --soft: #fff1ef; --hover: #fde4e2; --blue: #f68179;
     }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
@@ -42,9 +44,9 @@
     .content { flex: 1; min-width: 0; }
     main { max-width: 1400px; margin: 0 auto; padding: 4px 24px 28px; }
     .tabs-top { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin: 0 0 14px; padding-top: 12px; }
-    .tabs-top a { padding: 8px 14px; font-size: 14.5px; font-weight: 600; color: #4b5563; text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+    .tabs-top a { padding: 8px 14px; font-size: 14.5px; font-weight: 600; color: var(--text-2); text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; }
     .tabs-top a.active { color: var(--brand); border-bottom-color: var(--brand); }
-    .page-title { margin: 0; font-size: 21px; font-weight: 800; }
+    .page-title { color: var(--text); margin: 0; font-size: 21px; font-weight: 800; }
     .page-sub { margin: 3px 0 14px; color: var(--muted); font-size: 13px; }
     .menu-btn { display: none; }
     @media (max-width: 900px) {
@@ -58,30 +60,34 @@
     }
 
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
-    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-top: 2px solid var(--k, var(--brand));
+            border-radius: 10px; padding: 10px 14px; box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
+    .stat { --k: #f68179; }
     .stat .label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-    .stat .value { font-size: 24px; font-weight: 800; margin-top: 2px; }
+    .stat .value { font-size: 24px; font-weight: 800; margin-top: 2px; color: var(--text) !important; }
 
     .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px;
-               background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; }
+               background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
     .toolbar input[type=search], .toolbar select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px;
-                                       font-size: 13px; background: #fff; min-width: 0; }
+                                       font-size: 13px; background: var(--input); color: var(--text); min-width: 0; }
     .toolbar input[type=search] { flex: 1 1 200px; }
     .toolbar label.check { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
 
-    .tabs { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fff; }
-    .tabs button { border: none; border-radius: 0; background: #fff; color: var(--accent); padding: 8px 14px; }
+    .tabs { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--input); }
+    .tabs button { border: none; border-radius: 0; background: var(--input); color: var(--accent); padding: 8px 14px; }
     .tabs button.active { background: var(--accent); color: #fff; }
 
     .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
     th, td { padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
-    th { background: #f0f2f5; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+    th { background: var(--soft); font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
     tbody tr { cursor: pointer; }
-    tbody tr:hover { background: #f8f9fb; }
+    tbody tr:hover { background: var(--hover); }
     tr:last-child td { border-bottom: none; }
     tr.recovered td { color: var(--muted); }
 
+    .table-wrap, #mapWrap { box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
+    .legend i[style*='#000000'] { border-color: #8590a8; }
     #mapWrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
     #map { height: 440px; width: 100%; }
     .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 10px 12px; font-size: 12px; color: var(--muted);
@@ -93,27 +99,28 @@
     .pop .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 
     .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #fff; }
-    .badge.done { background: #e8f5e9; color: var(--ok); }
+    .badge.done { background: rgba(52,211,153,.15); color: var(--ok); }
     .muted { color: var(--muted); }
     a.call { color: var(--accent); font-weight: 600; text-decoration: none; }
     button { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent);
              color: #fff; font-size: 12px; cursor: pointer; font-family: inherit; }
-    button.secondary { background: #fff; color: var(--accent); }
-    button.green { background: var(--ok); border-color: var(--ok); }
+    button.secondary { background: transparent; color: var(--accent); }
+    button.green { background: #16a34a; border-color: #16a34a; }
+    .badge[style*='#000000'], .badge[style*='#000'] { box-shadow: 0 0 0 1px #8590a8 inset; }
     .rowBtns { display: flex; gap: 6px; }
 
-    dialog { border: none; border-radius: 12px; padding: 20px; width: min(440px, 92vw); }
+    dialog { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 20px; width: min(440px, 92vw); }
     dialog::backdrop { background: rgba(0,0,0,.4); }
     dialog h2 { margin: 0 0 12px; font-size: 18px; }
     dialog label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
     dialog select, dialog input, dialog textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border);
-                                                  border-radius: 8px; font-size: 14px; font-family: inherit; }
+                                                  border-radius: 8px; font-size: 14px; font-family: inherit; background: var(--input); color: var(--text); }
     .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
     .error { color: var(--bad); font-size: 13px; margin-top: 8px; min-height: 1em; }
     .note { font-size: 13px; color: var(--muted); margin-top: 8px; }
     #status { font-size: 13px; color: var(--muted); margin: 8px 0; }
     .history { list-style: none; padding: 0; margin: 0; max-height: 50vh; overflow-y: auto; }
-    .history li { border-left: 3px solid var(--accent); padding: 6px 10px; margin-bottom: 8px; background: #f8f9fb; border-radius: 0 6px 6px 0; }
+    .history li { border-left: 3px solid var(--accent); padding: 6px 10px; margin-bottom: 8px; background: var(--soft); border-radius: 0 6px 6px 0; }
     .history .when { font-size: 12px; color: var(--muted); }
     .hidden { display: none !important; }
     @media (max-width: 600px) { #map { height: 420px; } }
@@ -122,8 +129,8 @@
     .live.on i { background: #4ade80; }
     #leaderWrap td.num, #leaderWrap th.num { text-align: right; }
     .rank { display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 50%;
-            background: #eef2f7; font-weight: 700; font-size: 12px; margin-right: 8px; }
-    .rank.r1 { background: #fde68a; } .rank.r2 { background: #e5e7eb; } .rank.r3 { background: #fed7aa; }
+            background: var(--soft); font-weight: 700; font-size: 12px; margin-right: 8px; }
+    .rank.r1 { background: #fde68a; color: #111; } .rank.r2 { background: #e5e7eb; color: #111; } .rank.r3 { background: #fed7aa; color: #111; }
     .preview { font-size: 13px; margin-top: 10px; }
     .preview ul { margin: 6px 0 0; padding-left: 18px; color: var(--bad); max-height: 120px; overflow-y: auto; }
     a.link { color: var(--accent); font-size: 13px; }
@@ -168,7 +175,7 @@
       <div class="stat"><div class="label">Avg days in MFR</div><div class="value" id="statAge">–</div></div>
       <div class="stat"><div class="label">Never called</div><div class="value" id="statNever">–</div></div>
       <div class="stat"><div class="label">Calls today</div><div class="value" id="statToday">–</div></div>
-      <div class="stat"><div class="label">Recovered</div><div class="value" id="statRecovered" style="color:var(--ok)">–</div></div>
+      <div class="stat"><div class="label">Recovered</div><div class="value" id="statRecovered">–</div></div>
     </section>
 
     <section class="toolbar">
