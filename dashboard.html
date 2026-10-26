@@ -189,7 +189,7 @@
     <div class="dhead">
       <h2 id="dTitle"></h2>
       <span class="big" id="dCount"></span>
-      <button class="btn btn-light" id="dCsv" type="button">⬇ Download CSV</button>
+      <button class="btn btn-light" id="dCsv" type="button">⬇ Download Excel</button>
       <button class="btn btn-light" id="dChart" type="button">Go to chart</button>
       <button class="btn btn-sync" id="dClose" type="button">Close</button>
     </div>
@@ -203,6 +203,8 @@
   </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- SheetJS: builds the Excel download in the browser -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script>
     const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
@@ -332,7 +334,7 @@
       $('dRows').innerHTML = rows.slice(0, 500).map(r => '<tr>' + r.map((v, i) =>
         `<td class="${current.numeric.includes(i) ? 'num' : ''}">${i === (current.header[0] === 'Time' ? 1 : 0) ? '<strong>' + esc(v) + '</strong>' : esc(v)}</td>`).join('') + '</tr>').join('')
         || `<tr><td colspan="${current.header.length}" style="color:var(--muted)">Nothing to show.</td></tr>`;
-      if (rows.length > 500) $('dShown').textContent = `Showing 500 of ${rows.length} · download the CSV for all`;
+      if (rows.length > 500) $('dShown').textContent = `Showing 500 of ${rows.length} · download Excel for all`;
     }
     function openDetail(key) {
       const d = DETAILS[key]; if (!d) return;
@@ -347,19 +349,36 @@
       $('dChart').dataset.target = d.target || '';
       $('detail').showModal();
     }
-    // Download the list (all rows, or only the ones matching the search) as a CSV that opens in Excel
+    // Download the list (all rows, or only the ones matching the search) as an Excel file (.xlsx)
     function downloadCsv() {
       if (!current) return;
       const q = $('dSearch').value.trim().toLowerCase();
       const rows = q ? current.rows.filter(r => r.join(' ').toLowerCase().includes(q)) : current.rows;
-      const cell = (v) => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-      const filters = [$('cityFilter').value, $('hubFilter').value, $('modelFilter').value].filter(Boolean).join(' ');
-      const csv = '﻿' + [current.header, ...rows].map(r => r.map(cell).join(',')).join('\r\n');
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-      a.download = `${current.title}${filters ? ' ' + filters : ''} ${today}.csv`.replace(/[^\w\-. ]+/g, '').replace(/\s+/g, '_');
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      const filters = [$('cityFilter').value, $('hubFilter').value, $('modelFilter').value].filter(Boolean).join(' · ');
+
+      // Keep numbers as real numbers so Excel can sum and sort them
+      const data = [current.header, ...rows.map(r => r.map((v, i) =>
+        current.numeric.includes(i) && v !== '' && !isNaN(Number(v)) ? Number(v) : v))];
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      ws['!cols'] = current.header.map((h, i) => ({
+        wch: Math.min(40, Math.max(h.length, ...data.slice(1).map(r => String(r[i] ?? '').length)) + 2) }));
+      ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: data.length - 1, c: current.header.length - 1 } }) };
+
+      // A second sheet records what the file contains
+      const info = XLSX.utils.aoa_to_sheet([
+        ['Report', current.title],
+        ['Rows', rows.length],
+        ['Filters', filters || 'All cities, hubs and models'],
+        ['Search', q || '—'],
+        ['Downloaded', new Date().toLocaleString('en-IN')],
+        ['Source', 'Recovery Dashboard (sample data)']]);
+      info['!cols'] = [{ wch: 12 }, { wch: 50 }];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, current.title.replace(/[\\/?*[\]:]/g, '').slice(0, 31) || 'Data');
+      XLSX.utils.book_append_sheet(wb, info, 'About');
+      const name = `${current.title}${filters ? ' ' + filters : ''} ${today}`.replace(/[^\w\-. ]+/g, '').replace(/\s+/g, '_');
+      XLSX.writeFile(wb, name + '.xlsx');
     }
     function goToChart(targetId) {
       const panel = $(targetId) && $(targetId).closest('.panel');
