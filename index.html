@@ -193,11 +193,15 @@
       <label for="outcome">Outcome</label>
       <select id="outcome">
         <option>Will Renew</option><option>Not Renewing</option><option>No Answer</option>
-        <option>Switched Off</option><option>Recovered</option>
+        <option>Switched Off</option><option>Renewed</option><option>Recovered</option><option>Moved to Hub</option>
       </select>
+      <div id="movedByBox" class="hidden">
+        <label for="movedBy">Moved by</label>
+        <select id="movedBy"><option>Own Truck</option><option>Porter</option></select>
+      </div>
       <label for="notes">Notes (optional)</label>
       <textarea id="notes" rows="3" maxlength="500" placeholder="Will renew by evening"></textarea>
-      <div class="note">Saved as <strong id="dlgAgent"></strong>. Choosing "Recovered" removes the bike from the active list.</div>
+      <div class="note">Saved as <strong id="dlgAgent"></strong>. "Renewed" and "Recovered" remove the bike from the MFR list; "Moved to Hub" closes a recovered bike.</div>
       <div class="error" id="formError"></div>
       <div class="actions">
         <button type="button" class="secondary" id="cancelBtn">Cancel</button>
@@ -359,13 +363,13 @@
       const start = new Date(); start.setHours(0, 0, 0, 0);
       const { count } = await db.from('call_logs').select('*', { count: 'exact', head: true })
                                 .gte('called_at', start.toISOString());
-      const active = allBikes.filter(b => b.status !== 'recovered');
+      const active = allBikes.filter(b => b.status === 'in_recovery' && !b.police_case);
       const avg = active.length ? (active.reduce((s, b) => s + b.age_days, 0) / active.length).toFixed(1) : '0';
       $('statBikes').textContent = active.length;
       $('statAge').textContent = avg;
       $('statNever').textContent = active.filter(b => b.total_calls === 0).length;
       $('statToday').textContent = count ?? 0;
-      $('statRecovered').textContent = allBikes.length - active.length;
+      $('statRecovered').textContent = allBikes.filter(isDone).length;
     }
 
     // City list, and hubs for the chosen city only
@@ -384,9 +388,24 @@
       const q = $('search').value.trim().toLowerCase();
       const city = $('cityFilter').value, hub = $('hubFilter').value, showRec = $('showRecovered').checked;
       return allBikes.filter(b =>
-        (showRec || b.status !== 'recovered') &&
+        b.status !== 'active' &&                       // bikes with riders are not part of recovery
+        !b.police_case &&                              // police / legal cases are handled separately
+        (showRec || b.status === 'in_recovery') &&
         (!city || b.city === city) && (!hub || b.hub === hub) &&
         (!q || b.reg_number.toLowerCase().includes(q) || (b.rider_name || '').toLowerCase().includes(q)));
+    }
+
+    // Recovered or already at the hub = no longer in MFR
+    const isDone = (b) => b.status === 'recovered' || b.status === 'at_hub';
+    function doneLabel(b) {
+      return b.status === 'at_hub' ? `At hub${b.moved_by ? ' · ' + escapeHtml(b.moved_by) : ''}` : 'Recovered';
+    }
+    // Buttons for a bike: MFR bikes get Log call + Recovered; recovered bikes get Move to hub
+    function actionButtons(b) {
+      if (b.status === 'in_recovery') return `<button class="logBtn" data-id="${b.id}">Log call</button>
+               <button class="green recBtn" data-id="${b.id}">Recovered</button>`;
+      if (b.status === 'recovered') return `<button class="hubBtn" data-id="${b.id}">Move to hub</button>`;
+      return '';
     }
 
     function lastText(b) {
@@ -399,9 +418,9 @@
       const rows = visibleBikes();
       $('status').textContent = `${rows.length} bike${rows.length === 1 ? '' : 's'}`;
       $('rows').innerHTML = rows.map(b => {
-        const done = b.status === 'recovered';
+        const done = isDone(b);
         const [colour, label] = ageColour(b.age_days);
-        const ageCell = done ? '<span class="badge done">Recovered</span>'
+        const ageCell = done ? `<span class="badge done">${doneLabel(b)}</span>`
                              : `<span class="badge" style="background:${colour}">${label}</span>`;
         return `<tr data-id="${b.id}" class="${done ? 'recovered' : ''}">
           <td><strong>${escapeHtml(b.reg_number)}</strong></td>
@@ -411,8 +430,7 @@
           <td><a class="call" href="tel:${escapeHtml(b.rider_phone || '')}">${escapeHtml(b.rider_phone || '')}</a></td>
           <td>${lastText(b)}</td>
           <td>${b.total_calls}</td>
-          <td><div class="rowBtns">${done ? '' : `<button class="logBtn" data-id="${b.id}">Log call</button>
-               <button class="green recBtn" data-id="${b.id}">Recovered</button>`}</div></td>
+          <td><div class="rowBtns">${actionButtons(b)}</div></td>
         </tr>`;
       }).join('');
       drawPins(rows);
@@ -434,20 +452,19 @@
       const points = [];
       rows.forEach(b => {
         if (b.latitude == null || b.longitude == null) return;
-        const done = b.status === 'recovered';
+        const done = isDone(b);
         const [colour, label] = ageColour(b.age_days);
         L.circleMarker([b.latitude, b.longitude], done
             ? { radius: 8, color: '#2E7D32', weight: 3, fillColor: '#ffffff', fillOpacity: 1 }
             : { radius: 9, color: '#ffffff', weight: 2, fillColor: colour, fillOpacity: 0.95 })
           .bindPopup(`<div class="pop">
               <h3>${escapeHtml(b.reg_number)}</h3>
-              <p>${escapeHtml(b.city)} · ${escapeHtml(b.hub || '')} · <strong>${done ? 'Recovered' : label}</strong></p>
+              <p>${escapeHtml(b.city)} · ${escapeHtml(b.hub || '')} · <strong>${done ? doneLabel(b) : label}</strong></p>
               <p>${escapeHtml(b.rider_name || '')} · <a class="call" href="tel:${escapeHtml(b.rider_phone || '')}">${escapeHtml(b.rider_phone || '')}</a></p>
               <p style="color:#6b7280">${lastText(b)}</p>
               <div class="btns">
                 <button class="secondary histBtn" data-id="${b.id}">History</button>
-                ${done ? '' : `<button class="logBtn" data-id="${b.id}">Log call</button>
-                <button class="green recBtn" data-id="${b.id}">Recovered</button>`}
+                ${actionButtons(b)}
               </div>
             </div>`)
           .addTo(pinLayer);
@@ -575,8 +592,8 @@
       selectedBike = allBikes.find(b => b.id === bikeId);
       $('histReg').textContent = selectedBike.reg_number;
       $('histInfo').textContent = `${selectedBike.rider_name || ''} · ${selectedBike.rider_phone || ''} · ` +
-        (selectedBike.status === 'recovered' ? 'Recovered' : `${selectedBike.age_days} days in recovery`);
-      $('histLog').classList.toggle('hidden', selectedBike.status === 'recovered');
+        (isDone(selectedBike) ? doneLabel(selectedBike) : `${selectedBike.age_days} days in recovery`);
+      $('histLog').classList.toggle('hidden', selectedBike.status !== 'in_recovery');
       $('histList').innerHTML = '<li class="muted">Loading…</li>';
       $('historyDialog').showModal();
 
@@ -607,6 +624,7 @@
       $('dlgReg').textContent = selectedBike.reg_number;
       $('dlgAgent').textContent = currentUser.email;
       $('outcome').value = outcome || 'Will Renew';
+      $('movedByBox').classList.toggle('hidden', $('outcome').value !== 'Moved to Hub');
       $('notes').value = '';
       $('formError').textContent = '';
       $('logDialog').showModal();
@@ -614,11 +632,20 @@
 
     $('logForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const outcome = $('outcome').value;
+      const recoveredOnly = ['Moved to Hub'], mfrOnly = ['Will Renew', 'Not Renewing', 'No Answer', 'Switched Off', 'Renewed', 'Recovered'];
+      if (selectedBike.status === 'recovered' && !recoveredOnly.includes(outcome)) {
+        $('formError').textContent = 'This bike is already recovered. Choose "Moved to Hub".'; return;
+      }
+      if (selectedBike.status === 'in_recovery' && !mfrOnly.includes(outcome)) {
+        $('formError').textContent = 'Mark the bike as Recovered before moving it to the hub.'; return;
+      }
       const { error } = await db.from('call_logs').insert({
         bike_id: selectedBike.id,
-        outcome: $('outcome').value,
+        outcome,
         agent: currentUser.email,
         user_id: currentUser.id,
+        moved_by: outcome === 'Moved to Hub' ? $('movedBy').value : null,
         notes: $('notes').value.trim() || null
       });
       if (error) { $('formError').textContent = 'Could not save: ' + error.message; return; }
@@ -626,12 +653,18 @@
       loadBikes();
     });
     $('cancelBtn').addEventListener('click', () => $('logDialog').close());
+    $('outcome').addEventListener('change', () => {
+      $('movedByBox').classList.toggle('hidden', $('outcome').value !== 'Moved to Hub');
+      $('formError').textContent = '';
+    });
 
     // One click handler for all buttons and table rows
     document.addEventListener('click', (e) => {
       const log = e.target.closest('.logBtn'), rec = e.target.closest('.recBtn'), hist = e.target.closest('.histBtn');
       if (log)  { map.closePopup(); openLog(Number(log.dataset.id)); return; }
       if (rec)  { map.closePopup(); openLog(Number(rec.dataset.id), 'Recovered'); return; }
+      const hubB = e.target.closest('.hubBtn');
+      if (hubB) { map.closePopup(); openLog(Number(hubB.dataset.id), 'Moved to Hub'); return; }
       if (hist) { map.closePopup(); openHistory(Number(hist.dataset.id)); return; }
       const row = e.target.closest('#rows tr');
       if (row && !e.target.closest('a')) openHistory(Number(row.dataset.id));
