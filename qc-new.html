@@ -298,6 +298,11 @@
     .donegrid { text-align: left; margin: 12px 0; } .donegrid div { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
     .btn.wide { display: block; width: 100%; padding: 13px; font-size: 15px; margin-top: 8px; text-decoration: none; text-align: center; }
     .err { color: #dc2626; font-size: 13px; min-height: 1em; margin: 6px 0 0; }
+    .qbadge { display: inline-block; border: none; border-radius: 999px; padding: 5px 12px; font: 700 12.5px inherit; font-family: inherit; margin: 0 0 10px; cursor: pointer; }
+    .qbadge.wait { background: #fff4e0; color: #a15c00; } .qbadge.ok { background: #e8f5ec; color: #15803d; } .qbadge.bad { background: #fde8e8; color: #b91c1c; }
+    .qlist { background: #fff; border: 1px solid #f3c4c4; border-radius: 10px; padding: 6px 10px; margin-bottom: 10px; font-size: 13px; }
+    .qitem { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .qitem:last-child { border-bottom: 0; } .btn.sm { padding: 4px 10px; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -334,6 +339,8 @@
     </nav>
     <h1 class="page-title">New QC</h1>
     <p class="page-sub" id="who">Vehicle inspection checklist</p>
+    <button type="button" class="qbadge hidden" id="qBadge"></button>
+    <div class="qlist hidden" id="qList"></div>
 
     <section class="panel login" id="loginBox">
       <h3>Sign in to do a QC</h3>
@@ -481,15 +488,15 @@
         + (mis && mis.length ? ` · ${esc(mis.map(m => m.mistake.split(' / ')[0]).slice(0, 3).join(', '))}` : '');
     }
 
-    // Photo: shrink on the phone before sending (max 1280 px, JPEG)
+    // Photo: shrink on the phone before sending (max 1024 px, JPEG ~100 KB)
     $('photo').addEventListener('change', () => {
       const f = $('photo').files[0]; if (!f) return;
       const img = new Image(), url = URL.createObjectURL(f);
       img.onload = () => {
-        const s = Math.min(1, 1280 / Math.max(img.width, img.height));
+        const s = Math.min(1, 1024 / Math.max(img.width, img.height));
         const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
         c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        photoData = c.toDataURL('image/jpeg', 0.72); URL.revokeObjectURL(url);
+        photoData = c.toDataURL('image/jpeg', 0.62); URL.revokeObjectURL(url);
         $('photoPrev').src = photoData; $('photoPrev').classList.remove('hidden');
         $('photoText').innerHTML = '✓ Photo added<small>tap to retake</small>';
       };
@@ -567,26 +574,76 @@
       await submit();
     });
 
-    async function submit() {
-      if (!APP_SCRIPT_URL || APP_SCRIPT_URL.indexOf('script.google.com') < 0) { $('formErr').textContent = 'The QC app is not connected to the sheet yet. Contact the admin.'; return; }
-      const btn = $('nextBtn'); btn.disabled = true; btn.textContent = 'Saving…'; $('formErr').textContent = '';
+    // ---------- Saving in the background ----------
+    // Each QC is kept on this phone until Google confirms it's in the sheet, so nothing is lost
+    // if the signal drops or the page is closed. It retries by itself.
+    const QKEY = 'qc-queue', LKEY = 'qc-log';
+    const loadQ = () => { try { return JSON.parse(store.get(QKEY) || '[]'); } catch (e) { return []; } };
+    const saveQ = (q) => { try { localStorage.setItem(QKEY, JSON.stringify(q)); return true; } catch (e) { return false; } };
+    let sending = false, retryTimer = null;
+
+    function badge() {
+      const q = loadQ(), failed = q.filter(x => x.error), waiting = q.length - failed.length;
+      const b = $('qBadge');
+      b.classList.toggle('hidden', !q.length && !b.dataset.justSaved);
+      b.className = 'qbadge' + (failed.length ? ' bad' : waiting ? ' wait' : ' ok') + (!q.length && !b.dataset.justSaved ? ' hidden' : '');
+      b.textContent = failed.length ? `⚠ ${failed.length} QC not saved — tap to fix` : waiting ? `⏳ ${waiting} QC${waiting > 1 ? 's' : ''} uploading…` : '✓ All QCs saved';
+      $('qList').innerHTML = failed.map(x => `<div class="qitem"><b>${esc(x.qc.vehicle)}</b> · ${esc(x.qc.result.toLowerCase())} — ${esc(x.error)}
+        <span><button type="button" class="btn btn-light sm" data-retry="${x.id}">Try again</button>
+        <button type="button" class="btn btn-light sm" data-drop="${x.id}">Discard</button></span></div>`).join('');
+      if (!failed.length) $('qList').classList.add('hidden');
+    }
+    $('qBadge').addEventListener('click', () => $('qList').classList.toggle('hidden'));
+    $('qList').addEventListener('click', (e) => {
+      const r = e.target.closest('[data-retry]'), d = e.target.closest('[data-drop]');
+      const q = loadQ();
+      if (r) { const x = q.find(i => i.id === r.dataset.retry); if (x) delete x.error; saveQ(q); processQ(); }
+      if (d && confirm('Discard this QC? It will not be saved anywhere.')) { saveQ(q.filter(i => i.id !== d.dataset.drop)); }
+      badge();
+    });
+
+    async function processQ() {
+      if (sending) return; sending = true; clearTimeout(retryTimer);
       try {
-        const { data: { session: s } } = await db.auth.getSession();   // fresh login token
-        const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ token: s && s.access_token, qc: { hub: st.hub, vehicle: cleanVeh($('vehicle').value), technician: st.tech,
-            checks: st.checks, notes: st.notes, remarks: $('remarks').value.trim(), result, photo: photoData } }) });
-        const r = await res.json();
-        if (!r.ok) { const e = new Error(r.error || 'Could not save'); e.server = true; throw e; }
-        $('qcForm').classList.add('hidden'); $('doneBox').classList.remove('hidden');
-        $('doneText').innerHTML = `${esc(cleanVeh($('vehicle').value))} · <b>${result.charAt(0) + result.slice(1).toLowerCase()}</b> · ${esc(st.tech)}<br>` +
-          (r.live ? 'Saved to the NCR QC LIST and already on the QC Dashboard.' : 'Saved to the NCR QC LIST. It will show on the QC Dashboard within 10 minutes.');
-        $('doneGrid').innerHTML = `<div><span>Your QCs today</span><b>${r.today}</b></div><div><span>Rejected</span><b>${r.today_rejected}</b></div>`;
-        window.scrollTo({ top: 0 });
-      } catch (e) {
-        $('formErr').textContent = 'Not saved: ' + e.message + (e.server ? '' : ' — check your internet and press Submit again.');
-        $('formErr').scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      btn.disabled = false; btn.textContent = 'Submit QC';
+        for (;;) {
+          const q = loadQ(), item = q.find(x => !x.error);
+          if (!item) break;
+          const { data: { session: s } } = await db.auth.getSession();
+          if (!s) break;                                          // will send after sign-in
+          let r;
+          try {
+            const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({ token: s.access_token, qc: item.qc }) });
+            r = await res.json();
+          } catch (e) { retryTimer = setTimeout(processQ, 15000); break; }   // no signal: try again in 15 s
+          const now = loadQ();
+          if (r.ok) saveQ(now.filter(x => x.id !== item.id));
+          else if (r.retry) { retryTimer = setTimeout(processQ, 5000); break; }
+          else { const x = now.find(i => i.id === item.id); if (x) x.error = r.error || 'Could not save'; saveQ(now); }
+          badge();
+        }
+      } finally { sending = false; badge(); }
+    }
+    window.addEventListener('online', processQ);
+    window.addEventListener('beforeunload', (e) => { if (loadQ().some(x => !x.error)) { e.preventDefault(); e.returnValue = ''; } });
+
+    function submit() {
+      if (!APP_SCRIPT_URL || APP_SCRIPT_URL.indexOf('script.google.com') < 0) { $('formErr').textContent = 'The QC app is not connected to the sheet yet. Contact the admin.'; return; }
+      const qc = { client_id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), hub: st.hub, vehicle: cleanVeh($('vehicle').value),
+        technician: st.tech, checks: { ...st.checks }, notes: { ...st.notes }, remarks: $('remarks').value.trim(), result, photo: photoData };
+      const q = loadQ(); q.push({ id: qc.client_id, qc });
+      if (!saveQ(q)) { $('formErr').textContent = 'Phone storage is full — please wait for earlier QCs to finish uploading.'; return; }
+      // Count for the "saved" screen (this phone, today)
+      const today = new Date().toDateString(); let log = {};
+      try { log = JSON.parse(store.get(LKEY) || '{}'); } catch (e) {}
+      if (log.day !== today) log = { day: today, n: 0, rej: 0 };
+      log.n++; if (result === 'REJECTED') log.rej++; store.set(LKEY, JSON.stringify(log));
+      $('qcForm').classList.add('hidden'); $('doneBox').classList.remove('hidden');
+      $('doneText').innerHTML = `${esc(qc.vehicle)} · <b>${result.charAt(0) + result.slice(1).toLowerCase()}</b> · ${esc(st.tech)}<br>` +
+        'Uploading to the sheet in the background — you can start the next QC now.';
+      $('doneGrid').innerHTML = `<div><span>Your QCs today (this phone)</span><b>${log.n}</b></div><div><span>Rejected</span><b>${log.rej}</b></div>`;
+      $('qBadge').dataset.justSaved = '1'; badge(); window.scrollTo({ top: 0 });
+      processQ();
     }
     $('againBtn').addEventListener('click', () => {   // keep hub + technician, clear the rest
       $('vehicle').value = ''; $('lastQc').textContent = ''; photoData = ''; $('photo').value = '';
@@ -609,7 +666,7 @@
       const { data } = await db.from('qc_checks').select('hub').gte('qc_at', new Date(Date.now() - 60 * 864e5).toISOString()).limit(3000);
       const seen = [...new Set((data || []).map(r => r.hub).filter(Boolean))];
       HUBS_LIVE = [...new Set([...HUBS, ...seen])];
-      hubChips(HUBS_LIVE); loadTechs(); go(1);
+      hubChips(HUBS_LIVE); loadTechs(); go(1); badge(); processQ();
     }
     $('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault(); $('loginErr').textContent = '';
