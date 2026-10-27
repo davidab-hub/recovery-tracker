@@ -356,6 +356,12 @@
         <div class="counts" id="hubCounts"></div>
         <div class="chart"><canvas id="hubChart"></canvas></div>
       </div>
+      <div class="panel" style="grid-column:1/-1">
+        <h3>Transport cost, own truck vs Porter</h3>
+        <p class="note">Total ₹ spent per day on moving bikes to the hub · from the Amount column</p>
+        <div class="counts" id="costCounts"></div>
+        <div class="chart"><canvas id="costChart"></canvas></div>
+      </div>
       <div class="panel">
         <h3>Agent activity by outcome</h3>
         <p class="note">Top 15 agents in the period</p>
@@ -477,6 +483,15 @@
       draw('trendChart', { type: 'line', data: { labels, datasets: [{ label: 'Outflow', data: outD, borderColor: B1, backgroundColor: B1, borderWidth: 2, tension: .3, pointRadius: 2 }] }, options: { scales: axes(false) } });
       const hub = rows.filter(r => r.o === 'Moved to Hub');
       chips('hubCounts', MODES.map(m => ({ t: m === 'Van' ? 'Own truck' : m, n: hub.filter(r => r.m === m).length, color: MC[m] })));
+      const costOf = (m) => hub.filter(r => r.m === m), rsum = (a) => a.reduce((s, r) => s + r.amt, 0);
+      const vanC = rsum(costOf('Van')), porC = rsum(costOf('Porter')), vanN = costOf('Van').length, porN = costOf('Porter').length;
+      const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
+      $('costCounts').innerHTML = [[inr(vanC + porC), 'Total cost', ''], [inr(vanC), `Own truck · ${num(vanN)} bikes · ${vanN ? inr(vanC / vanN) : '–'}/bike`, MC.Van],
+        [inr(porC), `Porter · ${num(porN)} bikes · ${porN ? inr(porC / porN) : '–'}/bike`, MC.Porter]]
+        .map(([v, t, c]) => `<div class="count"><div class="n">${v}</div><div class="t">${c ? `<i style="background:${c}"></i>` : ''}${esc(t)}</div></div>`).join('');
+      draw('costChart', { type: 'bar', data: { labels, datasets: ['Van', 'Porter'].map(m => ({ label: m === 'Van' ? 'Own truck' : m, backgroundColor: MC[m],
+        data: days.map(d => Math.round(rsum(hub.filter(r => r.d === d && r.m === m)))) })) },
+        options: { scales: axes(true), plugins: { tooltip: { callbacks: { label: (x) => `${x.dataset.label}: ${inr(x.raw)}`, footer: (it) => 'Total: ' + inr(it.reduce((s, x) => s + x.raw, 0)) } } } } });
       draw('hubChart', { type: 'bar', data: { labels, datasets: MODES.map(m => ({ label: m === 'Van' ? 'Own truck' : m, backgroundColor: MC[m], data: days.map(d => hub.filter(r => r.d === d && r.m === m).length) })) }, options: { scales: axes(true) } });
 
       const byA = new Map(); rows.forEach(r => { const x = byA.get(r.a) || { a: r.a, today: 0, n: 0, rec: 0, ren: 0, hub: 0, pol: 0 };
