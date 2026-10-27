@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-palette="blue">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New QC</title>
+  <style>
+    :root {
+      /* Bounce brand */
+      --brand: #e3262b; --brand-dark: #b91c21; --brand-tint: #3a1517; --side: #16181d; --side-2: #1f2228; --side-text: #9aa0aa;
+      --page: #f4f5f8; --card: #ffffff; --text: #111827; --text-2: #4b5563; --muted: #6b7280;
+      --border: #e5e7eb; --grid: #e1e0d9; --axis: #c3c2b7;
+      --red: #e3262b; --blue: #2563eb; --green: #16a34a; --orange: #d97706; --dark: #1f2937;
+      --input: #ffffff; --soft: #f5f6f8; --hover: #eef4ff; --ring: #93c5fd; --label: #374151; --tip: #ffffff; --tip-text: #111827;
+      --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6;
+    }
+
+    /* ===== Themes: switch with the buttons at the top right ===== */
+    html[data-theme="dark"] {
+      --page: #0b1020; --card: #121a2f; --text: #e8ecf5; --text-2: #b4bdd0; --muted: #8590a8;
+      --border: #222c47; --grid: rgba(255,255,255,.07); --axis: #2f3a58; --dark: #2a3452;
+      --input: #0e1528; --soft: #18213a; --hover: #1d2848; --ring: #4f7ddb; --label: #dfe5f2; --tip: #1a2340; --tip-text: #e8ecf5;
+      --side: #080c18; --side-2: #121a2f; --brand-tint: #3a1219;
+      --s1: #4c95ef; --s2: #f07a45; --s3: #2cc28c; --s4: #f2b31b; --s5: #ef8fb3; --s6: #4fb84f; --s7: #8b7cf0;
+      --blue: #5b9df5; --green: #34d399; --orange: #f59e0b;
+    }
+    html[data-theme="dark"] .card, html[data-theme="dark"] .panel, html[data-theme="dark"] .bar {
+      background: linear-gradient(180deg, #141d34, #10172b); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+    html[data-theme="dark"] .cards .card { border-top: 2px solid var(--k); }
+    html[data-theme="dark"] .cards .card .value { text-shadow: 0 0 18px color-mix(in srgb, var(--k) 55%, transparent); }
+    html[data-theme="dark"] .card .ico { box-shadow: 0 0 14px color-mix(in srgb, var(--k) 45%, transparent); }
+    html[data-theme="dark"] .page-title { color: #fff; }
+
+    html[data-theme="gradient"] .cards .card { background: linear-gradient(135deg, var(--k), color-mix(in srgb, var(--k) 62%, #1a0a2e));
+      border: none; color: #fff; box-shadow: 0 6px 18px color-mix(in srgb, var(--k) 35%, transparent); }
+    html[data-theme="gradient"] .cards .card .label, html[data-theme="gradient"] .cards .card .sub,
+    html[data-theme="gradient"] .cards .card .value, html[data-theme="gradient"] .cards .card .more { color: #fff !important; }
+    html[data-theme="gradient"] .cards .card .label, html[data-theme="gradient"] .cards .card .sub { opacity: .88; }
+    html[data-theme="gradient"] .card .ico { background: rgba(255,255,255,.22) !important; color: #fff !important; }
+    html[data-theme="gradient"] .card .delta { background: rgba(255,255,255,.22) !important; color: #fff !important; }
+    html[data-theme="gradient"] .card .meter { background: rgba(255,255,255,.25); }
+    html[data-theme="gradient"] .panel { box-shadow: 0 4px 14px rgba(17,24,39,.06); border-color: transparent; }
+
+    html[data-theme="light"] .cards .card, html[data-theme="light"] .panel { box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
+
+    /* Card extras: icon badge, change vs yesterday, sparkline, meter */
+    .card .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .card .ico { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      color: var(--k); background: color-mix(in srgb, var(--k) 14%, transparent); }
+    .card .ico svg { width: 16px; height: 16px; }
+    .card .vrow { display: flex; align-items: baseline; gap: 8px; }
+    .card .value { color: var(--k) !important; }
+    html[data-theme="light"] .card .value, html:not([data-theme]) .card .value { color: var(--text) !important; }
+    .card .delta { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px; white-space: nowrap; }
+    .delta.good { color: #15803d; background: rgba(22,163,74,.12); } .delta.bad { color: #c81e1e; background: rgba(227,38,43,.12); }
+    .delta.flat { color: var(--muted); background: var(--soft); }
+    html[data-theme="dark"] .delta.good { color: #4ade80; } html[data-theme="dark"] .delta.bad { color: #ff7b7f; }
+    .card canvas.spark { display: block; width: 100%; height: 30px; margin-top: 6px; }
+    .card .meter { height: 6px; border-radius: 999px; background: var(--soft); margin-top: 8px; overflow: hidden; display: flex; }
+    .card .meter span { display: block; height: 100%; }
+    .themes { display: inline-flex; background: var(--soft); border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px; margin-left: auto; align-self: center; }
+    .themes button { border: none; background: transparent; color: var(--text-2); font: 600 12px inherit; font-family: inherit; padding: 4px 12px; border-radius: 999px; cursor: pointer; }
+    .themes button.on { background: var(--brand); color: #fff; }
+    .tabs-top { align-items: flex-end; flex-wrap: wrap; }
+    @media (max-width: 600px) { .themes { margin: 6px 0 8px; } }
+
+    /* ===== Colours: Bounce red, soft coral shades ===== */
+    :root { --a1: #86b6ef; --a2: #3987e5; --a3: #1c5cab; --a4: #0d366b; }
+    html[data-palette="blue"] {
+      --page: #f8fbff; --card: #ffffff; --border: #e6eef8; --input: #ffffff; --soft: #f1f6fd; --hover: #e8f0fb; --ring: #7fb3f8;
+      --text: #1b2538; --text-2: #4a5670; --muted: #7a879f; --label: #4a5670; --tip: #ffffff; --tip-text: #1b2538;
+      --grid: rgba(30,60,120,.06); --axis: #e6eef8;
+      --s1: #7fb3f8; --s2: #cfe2fd; --s3: #3b82f6; --s4: #eaf3fe; --s5: #5b9cf6; --s6: #a8cbfa; --s7: #2563eb; --red: #5b9cf6; --dark: #3b82f6;
+      --a1: #dbe9fe; --a2: #a8cbfa; --a3: #5b9cf6; --a4: #2563eb;
+    }
+    html[data-palette="blue"] .cards .card { --k: #7fb3f8 !important; }
+    html[data-palette="blue"] .card .value { color: var(--text) !important; }
+    html[data-palette="blue"] .card .delta { color: #2563eb !important; background: #e8f0fb !important; }
+    html[data-palette="blue"] .pill:not(.off) { background: #7fb3f8; border-color: #7fb3f8; color: #0b2a6f; }
+    html[data-palette="blue"] .page-title { color: var(--text); }
+    html[data-palette="blue"] .cards .card, html[data-palette="blue"] .panel, html[data-palette="blue"] .bar { box-shadow: 0 1px 2px rgba(20,40,90,.03), 0 6px 16px rgba(20,40,90,.05); }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--page); color: var(--text); }
+
+    /* App layout: dark sidebar + content */
+    .app { display: flex; min-height: 100vh; }
+    .side { width: 220px; flex-shrink: 0; background: var(--side); color: #fff; display: flex; flex-direction: column;
+            position: sticky; top: 0; height: 100vh; }
+    .side .collapse { text-align: right; padding: 10px 14px; color: var(--side-text); font-size: 15px; border-bottom: 1px solid #262930; }
+    .brandrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #262930; }
+    .logo { width: 38px; height: 38px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center;
+            justify-content: center; text-align: center; font-size: 8px; font-weight: 800; line-height: 1.1; letter-spacing: .03em; overflow: hidden; flex-shrink: 0; }
+    .logo img { width: 100%; height: 100%; object-fit: cover; }
+    .brandname { font-size: 14px; font-weight: 700; }
+    .brandname span { color: var(--brand); }
+    .navsec { padding: 12px 0 4px 16px; font-size: 10.5px; font-weight: 700; letter-spacing: .12em; color: #6b717c; }
+    .nav a { display: flex; align-items: center; gap: 10px; padding: 8px 16px; color: var(--side-text); text-decoration: none; font-size: 13.5px;
+             border-left: 3px solid transparent; }
+    .nav a:hover { background: var(--side-2); color: #fff; }
+    .nav a.active { background: var(--brand-tint); color: #fff; font-weight: 700; border-left-color: var(--brand); }
+    .nav svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .side .foot { margin-top: auto; border-top: 1px solid #262930; padding: 10px 14px; font-size: 12px; color: var(--side-text); }
+    .side .foot .live { display: flex; align-items: center; gap: 8px; }
+    .side .foot .live i { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block; }
+    .content { flex: 1; min-width: 0; }
+    main { max-width: 1520px; margin: 0 auto; padding: 4px 24px 28px; }
+    .tabs-top { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin: 0 0 14px; padding-top: 12px; }
+    .tabs-top a { padding: 8px 14px; font-size: 14.5px; font-weight: 600; color: var(--text-2); text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+    .tabs-top a.active { color: var(--brand); border-bottom-color: var(--brand); }
+    .page-title { margin: 0; font-size: 21px; font-weight: 800; }
+    .page-sub { margin: 3px 0 14px; color: var(--muted); font-size: 13px; }
+    .menu-btn { display: none; }
+    @media (max-width: 900px) {
+      .app { flex-direction: column; }
+      .side { width: 100%; height: auto; position: static; }
+      .side .collapse, .side .foot, .navsec { display: none; }
+      .side .nav { display: none; }
+      .side.open .nav { display: block; }
+      .brandrow { justify-content: space-between; padding: 12px 16px; }
+      .menu-btn { display: inline-block; background: none; border: 1px solid #3a3d44; color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 18px; }
+      main { padding: 8px 16px 32px; }
+    }
+    /* Show / hide pills for chart lines (brand red when on) */
+    .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+    .pill { border: 1.5px solid var(--brand); background: var(--brand); color: #fff; border-radius: 999px; padding: 4px 12px;
+            font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; }
+    .pill i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; border: 1.5px solid #fff; }
+    .pill.off { background: var(--input); color: var(--text-2); border-color: var(--border); }
+    .pill.off i { border-color: transparent; }
+
+    /* Top filter bar (matches the design) */
+    .bar { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px;
+           display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 14px; }
+    .bar label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+    .bar select { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;
+                  background: var(--input); color: var(--text); min-width: 120px; }
+    .bar .spacer { flex: 1; }
+    .btn { border: none; border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-clear { background: var(--red); color: #fff; }
+    .btn-sync { background: var(--dark); color: #fff; }
+    .synced { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+    .synced i { width: 9px; height: 9px; border-radius: 50%; background: #9ca3af; display: inline-block; }
+    .synced.ok i { background: #22c55e; }
+    .synced.err i { background: var(--red); }
+    .bar a { font-size: 12.5px; color: var(--blue); }
+
+    /* KPI cards */
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 10px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; min-height: 92px; }
+    .card .label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .card .value { font-size: 24px; font-weight: 800; margin-top: 3px; line-height: 1.1; }
+    .card .sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+    .c-red { color: var(--red); } .c-blue { color: var(--blue); } .c-green { color: var(--green); }
+    .c-orange { color: var(--orange); } .c-dark { color: var(--text); }
+
+    /* Detail section below the cards */
+    .section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 20px 0 8px; }
+    .section-head h2 { margin: 0; font-size: 13px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .05em; }
+    .section-head select { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: var(--input); color: var(--text); }
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 10px; }
+    @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .bar select { min-width: 0; flex: 1 1 120px; } }
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; min-width: 0; }
+    .panel h3 { margin: 0 0 2px; font-size: 13.5px; font-weight: 600; }
+    .panel .note { margin: 0 0 6px; font-size: 11px; color: var(--muted); }
+    .chart { position: relative; height: 230px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { font-size: 11px; color: var(--text-2); text-transform: uppercase; letter-spacing: .03em; background: var(--soft); }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tr:last-child td { border-bottom: none; }
+    .bad { color: var(--red); font-weight: 600; }
+    /* Count strip at the top of each panel */
+    .counts { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
+    .count { background: var(--soft); border-radius: 8px; padding: 5px 10px; min-width: 76px; }
+    .count .n { font-size: 17px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .count .t { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+    .count .t i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    button.count { border: 1px solid transparent; text-align: left; font-family: inherit; color: inherit; cursor: pointer; }
+    button.count:hover, button.count:focus-visible { border-color: var(--ring); background: var(--hover); outline: none; }
+    /* Clickable KPI cards */
+    .cards .card { cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
+    .cards .card:hover, .cards .card:focus-visible { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 35%, transparent); outline: none; transform: translateY(-1px); }
+    .cards .card .more { font-size: 11px; color: var(--blue); margin-top: 4px; opacity: 0; transition: opacity .15s; }
+    .cards .card:hover .more, .cards .card:focus-visible .more { opacity: 1; }
+    .panel.flash { box-shadow: 0 0 0 3px var(--ring); transition: box-shadow .3s; }
+    /* Details pop-up */
+    dialog#detail { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 14px; padding: 0; width: min(900px, 94vw); max-height: 86vh; }
+    dialog#detail::backdrop { background: rgba(0,0,0,.4); }
+    .dhead { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+    .dhead h2 { margin: 0; font-size: 16px; flex: 1; }
+    .dhead .big { font-size: 22px; font-weight: 800; }
+    .dbody { padding: 0 18px 16px; max-height: 64vh; overflow: auto; }
+    .dbody p { color: var(--muted); font-size: 13px; }
+    .btn-light { background: var(--input); border: 1px solid var(--border); color: var(--text); }
+    .hidden { display: none !important; }
+      /* QC page extras */
+    .login { max-width: 420px; margin: 20px 0; }
+    .login label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+    .login input { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
+    .login button { margin-top: 14px; width: 100%; padding: 9px; }
+    .login .err { color: var(--s3); font-size: 13px; min-height: 1em; margin: 8px 0 0; }
+    .authbox { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #262930; }
+    .authbox .who { color: #d1d5db; word-break: break-all; }
+    .authbox button { width: 100%; padding: 6px; background: transparent; border: 1px solid #3a3d44; color: var(--brand); font-size: 12.5px; font-weight: 600; border-radius: 8px; cursor: pointer; font-family: inherit; }
+    .card .value.small { font-size: 15px !important; line-height: 1.25; margin-top: 6px; }
+    td.wrap { white-space: normal; min-width: 260px; max-width: 420px; }
+    tr.click { cursor: pointer; } tr.click:hover td { background: var(--hover); }
+    /* Admin link at the bottom of the sidebar */
+    .adminlink { display: flex; align-items: center; gap: 8px; padding: 7px 8px; margin: 0 -4px 10px; border-radius: 8px; color: var(--side-text); text-decoration: none; font-size: 13px; font-weight: 600; }
+    @media (max-width: 900px) { .side.open .foot { display: block; } }
+    .adminlink svg { width: 15px; height: 15px; }
+    .adminlink:hover, .adminlink.active { background: var(--brand-tint); color: #fff; }
+    /* Collapse button at the top of the sidebar (desktop) */
+    .side { transition: width .2s; }
+    .side button.collapse { display: block; width: 100%; background: none; border: none; border-bottom: 1px solid #262930; cursor: pointer;
+      text-align: right; padding: 10px 14px; color: var(--side-text); font: inherit; font-size: 15px; }
+    @media (max-width: 900px) { .side button.collapse { display: none; } }
+    .side button.collapse:hover { color: #fff; background: var(--side-2); }
+    @media (min-width: 901px) {
+      html.side-min .side { width: 64px; }
+      html.side-min .side button.collapse { text-align: center; }
+      html.side-min .brandrow { justify-content: center; padding: 12px 0; }
+      html.side-min .brandname, html.side-min .navsec, html.side-min #authBox, html.side-min .side .foot .live { display: none; }
+      html.side-min .nav a, html.side-min .adminlink { font-size: 0; justify-content: center; padding: 10px 0; gap: 0; }
+      html.side-min .nav a svg, html.side-min .adminlink svg { width: 18px; height: 18px; }
+      html.side-min .nav { padding-top: 8px; }
+      html.side-min .side .foot { padding: 10px 8px; }
+      html.side-min .adminlink { margin: 0; }
+    }
+    .period-note { background: var(--s4); color: var(--s3); border-radius: 10px; padding: 8px 12px; font-size: 13px; margin: 0 0 10px; }
+    .bar .range { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+    .bar input[type=date] { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--input); color: var(--text); font-family: inherit; }
+    /* Admin contact details */
+    .contact { margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: var(--soft); font-size: 12.5px; line-height: 1.6; color: var(--text-2, var(--muted)); }
+    .contact a { color: var(--accent, var(--brand)); font-weight: 600; text-decoration: none; }
+    .contact-side { font-size: 11.5px; line-height: 1.5; color: var(--side-text); padding: 0 0 10px; margin-bottom: 10px; border-bottom: 1px solid #262930; word-break: break-all; }
+    .contact-side a { color: #d1d5db; text-decoration: none; }
+    .contact-side a:hover { color: #fff; }
+    @media (min-width: 901px) { html.side-min .contact-side { display: none; } }
+    /* ===== Blue theme: only the Bounce logo stays red ===== */
+    .brandname, .brandname span { color: #fff !important; }
+    .side { background: #0f1e36 !important; }
+    :root { --side: #0f1e36; --side-2: #172a48; --side-text: #a9b8d0; --brand-tint: #1e3a66; }
+    .side .collapse, .side button.collapse, .brandrow, .side .foot, .authbox, #authBox, .contact-side { border-color: #1d3050 !important; }
+    .nav a.active { background: #1e3a66 !important; color: #fff !important; border-left-color: #7fb3f8 !important; }
+    .adminlink:hover, .adminlink.active { background: #1e3a66 !important; }
+    .tabs-top a.active { color: #2563eb !important; border-bottom-color: #5b9cf6 !important; }
+    .authbox button, #authBox button { color: #9cc5fa !important; border-color: #2a4166 !important; }
+    .btn-clear { background: #5b9cf6 !important; color: #fff !important; }
+    .btn-sync { background: #2563eb !important; color: #fff !important; }
+    .contact a { color: #2563eb !important; }
+      /* ===== New QC form (phone first) ===== */
+    main.newqc { max-width: 640px; }
+    .steps { display: flex; gap: 6px; margin: 0 0 10px; }
+    .steps span { flex: 1; text-align: center; font-size: 12px; font-weight: 700; padding: 6px 0; border-radius: 999px; background: var(--soft); color: var(--muted); }
+    .steps span.on { background: var(--s5); color: #fff; }
+    .qcard { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+    .lbl { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin: 0 0 8px; display: flex; justify-content: space-between; align-items: center; }
+    .lbl-note { text-transform: none; letter-spacing: 0; font-weight: 600; }
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .chip { border: 1.5px solid var(--border); background: #fff; border-radius: 999px; padding: 9px 14px; font: 600 14px inherit; font-family: inherit; color: var(--text); cursor: pointer; }
+    .chip.on { background: var(--s5); border-color: var(--s5); color: #fff; }
+    .chip.sm { padding: 4px 10px; font-size: 12px; margin: 4px 4px 0 0; }
+    input.big { width: 100%; padding: 12px; border: 1.5px solid var(--border); border-radius: 10px; font: 700 19px inherit; font-family: inherit; letter-spacing: .05em; text-transform: uppercase; color: var(--text); }
+    #techOther { width: 100%; margin-top: 8px; padding: 10px; border: 1.5px solid var(--border); border-radius: 10px; font: 15px inherit; font-family: inherit; }
+    .mini { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; }
+    .photo { display: block; border: 2px dashed var(--s2); border-radius: 12px; padding: 16px; text-align: center; color: var(--s3); font-weight: 700; background: var(--soft); cursor: pointer; }
+    .photo small { display: block; color: var(--muted); font-weight: 500; margin-top: 3px; }
+    .photo img { display: block; max-width: 100%; max-height: 220px; margin: 10px auto 0; border-radius: 8px; }
+    .allok { background: #e8f5ec; color: #15803d; border: none; border-radius: 8px; padding: 7px 11px; font: 700 12px inherit; font-family: inherit; cursor: pointer; text-transform: none; letter-spacing: 0; }
+    .crow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .crow:last-child { border-bottom: 0; }
+    .crow.bad { background: #fff5f5; margin: 0 -12px; padding: 9px 12px; color: inherit; font-weight: inherit; }
+    .crow.bad > span { color: #b91c1c; font-weight: 600; }
+    .seg.four { display: grid; grid-template-columns: 1fr 1fr; }
+    .seg.four button:nth-child(3) { border-left: 0; } .seg.four button:nth-child(n+3) { border-top: 1px solid var(--border); }
+    .seg { display: flex; flex-wrap: wrap; justify-content: flex-end; border: 1.5px solid var(--border); border-radius: 9px; overflow: hidden; flex-shrink: 0; max-width: 62%; }
+    .seg button { border: none; background: #fff; padding: 9px 11px; font: 700 12.5px inherit; font-family: inherit; color: var(--muted); cursor: pointer; }
+    .seg button + button { border-left: 1px solid var(--border); }
+    .seg button.g { background: #16a34a; color: #fff; } .seg button.x { background: #dc2626; color: #fff; }
+    textarea#remarks { width: 100%; min-height: 70px; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px; font: 14px inherit; font-family: inherit; }
+    .quick { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .res { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .res button { border: 1.5px solid var(--border); border-radius: 10px; padding: 13px 4px; background: #fff; font: 700 14px inherit; font-family: inherit; color: var(--text); cursor: pointer; }
+    .res button[data-r="APPROVED"].sel { background: #16a34a; border-color: #16a34a; color: #fff; }
+    .res button[data-r="REJECTED"].sel { background: #dc2626; border-color: #dc2626; color: #fff; }
+    .res button[data-r="HOLD"].sel { background: #d97706; border-color: #d97706; color: #fff; }
+    .summary { font-size: 13px; line-height: 1.7; }
+    .tag { background: #fde8e8; color: #b91c1c; border-radius: 999px; padding: 1px 8px; font-size: 12px; font-weight: 700; }
+    .actionbar { position: sticky; bottom: 0; display: flex; gap: 8px; padding: 10px 0 14px; background: linear-gradient(to top, var(--page) 75%, transparent); }
+    .actionbar .btn { flex: 1; padding: 14px; font-size: 16px; font-weight: 800; border-radius: 12px; }
+    .actionbar #backBtn { flex: 0 0 auto; }
+    .done { text-align: center; max-width: 520px; }
+    .done .tick { width: 72px; height: 72px; border-radius: 50%; background: #e8f5ec; color: #15803d; font-size: 40px; display: flex; align-items: center; justify-content: center; margin: 10px auto; }
+    .donegrid { text-align: left; margin: 12px 0; } .donegrid div { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .btn.wide { display: block; width: 100%; padding: 13px; font-size: 15px; margin-top: 8px; text-decoration: none; text-align: center; }
+    .err { color: #dc2626; font-size: 13px; min-height: 1em; margin: 6px 0 0; }
+  </style>
+</head>
+<body>
+ <div class="app">
+  <aside class="side" id="side">
+    <button class="collapse" id="sideToggle" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">«</button>
+    <div class="brandrow">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="logo"><img src="logo.png" alt="Bounce" onerror="this.parentNode.textContent = 'BOUNCE DAILY'"></div>
+        <div class="brandname">Bounce <span>Recovery Info</span></div>
+      </div>
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu">☰</button>
+    </div>
+    <nav class="nav">
+      <div class="navsec">ANALYTICS</div>
+      <a href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Recovery Dashboard</a>
+      <a href="qc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>QC Dashboard</a>
+      <a href="qc-new.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v3h6V3M12 10v6M9 13h6"/></svg>New QC</a>
+      <a href="tracker.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Recovery Tracker</a>
+    </nav>
+    <div class="foot">
+      <div class="contact-side">Need help? Contact admin<br><a href="tel:+919180260780">+91 91802 60780</a><br><a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a></div>
+      <a href="admin.html" class="adminlink hidden" id="adminLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/><path d="M19 3l2 2-2 2"/></svg>Admin · Users</a>
+      <div id="authBox" class="authbox"></div>
+      <div class="live"><i></i>Live · Supabase</div>
+    </div>
+  </aside>
+
+  <div class="content">
+  <main class="newqc">
+    <nav class="tabs-top">
+      <a href="dashboard.html">Recovery Dashboard</a>
+      <a href="qc.html">QC Dashboard</a>
+    </nav>
+    <h1 class="page-title">New QC</h1>
+    <p class="page-sub" id="who">Vehicle inspection checklist</p>
+
+    <section class="panel login" id="loginBox">
+      <h3>Sign in to do a QC</h3>
+      <p class="note">Use the login your admin gave you.</p>
+      <form id="loginForm">
+        <label for="email">Email</label><input id="email" type="email" autocomplete="username" required>
+        <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required>
+        <button class="btn btn-clear" type="submit">Sign in</button>
+        <p class="err" id="loginErr"></p>
+      </form>
+      <div class="contact"><strong>Need access or help?</strong> Contact the admin, David Abraham:<br>
+        <a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a> · <a href="tel:+919180260780">+91 91802 60780</a> · <a href="https://wa.me/919180260780" target="_blank" rel="noopener">WhatsApp</a></div>
+    </section>
+
+    <form id="qcForm" class="hidden" autocomplete="off">
+      <div class="steps"><span class="on" data-s="1">1 · Bike</span><span data-s="2">2 · Checklist</span><span data-s="3">3 · Result</span></div>
+
+      <!-- Step 1: hub, vehicle, technician, photo -->
+      <section class="step" data-step="1">
+        <div class="qcard"><p class="lbl">Hub</p><div class="chips" id="hubChips"></div></div>
+        <div class="qcard"><p class="lbl">Vehicle number</p>
+          <input id="vehicle" class="big" inputmode="text" autocapitalize="characters" placeholder="DL9SCV2401" maxlength="14">
+          <p class="mini" id="lastQc"></p></div>
+        <div class="qcard"><p class="lbl"><span>Technician</span><span class="lbl-note" id="techNote"></span></p>
+          <div class="chips" id="techChips"></div>
+          <input id="techOther" class="hidden" placeholder="Type technician name" maxlength="60"></div>
+        <div class="qcard"><p class="lbl">Vehicle photo</p>
+          <label class="photo" id="photoBox"><input type="file" id="photo" accept="image/*" capture="environment" hidden>
+            <span id="photoText">📷 Take photo<small>or choose from gallery</small></span><img id="photoPrev" alt="" class="hidden"></label></div>
+      </section>
+
+      <!-- Step 2: checklist -->
+      <section class="step hidden" data-step="2">
+        <div class="qcard"><p class="lbl"><span>Checklist</span><button type="button" class="allok" id="allOk">✓ Mark all OK</button></p>
+          <div id="checks"></div></div>
+      </section>
+
+      <!-- Step 3: remarks + result -->
+      <section class="step hidden" data-step="3">
+        <div class="qcard"><p class="lbl">Body parts not fitted / other remarks</p>
+          <textarea id="remarks" maxlength="500" placeholder="e.g. Rear fender screw missing"></textarea>
+          <div class="quick" id="quick"></div></div>
+        <div class="qcard"><p class="lbl">QC result</p>
+          <div class="res" id="results"><button type="button" data-r="APPROVED">Approved</button><button type="button" data-r="REJECTED">Rejected</button><button type="button" data-r="HOLD">Hold</button></div>
+          <p class="mini" id="suggest"></p></div>
+        <div class="qcard summary" id="summary"></div>
+      </section>
+
+      <p class="err" id="formErr"></p>
+      <div class="actionbar">
+        <button type="button" class="btn btn-light hidden" id="backBtn">← Back</button>
+        <button type="button" class="btn btn-clear" id="nextBtn">Next: checklist →</button>
+      </div>
+    </form>
+
+    <section class="panel done hidden" id="doneBox">
+      <div class="tick">✓</div>
+      <h3>QC saved</h3>
+      <p class="note" id="doneText"></p>
+      <div class="donegrid" id="doneGrid"></div>
+      <button type="button" class="btn btn-clear wide" id="againBtn">Start next QC</button>
+      <a class="btn btn-light wide" href="qc.html">Open QC Dashboard</a>
+    </section>
+  </main>
+  </div>
+ </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
+    // Address of the Google script that writes QCs into the master sheet (NCR QC LIST → "App QCs")
+    const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwOIcQZX_LHln-SWTmQzO6iuEJW9-oINa5LLgCvV54XR9cQ2FHAcTWU6x4rYo9yF-S0/exec';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const store = { get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+                    set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+    // Same checks and wording as the NCR QC LIST Google Form (first answer = OK)
+    const CHECKS = [
+      ['VEHICLE NUMBER PLATES ARE AVAILABLE?', 'Number plates', [['YES', 'Both OK'], ['FRONT NUMB PLATE NOT AVAILABLE', 'Front missing'], ['REAR NUMB PLATE NOT AVAILABLE', 'Rear missing'], ['NO', 'Both missing']]],
+      ['BRAKE/BRAKE SENSOR CONDITION', 'Brake / brake sensor', [['GOOD', 'Good'], ['BAD', 'Bad']]],
+      ['HORN', 'Horn', [['WORKING', 'Working'], ['NOT WORKING', 'Not working']]],
+      ['LH SWITCH ASSEMBLY', 'LH switch (indicators, reverse)', [['WORKING', 'Working'], ['NOT WORKING', 'Not working']]],
+      ['FRONT AND REAR SUSPENSION WORKING/NO OIL LEAKAGE', 'Suspension / no oil leak', [['YES', 'OK'], ['NO', 'Problem']]],
+      ['RUBBER DAMPER (BATTERY STOPPER)', 'Rubber damper (battery stopper)', [['AVAILABLE', 'Available'], ['NOT AVAILABLE', 'Missing']]],
+      ['RH SWITCH ASSEMBLY', 'RH switch (riding modes)', [['WORKING', 'Working'], ['NOT WORKING', 'Not working']]],
+      ['TYRE PRESSURE/CONDITION GOOD', 'Tyre pressure / condition', [['YES', 'Good'], ['NO', 'Bad']]],
+      ['MOTOR/MOTOR CABLE', 'Motor / motor cable', [['GOOD', 'Good'], ['NOT GOOD', 'Not good']]],
+      ['FRONT AND REAR AXLE BOLT', 'Front & rear axle bolt', [['GOOD', 'Good'], ['NOT GOOD', 'Not good']]],
+      ['SIDE STAND/MAIN STAND', 'Side / main stand', [['GOOD', 'Good'], ['NOT GOOD', 'Not good']]],
+      ['THROTTLE AASEMBLY', 'Throttle', [['GOOD', 'Good'], ['NOT GOOD', 'Not good']]],
+      ['CONE SET/HANDLE MOVEMENT', 'Cone set / handle movement', [['GOOD', 'Good'], ['NOT GOOD', 'Not good']]],
+    ];
+    const QUICK = ['Screw missing', 'Bolt missing', 'Seat damage', 'MCU cover missing', 'IoT not fixed', 'Fender damage', 'Side cover damage', 'Wire not properly fitted'];
+    const HUBS = ['OKHLA', 'INDIRAPURAM', 'GURUGRAM', 'ROHINI'];
+
+    let session = null, step = 1, photoData = '', result = '';
+    const st = { hub: store.get('qc-hub') || '', tech: store.get('qc-tech') || '', checks: {} };
+
+    // ---------- Step 1 ----------
+    function hubChips(list) {
+      $('hubChips').innerHTML = list.map(h => `<button type="button" class="chip ${h === st.hub ? 'on' : ''}" data-hub="${esc(h)}">${esc(h)}</button>`).join('');
+    }
+    let techList = [];
+    async function loadTechs() {
+      // Technicians who worked at this hub in the last 60 days, most QCs first
+      $('techNote').textContent = st.hub ? 'at ' + st.hub.charAt(0) + st.hub.slice(1).toLowerCase() : '';
+      techList = [];
+      if (session && st.hub) {
+        const since = new Date(Date.now() - 60 * 864e5).toISOString();
+        const { data } = await db.from('qc_checks').select('technician').eq('hub', st.hub).gte('qc_at', since).limit(2000);
+        const n = {}; (data || []).forEach(r => { if (r.technician && r.technician !== 'Not recorded') n[r.technician] = (n[r.technician] || 0) + 1; });
+        techList = Object.keys(n).sort((a, b) => n[b] - n[a]).slice(0, 14);
+      }
+      if (st.tech && !techList.includes(st.tech)) techList.unshift(st.tech);
+      renderTechs();
+    }
+    function renderTechs() {
+      const other = !techList.includes(st.tech) && st.tech;
+      $('techChips').innerHTML = techList.map(t => `<button type="button" class="chip ${t === st.tech ? 'on' : ''}" data-tech="${esc(t)}">${esc(t)}</button>`).join('')
+        + `<button type="button" class="chip ${other || !$('techOther').classList.contains('hidden') ? 'on' : ''}" data-tech="__other">+ Other</button>`;
+    }
+    $('hubChips').addEventListener('click', (e) => { const b = e.target.closest('[data-hub]'); if (!b) return;
+      st.hub = b.dataset.hub; store.set('qc-hub', st.hub); hubChips(HUBS_LIVE); loadTechs(); });
+    $('techChips').addEventListener('click', (e) => { const b = e.target.closest('[data-tech]'); if (!b) return;
+      if (b.dataset.tech === '__other') { $('techOther').classList.remove('hidden'); $('techOther').focus(); st.tech = $('techOther').value.trim(); }
+      else { st.tech = b.dataset.tech; $('techOther').classList.add('hidden'); $('techOther').value = ''; store.set('qc-tech', st.tech); }
+      renderTechs(); });
+    $('techOther').addEventListener('input', () => { st.tech = $('techOther').value.trim(); });
+
+    const cleanVeh = (v) => v.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    let vehTimer = null;
+    $('vehicle').addEventListener('input', () => {
+      const v = cleanVeh($('vehicle').value); if ($('vehicle').value !== v) $('vehicle').value = v;
+      clearTimeout(vehTimer); $('lastQc').textContent = '';
+      if (v.length >= 6) vehTimer = setTimeout(() => lastQc(v), 400);
+    });
+    async function lastQc(v) {
+      const { data } = await db.from('qc_checks').select('qc_at, result, technician, id').eq('vehicle_number', v).order('qc_at', { ascending: false }).limit(1);
+      if (!data || !data.length) { $('lastQc').textContent = 'No earlier QC for this bike.'; return; }
+      const q = data[0], { data: mis } = await db.from('qc_mistakes').select('mistake').eq('qc_id', q.id);
+      const when = new Date(q.qc_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      $('lastQc').innerHTML = `Last QC: <b>${when}</b> · ${esc(q.result.charAt(0) + q.result.slice(1).toLowerCase())} · ${esc(q.technician)}`
+        + (mis && mis.length ? ` · ${esc(mis.map(m => m.mistake.split(' / ')[0]).slice(0, 3).join(', '))}` : '');
+    }
+
+    // Photo: shrink on the phone before sending (max 1280 px, JPEG)
+    $('photo').addEventListener('change', () => {
+      const f = $('photo').files[0]; if (!f) return;
+      const img = new Image(), url = URL.createObjectURL(f);
+      img.onload = () => {
+        const s = Math.min(1, 1280 / Math.max(img.width, img.height));
+        const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        photoData = c.toDataURL('image/jpeg', 0.72); URL.revokeObjectURL(url);
+        $('photoPrev').src = photoData; $('photoPrev').classList.remove('hidden');
+        $('photoText').innerHTML = '✓ Photo added<small>tap to retake</small>';
+      };
+      img.onerror = () => { $('formErr').textContent = 'Could not read that photo. Try again.'; };
+      img.src = url;
+    });
+
+    // ---------- Step 2 ----------
+    function renderChecks() {
+      $('checks').innerHTML = CHECKS.map(([key, label, opts]) => {
+        const v = st.checks[key];
+        return `<div class="crow ${v && v !== opts[0][0] ? 'bad' : ''}" data-key="${esc(key)}"><span>${esc(label)}</span><div class="seg ${opts.length > 2 ? 'four' : ''}">` +
+          opts.map(([val, txt], i) => `<button type="button" data-v="${esc(val)}" class="${v === val ? (i === 0 ? 'g' : 'x') : ''}">${esc(txt)}</button>`).join('') + '</div></div>';
+      }).join('');
+    }
+    $('checks').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-v]'); if (!b) return;
+      st.checks[b.closest('.crow').dataset.key] = b.dataset.v; $('formErr').textContent = ''; renderChecks(); suggest();
+    });
+    $('allOk').addEventListener('click', () => { $('formErr').textContent = ''; CHECKS.forEach(([k, , o]) => { if (!st.checks[k]) st.checks[k] = o[0][0]; }); renderChecks(); suggest(); });
+    const badItems = () => CHECKS.filter(([k, , o]) => st.checks[k] && st.checks[k] !== o[0][0]).map(([, l]) => l);
+
+    // ---------- Step 3 ----------
+    $('quick').innerHTML = 'Quick add: ' + QUICK.map(q => `<button type="button" class="chip sm">${q}</button>`).join('');
+    $('quick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return;
+      const t = $('remarks').value.trim(); $('remarks').value = t ? t + ', ' + b.textContent : b.textContent; suggest(); });
+    $('results').addEventListener('click', (e) => { const b = e.target.closest('[data-r]'); if (!b) return; result = b.dataset.r; paintResult(); summary(); });
+    $('remarks').addEventListener('input', () => { suggest(); summary(); });
+    function paintResult() { document.querySelectorAll('#results [data-r]').forEach(b => b.classList.toggle('sel', b.dataset.r === result)); }
+    function suggest() {
+      const bad = badItems().length;
+      $('suggest').innerHTML = bad ? `${bad} item${bad > 1 ? 's' : ''} marked bad → suggested: <b>Rejected</b>`
+        : ($('remarks').value.trim() ? 'All checks OK, but there are remarks — Approved or Rejected?' : 'All checks OK → suggested: <b>Approved</b>');
+      summary();
+    }
+    function summary() {
+      const bad = badItems();
+      $('summary').innerHTML = `<b>Summary</b><br>${esc(st.hub)} · ${esc(cleanVeh($('vehicle').value))} · ${esc(st.tech)} · ${photoData ? '📷 photo' : 'no photo'}` +
+        `<br>${bad.length ? 'Problems: ' + bad.map(b => `<span class="tag">${esc(b)}</span>`).join(' ') : 'No checklist problems'}` +
+        (result ? `<br>Result: <b>${result.charAt(0) + result.slice(1).toLowerCase()}</b>` : '');
+    }
+
+    // ---------- Steps ----------
+    function check(stepNo) {
+      if (stepNo === 1) {
+        if (!st.hub) return 'Choose the hub.';
+        if (!/^[A-Z0-9]{6,12}$/.test(cleanVeh($('vehicle').value))) return 'Enter the vehicle number (e.g. DL9SCV2401).';
+        if (!st.tech) return 'Choose or type the technician.';
+        if (!photoData) return 'Add a vehicle photo.';
+      }
+      if (stepNo === 2) { const miss = CHECKS.filter(([k]) => !st.checks[k]); if (miss.length) return `Answer all checks (${miss.length} left: ${miss[0][1]}…).`; }
+      if (stepNo === 3 && !result) return 'Choose the QC result.';
+      return '';
+    }
+    function go(n) {
+      step = n; $('formErr').textContent = '';
+      document.querySelectorAll('.step').forEach(s => s.classList.toggle('hidden', Number(s.dataset.step) !== n));
+      document.querySelectorAll('.steps span').forEach(s => s.classList.toggle('on', Number(s.dataset.s) <= n));
+      $('backBtn').classList.toggle('hidden', n === 1);
+      $('nextBtn').textContent = n === 1 ? 'Next: checklist →' : n === 2 ? 'Next: result →' : 'Submit QC';
+      if (n === 2) renderChecks();
+      if (n === 3) { if (!result) result = badItems().length ? 'REJECTED' : ''; paintResult(); suggest(); }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    $('backBtn').addEventListener('click', () => go(step - 1));
+    $('nextBtn').addEventListener('click', async () => {
+      const err = check(step); if (err) { $('formErr').textContent = err; return; }
+      if (step < 3) return go(step + 1);
+      await submit();
+    });
+
+    async function submit() {
+      if (!APP_SCRIPT_URL || APP_SCRIPT_URL.indexOf('script.google.com') < 0) { $('formErr').textContent = 'The QC app is not connected to the sheet yet. Contact the admin.'; return; }
+      const btn = $('nextBtn'); btn.disabled = true; btn.textContent = 'Saving…'; $('formErr').textContent = '';
+      try {
+        const { data: { session: s } } = await db.auth.getSession();   // fresh login token
+        const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ token: s && s.access_token, qc: { hub: st.hub, vehicle: cleanVeh($('vehicle').value), technician: st.tech,
+            checks: st.checks, remarks: $('remarks').value.trim(), result, photo: photoData } }) });
+        const r = await res.json();
+        if (!r.ok) throw new Error(r.error || 'Could not save');
+        $('qcForm').classList.add('hidden'); $('doneBox').classList.remove('hidden');
+        $('doneText').innerHTML = `${esc(cleanVeh($('vehicle').value))} · <b>${result.charAt(0) + result.slice(1).toLowerCase()}</b> · ${esc(st.tech)}<br>` +
+          (r.live ? 'Saved to the NCR QC LIST and already on the QC Dashboard.' : 'Saved to the NCR QC LIST. It will show on the QC Dashboard within 10 minutes.');
+        $('doneGrid').innerHTML = `<div><span>Your QCs today</span><b>${r.today}</b></div><div><span>Rejected</span><b>${r.today_rejected}</b></div>`;
+        window.scrollTo({ top: 0 });
+      } catch (e) {
+        $('formErr').textContent = 'Not saved: ' + e.message + ' — check your internet and press Submit again.';
+      }
+      btn.disabled = false; btn.textContent = 'Submit QC';
+    }
+    $('againBtn').addEventListener('click', () => {   // keep hub + technician, clear the rest
+      $('vehicle').value = ''; $('lastQc').textContent = ''; photoData = ''; $('photo').value = '';
+      $('photoPrev').classList.add('hidden'); $('photoText').innerHTML = '📷 Take photo<small>or choose from gallery</small>';
+      st.checks = {}; result = ''; $('remarks').value = '';
+      $('doneBox').classList.add('hidden'); $('qcForm').classList.remove('hidden'); go(1);
+    });
+
+    // ---------- Sign-in ----------
+    let HUBS_LIVE = HUBS;
+    async function showFor(s) {
+      session = s;
+      $('loginBox').classList.toggle('hidden', !!s);
+      $('qcForm').classList.toggle('hidden', !s); if (!s) $('doneBox').classList.add('hidden');
+      $('authBox').innerHTML = s ? `<span class="who">${esc(s.user.email)}</span><button type="button" id="signOutBtn">Sign Out</button>` : '<span class="who">Not signed in</span>';
+      if (!s) return;
+      $('signOutBtn').onclick = () => db.auth.signOut();
+      const name = (s.user.user_metadata && s.user.user_metadata.name) || s.user.email.split('@')[0].split('.')[0];
+      $('who').innerHTML = `QC by <b>${esc(name.toUpperCase())}</b> · ${new Date().toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`;
+      const { data } = await db.from('qc_checks').select('hub').gte('qc_at', new Date(Date.now() - 60 * 864e5).toISOString()).limit(3000);
+      const seen = [...new Set((data || []).map(r => r.hub).filter(Boolean))];
+      HUBS_LIVE = [...new Set([...HUBS, ...seen])];
+      hubChips(HUBS_LIVE); loadTechs(); go(1);
+    }
+    $('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); $('loginErr').textContent = '';
+      const { error } = await db.auth.signInWithPassword({ email: $('email').value.trim(), password: $('password').value });
+      if (error) $('loginErr').textContent = error.message;
+    });
+    let lastId;
+    db.auth.onAuthStateChange((_ev, s) => { const id = s?.user?.id || null; if (id === lastId) return; lastId = id; setTimeout(() => { showFor(s); showAdminLink(); }, 0); });
+    async function showAdminLink() {
+      const { data: { session } } = await db.auth.getSession();
+      if (!session) return $('adminLink').classList.add('hidden');
+      const { data } = await db.from('app_admins').select('user_id').eq('user_id', session.user.id).maybeSingle();
+      $('adminLink').classList.toggle('hidden', !data);
+    }
+    $('menuBtn').addEventListener('click', () => $('side').classList.toggle('open'));
+  </script>
+  <script>
+    // Sidebar collapse button («): remembers your choice on this browser
+    (function () {
+      const KEY = 'rt-side-min', btn = document.getElementById('sideToggle');
+      let min = false; try { min = localStorage.getItem(KEY) === '1'; } catch (e) {}
+      const apply = () => {
+        document.documentElement.classList.toggle('side-min', min);
+        btn.textContent = min ? '»' : '«';
+        btn.title = min ? 'Expand sidebar' : 'Collapse sidebar'; btn.setAttribute('aria-label', btn.title);
+      };
+      document.querySelectorAll('.side .nav a, .side .adminlink').forEach(a => a.title = a.textContent.trim());
+      apply();
+      btn.addEventListener('click', () => {
+        min = !min; apply();
+        try { localStorage.setItem(KEY, min ? '1' : '0'); } catch (e) {}
+        setTimeout(() => { if (typeof map !== 'undefined' && map.invalidateSize) map.invalidateSize(); window.dispatchEvent(new Event('resize')); }, 250);
+      });
+    })();
+  </script>
+</body>
+</html>
