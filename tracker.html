@@ -213,6 +213,7 @@
     .btn-clear { background: #5b9cf6 !important; color: #fff !important; }
     .btn-sync { background: #2563eb !important; color: #fff !important; }
     .contact a { color: #2563eb !important; }
+      body.noacc main > *:not(#noAccess):not(.tabs-top) { display: none !important; }
   </style>
 </head>
 <body>
@@ -488,12 +489,46 @@
     ['email', 'password'].forEach(id => $(id).addEventListener('input', () => $('authError').textContent = ''));
 
     // React to sign in / sign out (also runs once when the page loads)
-    // Show the Admin link at the bottom of the sidebar for admins only
+    // ---- Roles: who can see which page (the database enforces the same rules) ----
+    const PAGE_ROLES = { 'dashboard.html': ['admin', 'recovery'], 'tracker.html': ['admin', 'recovery'], 'qc.html': ['admin', 'qc'], 'qc-new.html': ['admin', 'qc'], 'admin.html': ['admin'] };
+    const ROLE_HOME = { qc: 'qc.html', recovery: 'dashboard.html' };
+    let myRoleCache = { uid: null, role: null };
+    // Shows only the menu links this person may use. Returns true if they may use THIS page.
+    async function applyRoles(session) {
+      const here = (location.pathname.split('/').pop() || 'dashboard.html');
+      const links = document.querySelectorAll('.side .nav a, .tabs-top a, .newqc-btn');
+      const adminLink = document.getElementById('adminLink');
+      if (!session) { links.forEach(a => a.classList.remove('hidden')); adminLink && adminLink.classList.add('hidden'); showNoAccess(false); return false; }
+      let role = myRoleCache.role;
+      if (myRoleCache.uid !== session.user.id) {
+        const { data, error } = await db.rpc('my_role');
+        role = error ? null : (data || null); myRoleCache = { uid: session.user.id, role };
+      }
+      links.forEach(a => { const ok = (PAGE_ROLES[a.getAttribute('href')] || []).includes(role); a.classList.toggle('hidden', !ok); });
+      adminLink && adminLink.classList.toggle('hidden', role !== 'admin');
+      const allowed = (PAGE_ROLES[here] || []).includes(role);
+      if (!allowed && ROLE_HOME[role] && ROLE_HOME[role] !== here) { location.replace(ROLE_HOME[role]); return false; }
+      showNoAccess(!allowed, session.user.email);
+      return allowed;
+    }
+    function showNoAccess(on, email) {
+      let box = document.getElementById('noAccess');
+      if (on && !box) {
+        box = document.createElement('section'); box.id = 'noAccess'; box.className = 'panel';
+        box.style.cssText = 'max-width:520px;margin:40px auto;padding:24px;text-align:center';
+        box.innerHTML = `<h3 style="margin:0 0 8px">You don't have access yet</h3>
+          <p style="color:var(--muted);margin:0 0 14px">You're signed in as <b class="na-email"></b>, but your login hasn't been given a role for this page.</p>
+          <p style="margin:0 0 16px">Contact the admin, David Abraham:<br><a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a> · <a href="tel:+919180260780">+91 91802 60780</a></p>
+          <button type="button" class="btn btn-light" id="naSignOut">Sign out</button>`;
+        document.querySelector('main').appendChild(box);
+        box.querySelector('#naSignOut').onclick = () => db.auth.signOut().then(() => location.reload());
+      }
+      if (box) { box.querySelector('.na-email').textContent = email || ''; box.classList.toggle('hidden', !on); }
+      document.body.classList.toggle('noacc', !!on);
+    }
     async function showAdminLink() {
       const { data: { session } } = await db.auth.getSession();
-      if (!session) return $('adminLink').classList.add('hidden');
-      const { data } = await db.from('app_admins').select('user_id').eq('user_id', session.user.id).maybeSingle();
-      $('adminLink').classList.toggle('hidden', !data);
+      return applyRoles(session);
     }
     db.auth.onAuthStateChange((_event, session) => {
       currentUser = session ? session.user : null;

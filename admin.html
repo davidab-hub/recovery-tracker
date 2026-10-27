@@ -213,6 +213,10 @@
     .adminlink:hover, .adminlink.active { background: var(--brand-tint); color: #fff; }
     .admin-grid { align-items: start; }
     .form label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+    .form input[type=text], .form input[type=email], .form select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
+    .rolesel { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: var(--input); color: var(--text); font-family: inherit; }
+    .rolesel.none { border-color: #f0b35a; background: #fff8ec; }
+    .role-help { font-size: 12px; color: var(--muted); margin: 4px 0 10px; line-height: 1.5; }
     .form input[type=text], .form input[type=email] { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
     .form label.check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); margin-top: 12px; }
     .form button { margin-top: 14px; }
@@ -327,7 +331,14 @@
           <form id="inviteForm" class="form">
             <label for="iName">Name</label><input id="iName" type="text" placeholder="e.g. Rahul Sharma" maxlength="80">
             <label for="iEmail">Work email</label><input id="iEmail" type="email" placeholder="name@bounceshare.com" required>
-            <label class="check"><input id="iAdmin" type="checkbox"> Make admin (can add and remove users)</label>
+            <label for="iRole">Role</label>
+            <select id="iRole" required>
+              <option value="" disabled selected>Choose a role…</option>
+              <option value="qc">QC team</option>
+              <option value="recovery">Recovery team</option>
+              <option value="admin">Admin</option>
+            </select>
+            <p class="role-help"><b>QC team:</b> QC Dashboard + New QC · <b>Recovery team:</b> Recovery Dashboard + Tracker · <b>Admin:</b> everything, incl. managing users</p>
             <button class="btn btn-clear" type="submit" id="inviteBtn">Create login &amp; get link</button>
             <p class="err" id="inviteErr"></p>
           </form>
@@ -350,7 +361,7 @@
 
       <section class="panel" style="margin-top:10px">
         <h3>People with access</h3>
-        <p class="note">Viewers can see both dashboards and download Excel. Admins can also manage users.</p>
+        <p class="note">Change someone's role with the dropdown — it applies the next time they open a page. QC team: QC Dashboard + New QC · Recovery team: Recovery Dashboard + Tracker · Admin: everything.</p>
         <div class="counts" id="userCounts"></div>
         <div class="table-wrap">
           <table>
@@ -386,28 +397,31 @@
     }
 
     let users = [];
+    const ROLE_OPTS = [['', 'No access (choose…)'], ['qc', 'QC team'], ['recovery', 'Recovery team'], ['admin', 'Admin']];
+    const ROLE_NAME = Object.fromEntries(ROLE_OPTS);
     async function loadUsers() {
       $('listErr').textContent = '';
       try { users = (await call('list')).users; } catch (e) { $('listErr').textContent = e.message; return; }
-      const admins = users.filter(u => u.is_admin).length, pending = users.filter(u => u.status === 'pending').length;
-      $('userCounts').innerHTML = [[users.length, 'People'], [admins, 'Admins'], [pending, 'Waiting to set password']]
+      const pending = users.filter(u => u.status === 'pending').length, noRole = users.filter(u => !u.role).length;
+      const n = (r) => users.filter(u => u.role === r).length;
+      $('userCounts').innerHTML = [[users.length, 'People'], [n('admin'), 'Admins'], [n('qc'), 'QC team'], [n('recovery'), 'Recovery team'], [noRole, 'No role yet'], [pending, 'Waiting to set password']]
         .map(([n, t]) => `<div class="count"><div class="n">${n}</div><div class="t">${t}</div></div>`).join('');
       $('userRows').innerHTML = users.map(u => `<tr>
           <td><strong>${esc(u.name || '—')}</strong>${u.is_me ? ' <span class="tag">you</span>' : ''}</td>
           <td>${esc(u.email)}</td>
-          <td><span class="tag ${u.is_admin ? 'tag-admin' : ''}">${u.is_admin ? 'Admin' : 'Viewer'}</span></td>
+          <td>${u.is_me ? '<span class="tag tag-admin">Admin</span>' : `<select class="rolesel ${u.role ? '' : 'none'}" data-id="${u.id}" aria-label="Role for ${esc(u.email)}">
+              ${ROLE_OPTS.map(([v, t]) => `<option value="${v}" ${u.role === v ? 'selected' : ''}>${t}</option>`).join('')}</select>`}</td>
           <td>${u.status === 'pending' ? '<span class="tag tag-wait">Link sent · not set up</span>' : '<span class="tag tag-ok">Active</span>'}</td>
           <td>${when(u.last_sign_in_at)}</td><td>${when(u.created_at)}</td>
           <td class="acts">
             <button class="btn btn-light sm" data-act="link" data-id="${u.id}">New link</button>
-            ${u.is_me ? '' : `<button class="btn btn-light sm" data-act="admin" data-id="${u.id}" data-val="${u.is_admin ? '' : '1'}">${u.is_admin ? 'Make viewer' : 'Make admin'}</button>
-            <button class="btn btn-light sm danger" data-act="remove" data-id="${u.id}">Remove</button>`}
+            ${u.is_me ? '' : `<button class="btn btn-light sm danger" data-act="remove" data-id="${u.id}">Remove</button>`}
           </td></tr>`).join('') || '<tr><td colspan="7" style="color:var(--muted)">No users yet.</td></tr>';
     }
 
     function showLink({ link, email, name }) {
       const who = name || email;
-      const msg = `Hi ${name || ''}, here is your login for the Bounce dashboards. Open this link, choose a password, and you're in (works once, valid for 24 hours):\n${link}\n\nAfter that, sign in any time at https://davidab-hub.github.io/recovery-tracker/qc.html with ${email}.`;
+      const msg = `Hi ${name || ''}, here is your login for the Bounce dashboards. Open this link, choose a password, and you're in (works once, valid for 24 hours):\n${link}\n\nAfter that, sign in any time at https://davidab-hub.github.io/recovery-tracker/ with ${email}.`;
       $('shareBox').classList.remove('hidden');
       $('shareNote').classList.add('hidden');
       $('shareWho').innerHTML = `For <strong>${esc(who)}</strong> · ${esc(email)}`;
@@ -421,7 +435,7 @@
     $('inviteForm').addEventListener('submit', async (e) => {
       e.preventDefault(); $('inviteErr').textContent = ''; $('inviteBtn').disabled = true; $('inviteBtn').textContent = 'Creating…';
       try {
-        const r = await call('invite', { name: $('iName').value, email: $('iEmail').value, make_admin: $('iAdmin').checked });
+        const r = await call('invite', { name: $('iName').value, email: $('iEmail').value, role: $('iRole').value });
         showLink(r); $('inviteForm').reset(); loadUsers();
       } catch (err) { $('inviteErr').textContent = err.message; }
       $('inviteBtn').disabled = false; $('inviteBtn').textContent = 'Create login & get link';
@@ -435,12 +449,23 @@
       const u = users.find(x => x.id === b.dataset.id); if (!u) return;
       try {
         if (b.dataset.act === 'link') showLink(await call('link', { id: u.id }));
-        if (b.dataset.act === 'admin') { await call('set_admin', { id: u.id, value: !!b.dataset.val }); loadUsers(); }
         if (b.dataset.act === 'remove') {
           if (!confirm(`Remove ${u.email}? They will lose access straight away.`)) return;
           await call('remove', { id: u.id }); loadUsers();
         }
       } catch (err) { $('listErr').textContent = err.message; }
+    });
+
+    $('userRows').addEventListener('change', async (e) => {
+      const sel = e.target.closest('select.rolesel'); if (!sel) return;
+      const u = users.find(x => x.id === sel.dataset.id); if (!u) return;
+      const role = sel.value;
+      if (role === 'admin' && !confirm(`Make ${u.email} an admin? They will be able to add and remove users.`)) { sel.value = u.role; return; }
+      sel.disabled = true; $('listErr').textContent = '';
+      let msg = '';
+      try { await call('set_role', { id: u.id, role }); msg = `<span style="color:#15803d">✓ ${esc(u.email)} is now: ${esc(ROLE_NAME[role] || 'No access')}</span>`; }
+      catch (err) { msg = esc(err.message); }
+      await loadUsers(); $('listErr').innerHTML = msg;
     });
 
     // ---- Sign-in ----
