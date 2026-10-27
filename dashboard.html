@@ -236,6 +236,22 @@
     .btn-sync { background: #2563eb !important; color: #fff !important; }
     .contact a { color: #2563eb !important; }
       body.noacc main > *:not(#noAccess):not(.tabs-top) { display: none !important; }
+    .chart.tall { height: 420px; }
+    .authbox { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #262930; }
+    .authbox .who { color: #d1d5db; word-break: break-all; }
+    .authbox button { width: 100%; padding: 6px; background: transparent; border: 1px solid #3a3d44; color: var(--brand); font-size: 12.5px; font-weight: 600; border-radius: 8px; cursor: pointer; font-family: inherit; }
+    .card.na { background: repeating-linear-gradient(135deg, #f8fafc, #f8fafc 8px, #f1f5f9 8px, #f1f5f9 16px); }
+    .card.na .value { color: #cbd5e1; } .card.na .sub { color: #94a3b8; font-style: italic; }
+    .na-box { height: 230px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #94a3b8; font-style: italic; border: 1.5px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; }
+    .na-col { color: #cbd5e1 !important; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #eef2f7; color: #475569; }
+    .tag-bad { background: #fde8e8; color: #b91c1c; } .tag-fir { background: #f3e8e8; color: #7f1d1d; } .tag-wait { background: #fff4e0; color: #a15c00; }
+    .login { max-width: 420px; margin: 20px 0; }
+    .login label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+    .login input { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
+    .login button { margin-top: 14px; width: 100%; padding: 9px; }
+    .login .err { color: #b91c1c; font-size: 13px; min-height: 1em; margin: 8px 0 0; }
+    body.noacc main > *:not(#noAccess):not(.tabs-top) { display: none !important; }
   </style>
 </head>
 <body>
@@ -261,10 +277,10 @@
     <div class="foot">
       <div class="contact-side">Need help? Contact admin<br><a href="tel:+919180260780">+91 91802 60780</a><br><a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a></div>
       <a href="admin.html" class="adminlink hidden" id="adminLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/><path d="M19 3l2 2-2 2"/></svg>Admin · Users</a>
+      <div id="authBox" class="authbox"></div>
       <div class="live"><i></i>Live · Supabase</div>
     </div>
   </aside>
-
   <div class="content">
   <main>
     <nav class="tabs-top">
@@ -272,40 +288,53 @@
       <a href="qc.html">QC Dashboard</a>
     </nav>
     <h1 class="page-title">Recovery Dashboard</h1>
-    <p class="page-sub">Bikes marked for recovery — live from Supabase (sample data)</p>
+    <p class="page-sub">From the "Recovered by/Moved by Data" and "Police station cases" sheets (synced every 10 minutes) · grey boxes need the Metabase recovery data</p>
 
-    <!-- Filter bar -->
+    <section class="panel login" id="loginBox">
+      <h3>Sign in to see recovery data</h3>
+      <p class="note">This page uses real recovery data, so it is only visible after signing in.</p>
+      <form id="loginForm">
+        <label for="email">Email</label><input id="email" type="email" autocomplete="username" required>
+        <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required>
+        <button class="btn btn-clear" type="submit">Sign in</button>
+        <p class="err" id="loginErr"></p>
+      </form>
+      <div class="contact"><strong>Need access or help?</strong> Contact the admin, David Abraham:<br>
+        <a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a> · <a href="tel:+919180260780">+91 91802 60780</a> · <a href="https://wa.me/919180260780" target="_blank" rel="noopener">WhatsApp</a></div>
+    </section>
+    <p class="err" id="loadErr" style="color:#b91c1c"></p>
+
+    <div id="dash" class="hidden">
+
     <section class="bar">
       <label for="cityFilter">City</label>
       <select id="cityFilter"><option value="">All Cities</option></select>
       <label for="hubFilter">Hub</label>
       <select id="hubFilter"><option value="">All Hubs</option></select>
       <label for="modelFilter">Model</label>
-      <select id="modelFilter"><option value="">All Models</option></select>
+      <select id="modelFilter" disabled title="Needs Metabase data"><option value="">All Models</option></select>
       <span class="spacer"></span>
       <button class="btn btn-clear" id="clearBtn" type="button">Clear</button>
-      <button class="btn btn-sync" id="syncBtn" type="button">↻ Sync</button>
-      <span class="synced" id="synced"><i></i><span>Loading…</span></span>
+      <button class="btn btn-sync" id="syncBtn" type="button">↻ Refresh</button>
+      <span class="synced"><i></i><span id="synced"></span></span>
     </section>
 
-    <!-- The 13 KPI cards ("today" = 7 AM to 7 AM IST) -->
     <section class="cards">
-      <div class="card"><div class="label">Total Bikes</div><div class="value c-dark" id="kTotal">–</div><div class="sub" id="kTotalSub"></div></div>
-      <div class="card"><div class="label">Bikes MFR</div><div class="value c-red" id="kMfr">–</div><div class="sub" id="kMfrSub"></div></div>
-      <div class="card"><div class="label">MFR %</div><div class="value c-red" id="kMfrPct">–</div><div class="sub">MFR ÷ total bikes</div></div>
-      <div class="card"><div class="label">Today's Inflow</div><div class="value c-blue" id="kInflow">–</div><div class="sub" id="kInflowSub"></div></div>
+      <div class="card na"><div class="label">Total Bikes</div><div class="value">—</div><div class="sub">needs Metabase data</div></div>
+      <div class="card na"><div class="label">Bikes MFR</div><div class="value">—</div><div class="sub">needs Metabase data</div></div>
+      <div class="card na"><div class="label">MFR %</div><div class="value">—</div><div class="sub">needs Metabase data</div></div>
+      <div class="card na"><div class="label">Today's Inflow</div><div class="value">—</div><div class="sub">needs Metabase data</div></div>
       <div class="card"><div class="label">Today's Outflow</div><div class="value c-green" id="kOutflow">–</div><div class="sub" id="kOutflowSub"></div></div>
       <div class="card"><div class="label">Recovered Bikes</div><div class="value c-orange" id="kRecovered">–</div><div class="sub" id="kRecoveredSub"></div></div>
-      <div class="card"><div class="label">Available Recovery Agents</div><div class="value c-dark" id="kAgents">–</div><div class="sub">active today (closed ≥ 1 bike)</div></div>
+      <div class="card"><div class="label">Available Recovery Agents</div><div class="value c-dark" id="kAgents">–</div><div class="sub" id="kAgentsSub"></div></div>
       <div class="card"><div class="label">Moved to Active</div><div class="value c-green" id="kActive">–</div><div class="sub" id="kActiveSub"></div></div>
       <div class="card"><div class="label">Moved to Hub</div><div class="value c-orange" id="kHub">–</div><div class="sub" id="kHubSub"></div></div>
       <div class="card"><div class="label">Moved by Own Truck</div><div class="value c-dark" id="kTruck">–</div><div class="sub" id="kTruckSub"></div></div>
       <div class="card"><div class="label">Moved by Porter</div><div class="value c-dark" id="kPorter">–</div><div class="sub" id="kPorterSub"></div></div>
-      <div class="card"><div class="label">Police Station Bikes</div><div class="value c-red" id="kPolice">–</div><div class="sub">held at a police station · not in MFR</div></div>
-      <div class="card"><div class="label">FIR Registered Bikes</div><div class="value c-red" id="kFir">–</div><div class="sub">FIR filed · not in MFR</div></div>
+      <div class="card"><div class="label">Police Station Bikes</div><div class="value c-red" id="kPolice">–</div><div class="sub" id="kPoliceSub"></div></div>
+      <div class="card"><div class="label">FIR Registered Bikes</div><div class="value c-red" id="kFir">–</div><div class="sub" id="kFirSub"></div></div>
     </section>
 
-    <!-- Detail charts -->
     <div class="section-head">
       <h2>Details</h2>
       <select id="rangeFilter" aria-label="Period for the charts below">
@@ -317,667 +346,250 @@
     <section class="grid2">
       <div class="panel">
         <h3>Inflow vs outflow, per day</h3>
-        <p class="note">Inflow = bikes marked for recovery · Outflow = recovered or renewed</p>
+        <p class="note">Outflow = recovered or renewed · inflow needs Metabase data</p>
         <div class="counts" id="trendCounts"></div>
-        <div class="pills" id="trendPills"></div>
-        <div class="chart"><canvas id="trendChart" aria-label="Line chart of daily inflow and outflow"></canvas></div>
+        <div class="chart"><canvas id="trendChart"></canvas></div>
       </div>
       <div class="panel">
         <h3>Recovered bikes moved to hub, per day</h3>
         <p class="note">By transport</p>
         <div class="counts" id="hubCounts"></div>
-        <div class="chart"><canvas id="hubChart" aria-label="Stacked bar chart of hub moves per day by transport"></canvas></div>
+        <div class="chart"><canvas id="hubChart"></canvas></div>
       </div>
       <div class="panel">
         <h3>Agent activity by outcome</h3>
-        <p class="note" id="agentNote"></p>
+        <p class="note">Top 15 agents in the period</p>
         <div class="counts" id="agentCounts"></div>
-        <div class="chart" id="agentChartBox"><canvas id="agentChart" aria-label="Stacked bar chart of agent actions by outcome"></canvas></div>
+        <div class="chart tall"><canvas id="agentChart"></canvas></div>
       </div>
       <div class="panel">
         <h3>Agent table</h3>
-        <p class="note">Recovered, renewed and moved to hub in the period</p>
-        <div class="counts" id="agentTableCounts"></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Agent</th><th class="num">Today</th><th class="num">Calls</th><th class="num">Recovered</th>
-              <th class="num">Renewed</th><th class="num">To hub</th><th class="num">Not reached</th></tr></thead>
-            <tbody id="agentRows"></tbody>
+        <p class="note">Recovered, renewed and moved to hub in the period · click a column to sort</p>
+        <div class="table-wrap" style="max-height:470px;overflow:auto">
+          <table id="agentTable">
+            <thead><tr><th data-k="a">Agent</th><th class="num" data-k="today">Today</th><th class="num" data-k="n">Cases</th><th class="num" data-k="rec">Recovered</th>
+              <th class="num" data-k="ren">Renewed</th><th class="num" data-k="hub">To hub</th><th class="num" data-k="pol">Police stn</th></tr></thead>
+            <tbody></tbody>
           </table>
         </div>
       </div>
-      <div class="panel">
+      <div class="panel na-panel">
         <h3>MFR bikes by age</h3>
         <p class="note">Days since marked for recovery</p>
-        <div class="counts" id="ageCounts"></div>
-        <div class="chart"><canvas id="ageChart" aria-label="Bar chart of MFR bikes by age bucket"></canvas></div>
+        <div class="na-box">Needs Metabase data<br><small>(list of bikes currently marked for recovery)</small></div>
       </div>
-      <div class="panel">
+      <div class="panel na-panel">
         <h3>MFR bikes by city and age</h3>
-        <p class="note">Darker blue = older · total shown on each bar</p>
-        <div class="counts" id="cityCounts"></div>
-        <div class="chart"><canvas id="cityChart" aria-label="Stacked bar chart of MFR bikes per city by age"></canvas></div>
+        <p class="note">Darker blue = older</p>
+        <div class="na-box">Needs Metabase data</div>
       </div>
       <div class="panel">
         <h3>Fleet status</h3>
-        <p class="note">Where every bike is right now</p>
+        <p class="note">Bikes on the police list right now · rest of the fleet needs Metabase data</p>
         <div class="counts" id="fleetCounts"></div>
-        <div class="chart"><canvas id="fleetChart" aria-label="Donut chart of bikes by status"></canvas></div>
+        <div class="chart"><canvas id="fleetChart"></canvas></div>
       </div>
       <div class="panel">
-        <h3>Call outcomes</h3>
+        <h3>Case outcomes</h3>
         <p class="note" id="outcomeNote"></p>
         <div class="counts" id="outcomeCounts"></div>
-        <div class="chart"><canvas id="outcomeChart" aria-label="Donut chart of call outcomes"></canvas></div>
+        <div class="chart"><canvas id="outcomeChart"></canvas></div>
       </div>
     </section>
     <section class="panel" style="margin-top:16px">
       <h3>Hub table</h3>
-      <p class="note">Sorted by MFR bikes</p>
-      <div class="counts" id="hubTableCounts"></div>
+      <p class="note">Hubs = drop locations in the recovery sheet · MFR columns need Metabase data</p>
       <div class="table-wrap">
-        <table>
-          <thead><tr><th>Hub</th><th>City</th><th class="num">Total bikes</th><th class="num">MFR</th><th class="num">MFR %</th>
-            <th class="num">Avg days</th><th class="num">Over 10 days</th><th class="num">Never called</th><th class="num">Recovered (period)</th></tr></thead>
-          <tbody id="hubRows"></tbody>
+        <table id="hubTable">
+          <thead><tr><th>Hub</th><th>City</th><th class="num na-col">Total bikes</th><th class="num na-col">MFR</th><th class="num na-col">MFR %</th>
+            <th class="num na-col">Avg days</th><th class="num">Over 10 days</th><th class="num">Own truck</th><th class="num">Porter</th><th class="num">Recovered (period)</th></tr></thead>
+          <tbody></tbody>
         </table>
       </div>
     </section>
+    <section class="panel" style="margin-top:16px">
+      <h3>Police station &amp; FIR bikes <span class="note" id="polCount" style="font-weight:500"></span></h3>
+      <p class="note">Current list from the police sheet · follows the City filter</p>
+      <input id="pSearch" type="search" placeholder="Search vehicle or station…" style="width:100%;max-width:360px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;background:var(--input);color:var(--text)">
+      <div class="table-wrap" style="max-height:420px;overflow:auto"><table id="tPol"><thead><tr><th>Vehicle</th><th>Status</th><th>Police station / note</th><th>City</th><th>First reported</th><th class="num">Days since</th><th>Agent</th></tr></thead><tbody></tbody></table></div>
+    </section>
+    </div>
   </main>
   </div>
  </div>
 
-  <!-- Details pop-up: opens when a card or a count is clicked -->
-  <dialog id="detail">
-    <div class="dhead">
-      <h2 id="dTitle"></h2>
-      <span class="big" id="dCount"></span>
-      <button class="btn btn-light" id="dCsv" type="button">⬇ Download Excel</button>
-      <button class="btn btn-light" id="dChart" type="button">Go to chart</button>
-      <button class="btn btn-sync" id="dClose" type="button">Close</button>
-    </div>
-    <div class="dbody">
-      <p id="dNote"></p>
-      <input id="dSearch" type="search" placeholder="Search reg number, hub, agent…"
-             style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:10px;background:var(--input);color:var(--text)">
-      <p id="dShown" style="margin:0 0 6px"></p>
-      <div class="table-wrap"><table><thead id="dHead"></thead><tbody id="dRows"></tbody></table></div>
-    </div>
-  </dialog>
-
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <!-- SheetJS: builds the Excel download in the browser -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const num = (n) => Number(n).toLocaleString('en-IN');
+    const rs = (n) => '₹' + (n >= 1e5 ? (n / 1e5).toFixed(2) + ' L' : num(Math.round(n)));
+    const fmtDay = (d) => new Date(d + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    let DATA = [], POLICE = [], LAST = '', FIRST = '';
+    const addDays = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+    const OUT = ['Moved to Hub', 'Rent Paid', 'Found in Hub', 'Police Station'];
+    const MODES = ['Van', 'Porter', 'Customer drop'];
+    const B1 = '#1d4ed8', B2 = '#60a5fa', B3 = '#bfdbfe', RED = '#dc2626', ORG = '#f59e0b', GRY = '#94a3b8';
+    const OC = { 'Moved to Hub': B1, 'Rent Paid': B2, 'Found in Hub': B3, 'Police Station': RED };
+    const MC = { 'Van': B1, 'Porter': B2, 'Customer drop': B3 };
+    Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+    Chart.defaults.font.size = 11; Chart.defaults.color = '#64748b';
+    Chart.defaults.plugins.legend.labels.usePointStyle = true; Chart.defaults.plugins.legend.labels.boxWidth = 8;
+    Chart.defaults.maintainAspectRatio = false;
+    const axes = (stacked, horiz) => { const v = { beginAtZero: true, stacked, ticks: { precision: 0 }, grid: { color: '#e8eef7' }, border: { display: false } };
+      const c = { stacked, grid: { display: false }, ticks: { autoSkip: !horiz, maxRotation: 0 }, border: { color: '#cbd5e1' } }; return horiz ? { x: v, y: c } : { x: c, y: v }; };
+    const charts = {}; const draw = (id, cfg) => { if (charts[id]) charts[id].destroy(); charts[id] = new Chart($(id), cfg); };
+
+
+    let TODAY = '';
+    const uniq = (a) => [...new Set(a)].filter(Boolean).sort();
+    function fillCities() { const cur = $('cityFilter').value; $('cityFilter').length = 1;
+      uniq([...DATA.map(r => r.c), ...POLICE.map(r => r.c)]).forEach(c => $('cityFilter').add(new Option(c, c))); $('cityFilter').value = cur; }
+    function fillHubs() { const c = $('cityFilter').value, cur = $('hubFilter').value; $('hubFilter').length = 1;
+      uniq(DATA.filter(r => !c || r.c === c).map(r => r.l)).forEach(h => $('hubFilter').add(new Option(h, h))); $('hubFilter').value = cur; }
+    const isRec = (r) => r.o === 'Moved to Hub' || r.o === 'Found in Hub';
+    const isRen = (r) => r.o === 'Rent Paid';
+    function chips(id, items) { $(id).innerHTML = items.map(it => `<div class="count"><div class="n">${num(it.n)}</div><div class="t">${it.color ? `<i style="background:${it.color}"></i>` : ''}${esc(it.t)}</div></div>`).join(''); }
+
+    function render() {
+      const c = $('cityFilter').value, h = $('hubFilter').value, n = Number($('rangeFilter').value);
+      const base = DATA.filter(r => (!c || r.c === c) && (!h || r.l === h));
+      const from = addDays(TODAY, 1 - n);
+      const rows = base.filter(r => r.d >= from && r.d <= TODAY), td = base.filter(r => r.d === TODAY);
+      $('synced').textContent = `Latest day in sheet: ${fmtDay(TODAY)} · updated ${new Date(loadedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+      const sum = (arr) => arr.reduce((s, r) => s + r.amt, 0);
+      const per = (arr) => arr.length ? rs(sum(arr) / arr.length) + '/bike' : '';
+      const tRec = td.filter(isRec).length, tRen = td.filter(isRen).length;
+      $('kOutflow').textContent = num(tRec + tRen); $('kOutflowSub').textContent = `${tRec} recovered · ${tRen} renewed`;
+      $('kRecovered').textContent = num(tRec); $('kRecoveredSub').textContent = `today · ${num(rows.filter(isRec).length)} in last ${n} days`;
+      $('kAgents').textContent = num(new Set(td.map(r => r.a)).size); $('kAgentsSub').textContent = 'active today (closed ≥ 1 bike)';
+      $('kActive').textContent = num(tRen); $('kActiveSub').textContent = `rent paid today · ${num(rows.filter(isRen).length)} in last ${n} days`;
+      const th = td.filter(r => r.o === 'Moved to Hub'), tv = th.filter(r => r.m === 'Van'), tp = th.filter(r => r.m === 'Porter');
+      $('kHub').textContent = num(th.length); $('kHubSub').textContent = `today · ${th.filter(r => r.m === 'Customer drop').length} dropped by customer`;
+      $('kTruck').textContent = num(tv.length); $('kTruckSub').textContent = `today · ${per(tv)}`;
+      $('kPorter').textContent = num(tp.length); $('kPorterSub').textContent = `today · ${per(tp)}`;
+
+      const days = []; for (let d = from < FIRST ? FIRST : from; d <= TODAY; d = addDays(d, 1)) days.push(d);
+      const labels = days.map(fmtDay);
+      const outD = days.map(d => rows.filter(r => r.d === d && (isRec(r) || isRen(r))).length);
+      chips('trendCounts', [{ t: 'Outflow', n: outD.reduce((a, b) => a + b, 0), color: B1 }, { t: 'Recovered', n: rows.filter(isRec).length }, { t: 'Renewed', n: rows.filter(isRen).length }]);
+      draw('trendChart', { type: 'line', data: { labels, datasets: [{ label: 'Outflow', data: outD, borderColor: B1, backgroundColor: B1, borderWidth: 2, tension: .3, pointRadius: 2 }] }, options: { scales: axes(false) } });
+      const hub = rows.filter(r => r.o === 'Moved to Hub');
+      chips('hubCounts', MODES.map(m => ({ t: m === 'Van' ? 'Own truck' : m, n: hub.filter(r => r.m === m).length, color: MC[m] })));
+      draw('hubChart', { type: 'bar', data: { labels, datasets: MODES.map(m => ({ label: m === 'Van' ? 'Own truck' : m, backgroundColor: MC[m], data: days.map(d => hub.filter(r => r.d === d && r.m === m).length) })) }, options: { scales: axes(true) } });
+
+      const byA = new Map(); rows.forEach(r => { const x = byA.get(r.a) || { a: r.a, today: 0, n: 0, rec: 0, ren: 0, hub: 0, pol: 0 };
+        x.n++; if (r.d === TODAY) x.today++; if (isRec(r)) x.rec++; if (isRen(r)) x.ren++; if (r.o === 'Moved to Hub') x.hub++; if (r.o === 'Police Station') x.pol++; byA.set(r.a, x); });
+      AG = [...byA.values()]; agentTable();
+      chips('agentCounts', [{ t: 'Agents', n: AG.length }, { t: 'Cases', n: rows.length }, { t: 'Avg / agent / day', n: Math.round(rows.length / Math.max(1, AG.length) / Math.max(1, days.length)) }]);
+      const top = [...AG].sort((p, q) => q.n - p.n).slice(0, 15);
+      const LBL = { 'Moved to Hub': 'Moved to Hub', 'Rent Paid': 'Renewed', 'Found in Hub': 'Found in Hub', 'Police Station': 'Police Station' };
+      draw('agentChart', { type: 'bar', data: { labels: top.map(x => x.a), datasets: OUT.map(o => ({ label: LBL[o], backgroundColor: OC[o], data: top.map(x => rows.filter(r => r.a === x.a && r.o === o).length) })) }, options: { indexAxis: 'y', scales: axes(true, true) } });
+
+      const oc = OUT.map(o => rows.filter(r => r.o === o).length);
+      $('outcomeNote').textContent = `All ${num(rows.length)} cases in the last ${n} days`;
+      chips('outcomeCounts', OUT.map((o, i) => ({ t: LBL[o], n: oc[i], color: OC[o] })));
+      draw('outcomeChart', { type: 'doughnut', data: { labels: OUT.map(o => LBL[o]), datasets: [{ data: oc, backgroundColor: OUT.map(o => OC[o]), borderWidth: 0 }] }, options: { cutout: '62%', plugins: { legend: { position: 'right' } } } });
+
+      const hubs = new Map(); rows.filter(r => r.l).forEach(r => { const x = hubs.get(r.l) || { cities: new Map(), old: 0, van: 0, por: 0, rec: 0 };
+        x.cities.set(r.c, (x.cities.get(r.c) || 0) + 1); if (r.ag !== null && r.ag > 10) x.old++; if (r.m === 'Van') x.van++; if (r.m === 'Porter') x.por++; if (isRec(r)) x.rec++; hubs.set(r.l, x); });
+      $('hubTable').tBodies[0].innerHTML = [...hubs].sort((p, q) => q[1].rec - p[1].rec).map(([k, x]) => `<tr><td><strong>${esc(k)}</strong></td><td>${esc([...x.cities].sort((p, q) => q[1] - p[1])[0][0])}</td>
+        <td class="num na-col">—</td><td class="num na-col">—</td><td class="num na-col">—</td><td class="num na-col">—</td><td class="num">${x.old}</td><td class="num">${num(x.van)}</td><td class="num">${num(x.por)}</td><td class="num">${num(x.rec)}</td></tr>`).join('') || '<tr><td colspan="10">Nothing in this period.</td></tr>';
+    }
+    let AG = [], sortK = 'n', sortDir = -1;
+    function agentTable() {
+      const s = [...AG].sort((p, q) => { const a = p[sortK], b = q[sortK]; return (typeof a === 'string' ? a.localeCompare(b) : a - b) * sortDir; });
+      $('agentTable').tBodies[0].innerHTML = s.map(x => `<tr><td><strong>${esc(x.a)}</strong></td><td class="num">${x.today}</td><td class="num">${num(x.n)}</td><td class="num">${num(x.rec)}</td><td class="num">${num(x.ren)}</td><td class="num">${num(x.hub)}</td><td class="num">${x.pol}</td></tr>`).join('') || '<tr><td colspan="7">Nothing in this period.</td></tr>';
+    }
+    document.querySelectorAll('#agentTable th').forEach(th => { th.style.cursor = 'pointer'; th.onclick = () => { const k = th.dataset.k; sortDir = sortK === k ? -sortDir : (k === 'a' ? 1 : -1); sortK = k; agentTable(); }; });
+
+    function police() {
+      const c = $('cityFilter').value, P = POLICE.filter(r => !c || r.c === c);
+      const cnt = (s) => P.filter(r => r.s === s).length;
+      $('kPolice').textContent = num(cnt('Police Station')); $('kPoliceSub').textContent = 'held at a police station · not in MFR';
+      $('kFir').textContent = num(cnt('FIR Filed')); $('kFirSub').textContent = `FIR filed · ${cnt('Under Process')} more under process`;
+      const S = [['Police Station', RED], ['FIR Filed', '#7f1d1d'], ['Under Process', ORG], ['Other', GRY]];
+      const grp = (r) => ['Police Station', 'FIR Filed', 'Under Process'].includes(r.s) ? r.s : 'Other';
+      const v = S.map(([s]) => P.filter(r => grp(r) === s).length);
+      chips('fleetCounts', S.map(([s, col], i) => ({ t: s === 'Under Process' ? 'FIR under process' : s, n: v[i], color: col })));
+      draw('fleetChart', { type: 'doughnut', data: { labels: S.map(x => x[0]), datasets: [{ data: v, backgroundColor: S.map(x => x[1]), borderWidth: 0 }] }, options: { cutout: '62%', plugins: { legend: { position: 'right' } } } });
+      polTable(P);
+    }
+    function polTable(P) {
+      const q = $('pSearch').value.trim().toLowerCase();
+      const L = q ? P.filter(r => [r.r, r.p, r.n, r.s, r.c, r.fa].join(' ').toLowerCase().includes(q)) : P;
+      const ord = { 'Police Station': 0, 'FIR Filed': 1, 'Under Process': 2 };
+      const days = (d) => d ? Math.round((Date.parse(LAST) - Date.parse(d)) / 864e5) : '';
+      $('polCount').textContent = `· ${L.length} bikes`;
+      $('tPol').tBodies[0].innerHTML = [...L].sort((p, q2) => (ord[p.s] ?? 9) - (ord[q2.s] ?? 9) || p.c.localeCompare(q2.c)).map(r => {
+        const tag = r.s === 'Police Station' ? 'tag-bad' : r.s === 'FIR Filed' ? 'tag-fir' : r.s === 'Under Process' ? 'tag-wait' : '';
+        return `<tr><td><strong>${esc(r.r)}</strong></td><td><span class="tag ${tag}">${esc(r.s)}</span></td><td>${esc(r.p || r.n || '')}</td><td>${esc(r.c)}</td><td>${r.fd ? fmtDay(r.fd) : ''}</td><td class="num">${days(r.fd)}</td><td>${esc(r.fa)}</td></tr>`; }).join('') || '<tr><td colspan="7">No matches.</td></tr>';
+    }
+    $('pSearch').oninput = () => polTable(POLICE.filter(r => !$('cityFilter').value || r.c === $('cityFilter').value));
+    $('cityFilter').onchange = () => { fillHubs(); render(); police(); };
+    $('hubFilter').onchange = render; $('rangeFilter').onchange = render;
+    $('clearBtn').onclick = () => { $('cityFilter').value = ''; fillHubs(); $('hubFilter').value = ''; $('rangeFilter').value = '30'; render(); police(); };
+    $('menuBtn').onclick = () => $('side').classList.toggle('open');
+
+    // ---- Load from Supabase (Recovery team + admins only; the database checks the role) ----
     const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    const $ = (id) => document.getElementById(id);
-    const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-
-    // ---- Operational day: 7 AM to 7 AM IST (same as the Metabase cards) ----
-    const SHIFT = (5.5 - 7) * 3600 * 1000;                 // IST offset minus 7 hours
-    const opDay = (iso) => new Date(new Date(iso).getTime() + SHIFT).toISOString().slice(0, 10);
-    let today = opDay(new Date().toISOString());
-    const monthStart = () => today.slice(0, 8) + '01';
-    function lastDays(n) {
-      const out = [], base = Date.parse(today + 'T00:00:00Z');
-      for (let i = n - 1; i >= 0; i--) out.push(new Date(base - i * 86400000).toISOString().slice(0, 10));
+    let loadedAt = Date.now(), loading = false;
+    async function pageAll(q) {
+      const out = [];
+      for (let from = 0; ; from += 1000) { const { data, error } = await q().range(from, from + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; }
       return out;
     }
-    const fmtDay = (d) => new Date(d + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const count = (arr, fn) => arr.reduce((n, x) => n + (fn(x) ? 1 : 0), 0);
-    const num = (n) => Number(n).toLocaleString('en-IN');
-
-    // ---- Chart styling (validated palette, fixed outcome order) ----
-    const C = {};
-    const OUTCOMES = ['Recovered', 'Renewed', 'Moved to Hub', 'Will Renew', 'No Answer', 'Switched Off', 'Not Renewing'];
-    const OUTCOME_COLOUR = {};
-    function readColours() {
-      ['s1','s2','s3','s4','s5','s6','s7','grid','axis','muted','card','label','tip','tip-text','text','border','red','blue','green','orange','brand']
-        .forEach(k => C[k.replace('-', '_')] = css('--' + k));
-      OUTCOMES.forEach((o, i) => OUTCOME_COLOUR[o] = C['s' + (i + 1)]);
-      AGE_RAMP.splice(0, 4, css('--a1'), css('--a2'), css('--a3'), css('--a4'));
-      Chart.defaults.color = C.muted;
-      Object.assign(Chart.defaults.plugins.tooltip, { backgroundColor: C.tip, titleColor: C.tip_text, bodyColor: C.tip_text, borderColor: C.border });
-    }
-    const AGE_BUCKETS = ['0-1 days', '1-2 days', '2-3 days', '3-4 days', '4-5 days', '5-10 days', '10+ days'];
-    const AGE_BANDS = [
-      { label: '0-2 days', test: d => d < 2 }, { label: '2-5 days', test: d => d >= 2 && d < 5 },
-      { label: '5-10 days', test: d => d >= 5 && d <= 10 }, { label: '10+ days', test: d => d > 10 }];
-    const AGE_RAMP = [];
-    function bucket(d) {
-      if (d < 1) return '0-1 days'; if (d < 2) return '1-2 days'; if (d < 3) return '2-3 days';
-      if (d < 4) return '3-4 days'; if (d < 5) return '4-5 days'; if (d <= 10) return '5-10 days'; return '10+ days';
-    }
-
-    Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
-    Chart.defaults.font.size = 11;
-    Object.assign(Chart.defaults.plugins.tooltip, { borderWidth: 1, padding: 10 });
-    readColours();
-    Chart.defaults.plugins.legend.labels.usePointStyle = true;
-    Chart.defaults.plugins.legend.labels.boxWidth = 8;
-    const axes = (stacked = false, horizontal = false) => {
-      const v = { beginAtZero: true, stacked, grace: '12%', ticks: { precision: 0, color: C.muted }, grid: { color: C.grid }, border: { display: false } };
-      const c = { stacked, ticks: { color: C.muted, maxRotation: 0, autoSkipPadding: 12 }, grid: { display: false }, border: { color: C.axis } };
-      return horizontal ? { x: v, y: c } : { x: c, y: v };
-    };
-    // Prints counts on the charts: 'total' = sum per bar (stacked or single), 'last' = latest value of each line
-    Chart.register({
-      id: 'valueLabels',
-      afterDatasetsDraw(chart, _args, opts) {
-        if (!opts || !opts.mode) return;
-        const { ctx } = chart, horizontal = chart.options.indexAxis === 'y';
-        ctx.save();
-        ctx.font = '600 11px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
-        ctx.fillStyle = C.label;
-        const visible = chart.data.datasets.map((_, i) => i).filter(i => chart.isDatasetVisible(i));
-        if (opts.mode === 'last') {
-          // Latest value of each visible line, nudged apart so labels never overlap
-          const items = visible.map(i => {
-            const ds = chart.data.datasets[i], n = ds.data.length - 1, el = chart.getDatasetMeta(i).data[n];
-            return el ? { text: `${ds.label} ${ds.data[n]}`, x: el.x, y: el.y - 6 } : null;
-          }).filter(Boolean).sort((a, b) => a.y - b.y);
-          for (let k = 1; k < items.length; k++) if (items[k].y - items[k - 1].y < 14) items[k].y = items[k - 1].y + 14;
-          ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
-          items.forEach(it => ctx.fillText(it.text, it.x - 4, it.y));
-        } else {
-          chart.data.labels.forEach((_, idx) => {
-            let total = 0, edge = null, mid = null;
-            visible.forEach(i => {
-              const v = Number(chart.data.datasets[i].data[idx]) || 0, el = chart.getDatasetMeta(i).data[idx];
-              if (!el) return;
-              total += v;
-              if (horizontal) { edge = edge === null ? el.x : Math.max(edge, el.x); mid = el.y; }
-              else { edge = edge === null ? el.y : Math.min(edge, el.y); mid = el.x; }
-            });
-            if (!total || edge === null) return;
-            if (horizontal) { ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(total, edge + 6, mid); }
-            else { ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(total, mid, edge - 4); }
-          });
-        }
-        ctx.restore();
-      }
-    });
-
-    const fade = (hex, a = 0.14) => /^#[0-9a-f]{6}$/i.test(hex) ? hex + Math.round(a * 255).toString(16).padStart(2, '0') : hex;
-    // Donut: prints the total in the middle
-    Chart.register({ id: 'centerText', afterDatasetsDraw(chart, _a, opts) {
-      if (!opts || opts.text == null) return;
-      const { ctx, chartArea: a } = chart, x = (a.left + a.right) / 2, y = (a.top + a.bottom) / 2;
-      ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = C.text;
-      ctx.font = '800 22px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif'; ctx.textBaseline = 'bottom'; ctx.fillText(opts.text, x, y + 6);
-      ctx.font = '500 11px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif'; ctx.fillStyle = C.muted; ctx.textBaseline = 'top'; ctx.fillText(opts.sub || '', x, y + 8);
-      ctx.restore(); } });
-    // Tiny line chart inside a KPI card
-    function spark(card, data) {
-      let cv = card.querySelector('canvas.spark');
-      if (!cv) { cv = document.createElement('canvas'); cv.className = 'spark'; card.querySelector('.more').before(cv); }
-      const dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 150, h = 30;
-      cv.width = w * dpr; cv.height = h * dpr;
-      const g = cv.getContext('2d'); g.scale(dpr, dpr); g.clearRect(0, 0, w, h);
-      const max = Math.max(1, ...data), step = w / Math.max(1, data.length - 1);
-      const pts = data.map((v, i) => [i * step, h - 3 - (v / max) * (h - 8)]);
-      const col = document.documentElement.dataset.theme === 'gradient' ? '#ffffff' : getComputedStyle(card).getPropertyValue('--k').trim();
-      const grad = g.createLinearGradient(0, 0, 0, h); grad.addColorStop(0, col + '55'); grad.addColorStop(1, col + '00');
-      g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y));
-      g.lineTo(w, h); g.lineTo(0, h); g.closePath(); g.fillStyle = col.startsWith('#') && col.length === 7 ? grad : 'transparent'; g.fill();
-      g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y));
-      g.strokeStyle = col; g.lineWidth = 1.8; g.lineJoin = 'round'; g.stroke();
-      const [lx, ly] = pts[pts.length - 1]; g.beginPath(); g.arc(lx - 1, ly, 2.5, 0, 7); g.fillStyle = col; g.fill();
-    }
-    function delta(card, todayN, yestN, upIsGood) {
-      const el = card.querySelector('.delta'), d = todayN - yestN;
-      el.textContent = d === 0 ? '= yday' : (d > 0 ? '▲ ' : '▼ ') + Math.abs(d) + ' vs yday';
-      el.className = 'delta ' + (d === 0 ? 'flat' : (d > 0) === upIsGood ? 'good' : 'bad');
-    }
-    function meter(card, parts) {
-      let m = card.querySelector('.meter');
-      if (!m) { m = document.createElement('div'); m.className = 'meter'; card.querySelector('.more').before(m); }
-      const tot = parts.reduce((a, p) => a + p.n, 0) || 1;
-      m.innerHTML = parts.map(p => `<span style="width:${100 * p.n / tot}%;background:${p.c}" title="${esc(p.t)}: ${p.n}"></span>`).join('');
-    }
-
-    const charts = {};
-    const trendHidden = new Set();   // lines the user switched off with the pills
-    function draw(id, config) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart($(id), config); }
-
-    // ---- Count strips and the details pop-up ----
-    const DETAILS = {};      // key -> { title, note, kind: 'bike' | 'call', rows, target }
-    function chips(id, items) {
-      $(id).innerHTML = items.map(it => {
-        const dot = it.color ? `<i style="background:${it.color}"></i>` : '';
-        const inner = `<div class="n">${num(it.n)}</div><div class="t">${dot}${esc(it.t)}</div>`;
-        return it.key ? `<button type="button" class="count" data-key="${esc(it.key)}" title="Show details">${inner}</button>`
-                      : `<div class="count">${inner}</div>`;
-      }).join('');
-    }
-    const latestPerBike = (rows) => {
-      const m = new Map();
-      rows.forEach(c => { const p = m.get(c.bike_id); if (!p || p.called_at < c.called_at) m.set(c.bike_id, c); });
-      return [...m.values()].sort((a, b) => (a.called_at < b.called_at ? 1 : -1));
-    };
-    const fmtTime = (iso) => new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-    const statusText = (b) => b.police_case ? b.police_case
-      : ({ active: 'Active', in_recovery: 'MFR', recovered: 'Recovered', at_hub: 'At hub' }[b.status] || b.status);
-
-    // Every details list is turned into plain rows (header + cells), used for the table, search and CSV
-    let current = null;   // { title, header, rows: [[...cells]] }
-    function detailTable(d) {
-      const byId = new Map(bikes.map(b => [b.id, b]));
-      if (d.kind === 'bike') return {
-        header: ['Reg number', 'City', 'Hub', 'Model', 'Status', 'Days in MFR', 'Calls'], numeric: [5, 6],
-        rows: d.rows.map(b => [b.reg_number, b.city, b.hub || '', b.model || '', statusText(b),
-                               b.status === 'active' ? '' : b.age_days, b.total_calls]) };
-      return {
-        header: ['Time', 'Reg number', 'City', 'Hub', 'Action', 'Moved by', 'Agent'], numeric: [],
-        rows: d.rows.map(c => { const b = byId.get(c.bike_id) || {};
-          return [fmtTime(c.called_at), b.reg_number || '', b.city || '', b.hub || '', c.outcome, c.moved_by || '', c.agent]; }) };
-    }
-    function showDetailRows() {
-      const q = $('dSearch').value.trim().toLowerCase();
-      const rows = q ? current.rows.filter(r => r.join(' ').toLowerCase().includes(q)) : current.rows;
-      $('dShown').textContent = q ? `${rows.length} of ${current.rows.length} match` : '';
-      $('dRows').innerHTML = rows.slice(0, 500).map(r => '<tr>' + r.map((v, i) =>
-        `<td class="${current.numeric.includes(i) ? 'num' : ''}">${i === (current.header[0] === 'Time' ? 1 : 0) ? '<strong>' + esc(v) + '</strong>' : esc(v)}</td>`).join('') + '</tr>').join('')
-        || `<tr><td colspan="${current.header.length}" style="color:var(--muted)">Nothing to show.</td></tr>`;
-      if (rows.length > 500) $('dShown').textContent = `Showing 500 of ${rows.length} · download Excel for all`;
-    }
-    function openDetail(key) {
-      const d = DETAILS[key]; if (!d) return;
-      current = { title: d.title, ...detailTable(d) };
-      $('dTitle').textContent = d.title;
-      $('dCount').textContent = num(d.rows.length);
-      $('dNote').textContent = d.note || '';
-      $('dHead').innerHTML = '<tr>' + current.header.map((h, i) => `<th class="${current.numeric.includes(i) ? 'num' : ''}">${esc(h)}</th>`).join('') + '</tr>';
-      $('dSearch').value = '';
-      showDetailRows();
-      $('dChart').classList.toggle('hidden', !d.target);
-      $('dChart').dataset.target = d.target || '';
-      $('detail').showModal();
-    }
-    // Download the list (all rows, or only the ones matching the search) as an Excel file (.xlsx)
-    function downloadCsv() {
-      if (!current) return;
-      const q = $('dSearch').value.trim().toLowerCase();
-      const rows = q ? current.rows.filter(r => r.join(' ').toLowerCase().includes(q)) : current.rows;
-      const filters = [$('cityFilter').value, $('hubFilter').value, $('modelFilter').value].filter(Boolean).join(' · ');
-
-      // Keep numbers as real numbers so Excel can sum and sort them
-      const data = [current.header, ...rows.map(r => r.map((v, i) =>
-        current.numeric.includes(i) && v !== '' && !isNaN(Number(v)) ? Number(v) : v))];
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      ws['!cols'] = current.header.map((h, i) => ({
-        wch: Math.min(40, Math.max(h.length, ...data.slice(1).map(r => String(r[i] ?? '').length)) + 2) }));
-      ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: data.length - 1, c: current.header.length - 1 } }) };
-
-      // A second sheet records what the file contains
-      const info = XLSX.utils.aoa_to_sheet([
-        ['Report', current.title],
-        ['Rows', rows.length],
-        ['Filters', filters || 'All cities, hubs and models'],
-        ['Search', q || '—'],
-        ['Downloaded', new Date().toLocaleString('en-IN')],
-        ['Source', 'Recovery Dashboard (sample data)']]);
-      info['!cols'] = [{ wch: 12 }, { wch: 50 }];
-
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, current.title.replace(/[\\/?*[\]:]/g, '').slice(0, 31) || 'Data');
-      XLSX.utils.book_append_sheet(wb, info, 'About');
-      const name = `${current.title}${filters ? ' ' + filters : ''} ${today}`.replace(/[^\w\-. ]+/g, '').replace(/\s+/g, '_');
-      XLSX.writeFile(wb, name + '.xlsx');
-    }
-    function goToChart(targetId) {
-      const panel = $(targetId) && $(targetId).closest('.panel');
-      if (!panel) return;
-      panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      panel.classList.add('flash'); setTimeout(() => panel.classList.remove('flash'), 1600);
-    }
-
-    // ---- Data ----
-    let bikes = [], calls = [];
-
     async function load() {
-      const s = $('synced'); s.className = 'synced'; s.querySelector('span').textContent = 'Syncing…';
-      today = opDay(new Date().toISOString());
-      const from = [monthStart(), lastDays(30)[0]].sort()[0];
-      const since = new Date(Date.parse(from + 'T00:00:00Z') - SHIFT).toISOString();
-      const [b, c] = await Promise.all([
-        db.from('bike_overview').select('id, reg_number, city, hub, model, age_days, total_calls, status, mfr_since, police_case'),
-        db.from('call_logs').select('bike_id, outcome, agent, called_at, moved_by').gte('called_at', since)
-      ]);
-      if (b.error || c.error) {
-        s.className = 'synced err'; s.querySelector('span').textContent = 'Sync failed: ' + (b.error || c.error).message; return;
-      }
-      bikes = b.data; calls = c.data;
-      fillFilters(); render();
-      s.className = 'synced ok';
-      s.querySelector('span').textContent = 'Synced ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      if (loading) return; loading = true; $('loadErr').textContent = '';
+      try {
+        const since = new Date(Date.now() - 45 * 864e5).toISOString().slice(0, 10);
+        const cases = await pageAll(() => db.from('recovery_cases').select('case_date, reg_number, city, agent, outcome, moved_by, truck_no, amount, days_overdue, drop_loc').gte('case_date', since).order('id'));
+        const pol = await pageAll(() => db.from('police_cases').select('reg_number, status, station, note, city').order('reg_number'));
+        const regs = pol.map(p => p.reg_number), firstSeen = new Map();
+        for (let i = 0; i < regs.length; i += 150) {
+          const { data, error } = await db.from('recovery_cases').select('reg_number, case_date, agent').in('reg_number', regs.slice(i, i + 150)).order('case_date');
+          if (error) throw error; data.forEach(r => { if (!firstSeen.has(r.reg_number)) firstSeen.set(r.reg_number, r); });
+        }
+        DATA = cases.map(r => ({ d: r.case_date, c: r.city || '', a: r.agent || 'Not recorded', o: r.outcome || '', m: r.moved_by === 'Own truck' ? 'Van' : (r.moved_by || ''),
+          t: r.truck_no || '', amt: Number(r.amount) || 0, ag: r.days_overdue, l: r.drop_loc || '' }));
+        POLICE = pol.map(p => { const f = firstSeen.get(p.reg_number); return { r: p.reg_number, s: p.status, p: p.station || '', n: p.note || '', c: p.city || '', fd: f ? f.case_date : '', fa: f ? f.agent || '' : '' }; });
+        LAST = DATA.reduce((m, r) => r.d > m ? r.d : m, ''); FIRST = DATA.reduce((m, r) => r.d < m ? r.d : m, '9999');
+        TODAY = LAST || new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10); if (!DATA.length) FIRST = TODAY;
+        loadedAt = Date.now();
+        fillCities(); fillHubs(); render(); police();
+        $('dash').classList.remove('hidden');
+        if (!DATA.length) $('loadErr').textContent = 'No recovery data yet — the sheet sync has not run.';
+      } catch (e) { $('loadErr').textContent = 'Could not load data: ' + e.message; }
+      loading = false;
     }
-
-    function fillFilters() {
-      const keep = (sel, values, all) => {
-        const cur = sel.value;
-        sel.innerHTML = `<option value="">${all}</option>` + values.map(v => `<option>${esc(v)}</option>`).join('');
-        sel.value = values.includes(cur) ? cur : '';
-      };
-      keep($('cityFilter'), [...new Set(bikes.map(b => b.city))].sort(), 'All Cities');
-      const city = $('cityFilter').value;
-      keep($('hubFilter'), [...new Set(bikes.filter(b => !city || b.city === city).map(b => b.hub).filter(Boolean))].sort(), 'All Hubs');
-      keep($('modelFilter'), [...new Set(bikes.map(b => b.model).filter(Boolean))].sort(), 'All Models');
+    let channel = null;
+    function listenForChanges() {
+      if (channel) return; let t;
+      channel = db.channel('recovery-updates').on('broadcast', { event: 'changed' }, () => { clearTimeout(t); t = setTimeout(load, 2000); }).subscribe();
     }
+    setInterval(() => { if (DATA.length && document.visibilityState === 'visible') load(); }, 5 * 60 * 1000);
+    $('syncBtn').onclick = load;
 
-    const isMfr = (b) => b.status === 'in_recovery' && !b.police_case;
-
-    function render() {
-      const city = $('cityFilter').value, hub = $('hubFilter').value, model = $('modelFilter').value;
-      const inScope = (b) => b && (!city || b.city === city) && (!hub || b.hub === hub) && (!model || b.model === model);
-      const byId = new Map(bikes.map(b => [b.id, b]));
-      const B = bikes.filter(inScope);
-      const K = calls.filter(c => inScope(byId.get(c.bike_id)) && !byId.get(c.bike_id).police_case);
-      const mfr = B.filter(isMfr);
-      const ms = monthStart();
-
-      // Per-day counts of distinct bikes
-      const perDay = (rows, keyFn) => { const m = {}; rows.forEach(r => { const d = r.day; (m[d] ||= new Set()).add(keyFn(r)); }); return m; };
-      const withDay = K.map(c => ({ ...c, day: opDay(c.called_at) }));
-      // Inflow: the day each (non-police) bike was marked for recovery
-      const inflowSets = perDay(B.filter(b => !b.police_case).map(b => ({ id: b.id, day: opDay(b.mfr_since) })), x => x.id);
-      const outflowSets = perDay(withDay.filter(c => c.outcome === 'Recovered' || c.outcome === 'Renewed'), c => c.bike_id);
-      const sets = (o) => perDay(withDay.filter(c => c.outcome === o), c => c.bike_id);
-      const recSets = sets('Recovered'), renewSets = sets('Renewed'), hubSets = sets('Moved to Hub');
-      const truckSets = perDay(withDay.filter(c => c.outcome === 'Moved to Hub' && c.moved_by === 'Own Truck'), c => c.bike_id);
-      const porterSets = perDay(withDay.filter(c => c.outcome === 'Moved to Hub' && c.moved_by === 'Porter'), c => c.bike_id);
-      const on = (m, d) => (m[d] ? m[d].size : 0);
-      const mtd = (m) => Object.keys(m).filter(d => d >= ms && d <= today).reduce((s, d) => s + m[d].size, 0);
-      const doneDays = Math.max(0, (Date.parse(today) - Date.parse(ms)) / 86400000);
-      const avgMtd = (m) => doneDays ? Object.keys(m).filter(d => d >= ms && d < today).reduce((s, d) => s + m[d].size, 0) / doneDays : null;
-      const avgText = (m) => { const a = avgMtd(m); return a === null ? 'avg –/day (MTD)' : `avg ${a.toFixed(1)}/day (MTD)`; };
-
-      // ---- 13 cards ----
-      $('kTotal').textContent = num(B.length);
-      $('kTotalSub').textContent = `${num(count(B, b => b.status === 'active'))} active with riders`;
-      $('kMfr').textContent = num(mfr.length);
-      $('kMfrSub').textContent = `${count(mfr, b => b.age_days > 10)} over 10 days`;
-      $('kMfrPct').textContent = B.length ? (100 * mfr.length / B.length).toFixed(1) + '%' : '0%';
-      $('kInflow').textContent = on(inflowSets, today);
-      $('kInflowSub').innerHTML = `Plan expired → MFR<br>${avgText(inflowSets)}`;
-      $('kOutflow').textContent = on(outflowSets, today);
-      $('kOutflowSub').innerHTML = `Recovered · Renewed<br>${avgText(outflowSets)}`;
-      $('kRecovered').textContent = on(recSets, today);
-      $('kRecoveredSub').textContent = `today · ${mtd(recSets)} this month`;
-      $('kAgents').textContent = new Set(withDay.filter(c => c.day === today && ['Recovered', 'Renewed', 'Moved to Hub'].includes(c.outcome)).map(c => c.agent)).size;
-      $('kActive').textContent = on(renewSets, today);
-      $('kActiveSub').textContent = `rider renewed · ${mtd(renewSets)} this month`;
-      $('kHub').textContent = on(hubSets, today);
-      $('kHubSub').textContent = `today · ${mtd(hubSets)} this month`;
-      $('kTruck').textContent = on(truckSets, today);
-      $('kTruckSub').textContent = `today · ${mtd(truckSets)} this month`;
-      $('kPorter').textContent = on(porterSets, today);
-      $('kPorterSub').textContent = `today · ${mtd(porterSets)} this month`;
-      $('kPolice').textContent = count(B, b => b.police_case === 'Police Station');
-      $('kFir').textContent = count(B, b => b.police_case === 'FIR Filed');
-
-      // ---- Card extras: 14-day sparkline + change vs yesterday, meters ----
-      const d14 = lastDays(14), yday = d14[d14.length - 2];
-      const agentSets = perDay(withDay.filter(c => ['Recovered', 'Renewed', 'Moved to Hub'].includes(c.outcome)), c => c.agent);
-      const card = (k) => document.querySelector(`.cards .card[data-key="${k}"]`);
-      [['inflow', inflowSets, false], ['outflow', outflowSets, true], ['recovered', recSets, true], ['agents', agentSets, true],
-       ['active', renewSets, true], ['hub', hubSets, true], ['truck', truckSets, true], ['porter', porterSets, true]].forEach(([k, m, good]) => {
-        spark(card(k), d14.map(d => on(m, d))); delta(card(k), on(m, today), on(m, yday), good);
-      });
-      const cTxt = C.text;
-      meter(card('total'), [
-        { t: 'Active', n: count(B, b => b.status === 'active' && !b.police_case), c: C.s3 },
-        { t: 'MFR', n: mfr.length, c: C.red },
-        { t: 'Recovered', n: count(B, b => b.status === 'recovered' && !b.police_case), c: C.s2 },
-        { t: 'At hub', n: count(B, b => b.status === 'at_hub' && !b.police_case), c: C.s1 },
-        { t: 'Police / FIR', n: count(B, b => b.police_case), c: C.muted }]);
-      meter(card('mfr'), AGE_BANDS.map((band, i) => ({ t: band.label, n: count(mfr, b => band.test(b.age_days)), c: AGE_RAMP[i] })));
-      meter(card('mfrPct'), [{ t: 'MFR', n: mfr.length, c: C.s5 }, { t: 'Other', n: Math.max(0, B.length - mfr.length), c: 'transparent' }]);
-
-      // ---- What each card and count opens when clicked ----
-      const range = Number($('rangeFilter').value), days = lastDays(range), first = days[0], labels = days.map(fmtDay);
-      const todayCalls = (pred) => latestPerBike(withDay.filter(c => c.day === today && pred(c)));
-      const periodCalls = (pred) => latestPerBike(withDay.filter(c => c.day >= first && pred(c)));
-      const byAge = (arr) => [...arr].sort((a, b) => b.age_days - a.age_days);
-      const isOut = (c) => c.outcome === 'Recovered' || c.outcome === 'Renewed';
-      const isHub = (c) => c.outcome === 'Moved to Hub';
-      const period = `last ${range} days`;
-      Object.keys(DETAILS).forEach(k => delete DETAILS[k]);
-      Object.assign(DETAILS, {
-        total:     { title: 'Total bikes', kind: 'bike', rows: [...B].sort((a, b) => a.reg_number.localeCompare(b.reg_number)), target: 'hubRows' },
-        mfr:       { title: 'Bikes MFR', note: 'Oldest first. Police / FIR cases are not included.', kind: 'bike', rows: byAge(mfr), target: 'ageChart' },
-        mfrPct:    { title: 'Bikes MFR (used for MFR %)', note: `${mfr.length} of ${B.length} bikes.`, kind: 'bike', rows: byAge(mfr), target: 'cityChart' },
-        inflow:    { title: "Today's inflow", note: 'Bikes marked for recovery today (from 7 AM).', kind: 'bike',
-                     rows: byAge(B.filter(b => !b.police_case && opDay(b.mfr_since) === today)), target: 'trendChart' },
-        outflow:   { title: "Today's outflow", note: 'Bikes recovered or renewed today.', kind: 'call', rows: todayCalls(isOut), target: 'trendChart' },
-        recovered: { title: 'Recovered today', kind: 'call', rows: todayCalls(c => c.outcome === 'Recovered'), target: 'agentChart' },
-        agents:    { title: 'Agent actions today', note: 'Every bike an agent recovered, renewed or moved to hub today.', kind: 'call',
-                     rows: todayCalls(c => isOut(c) || isHub(c)), target: 'agentChart' },
-        active:    { title: 'Moved to active today', note: 'Riders who renewed.', kind: 'call', rows: todayCalls(c => c.outcome === 'Renewed'), target: 'agentChart' },
-        hub:       { title: 'Moved to hub today', kind: 'call', rows: todayCalls(isHub), target: 'hubChart' },
-        truck:     { title: 'Moved by Own Truck today', kind: 'call', rows: todayCalls(c => isHub(c) && c.moved_by === 'Own Truck'), target: 'hubChart' },
-        porter:    { title: 'Moved by Porter today', kind: 'call', rows: todayCalls(c => isHub(c) && c.moved_by === 'Porter'), target: 'hubChart' },
-        police:    { title: 'Police station bikes', kind: 'bike', rows: byAge(B.filter(b => b.police_case === 'Police Station')), target: null },
-        fir:       { title: 'FIR registered bikes', kind: 'bike', rows: byAge(B.filter(b => b.police_case === 'FIR Filed')), target: null },
-        inflowP:   { title: `Inflow · ${period}`, kind: 'bike', rows: byAge(B.filter(b => !b.police_case && opDay(b.mfr_since) >= first)), target: 'trendChart' },
-        outflowP:  { title: `Outflow · ${period}`, kind: 'call', rows: periodCalls(isOut), target: 'trendChart' },
-        recP:      { title: `Recovered · ${period}`, kind: 'call', rows: periodCalls(c => c.outcome === 'Recovered'), target: 'agentChart' },
-        renewP:    { title: `Renewed · ${period}`, kind: 'call', rows: periodCalls(c => c.outcome === 'Renewed'), target: 'agentChart' },
-        actionsP:  { title: `All agent actions · ${period}`, kind: 'call',
-                     rows: withDay.filter(c => c.day >= first).sort((a, b) => (a.called_at < b.called_at ? 1 : -1)), target: 'agentChart' },
-        hubP:      { title: `Moved to hub · ${period}`, kind: 'call', rows: periodCalls(isHub), target: 'hubChart' },
-        truckP:    { title: `Own Truck · ${period}`, kind: 'call', rows: periodCalls(c => isHub(c) && c.moved_by === 'Own Truck'), target: 'hubChart' },
-        porterP:   { title: `Porter · ${period}`, kind: 'call', rows: periodCalls(c => isHub(c) && c.moved_by === 'Porter'), target: 'hubChart' },
-        over10:    { title: 'MFR bikes over 10 days', kind: 'bike', rows: byAge(mfr.filter(b => b.age_days > 10)), target: 'ageChart' },
-        never:     { title: 'MFR bikes never called', kind: 'bike', rows: byAge(mfr.filter(b => b.total_calls === 0)), target: 'ageChart' }
-      });
-
-      // ---- Details (period filter) ----
-      draw('trendChart', {
-        type: 'line',
-        data: { labels, datasets: [
-          { label: 'Inflow', data: days.map(d => on(inflowSets, d)), borderColor: C.s1, backgroundColor: fade(C.s1), fill: 'origin', tension: .35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5 },
-          { label: 'Outflow', data: days.map(d => on(outflowSets, d)), borderColor: C.s2, backgroundColor: fade(C.s2), fill: 'origin', tension: .35, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5 },
-          { label: 'Net reduction', data: days.map(d => on(outflowSets, d) - on(inflowSets, d)), borderColor: C.s3, backgroundColor: C.s3, tension: .35,
-            borderWidth: 2, borderDash: [5, 4], pointRadius: 0, pointHoverRadius: 5 }] },
-        options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 18 } },
-          plugins: { legend: { display: false }, valueLabels: { mode: 'last' } }, scales: axes() }
-      });
-      // Pills above the chart show / hide each line (they also act as the legend)
-      const tc = charts.trendChart;
-      tc.data.datasets.forEach((ds, i) => tc.setDatasetVisibility(i, !trendHidden.has(ds.label)));
-      tc.update('none');
-      $('trendPills').innerHTML = tc.data.datasets.map((ds, i) =>
-        `<button type="button" class="pill ${trendHidden.has(ds.label) ? 'off' : ''}" data-i="${i}" aria-pressed="${!trendHidden.has(ds.label)}">
-           <i style="background:${ds.borderColor}"></i>${esc(ds.label)}</button>`).join('');
-      const sumP = (m) => days.reduce((s, d) => s + on(m, d), 0);
-      const inP = DETAILS.inflowP.rows.length, outP = DETAILS.outflowP.rows.length;
-      chips('trendCounts', [
-        { n: inP, t: 'Inflow', color: C.s1, key: 'inflowP' },
-        { n: outP, t: 'Outflow', color: C.s2, key: 'outflowP' },
-        { n: inP - outP, t: inP >= outP ? 'Net added to MFR' : 'Net reduced MFR' }]);
-      chips('hubCounts', [
-        { n: sumP(truckSets), t: 'Own Truck', color: C.s1, key: 'truckP' },
-        { n: sumP(porterSets), t: 'Porter', color: C.s2, key: 'porterP' },
-        { n: sumP(hubSets), t: 'Total moved', key: 'hubP' }]);
-      draw('hubChart', {
-        type: 'bar',
-        data: { labels, datasets: [
-          { label: 'Own Truck', data: days.map(d => on(truckSets, d)), backgroundColor: C.s1, borderColor: C.card, borderWidth: { top: 2 }, borderSkipped: false, maxBarThickness: 18 },
-          { label: 'Porter', data: days.map(d => on(porterSets, d)), backgroundColor: C.s2, borderColor: C.card, borderWidth: { top: 2 }, borderSkipped: false, maxBarThickness: 18 }] },
-        options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 18 } },
-          plugins: { legend: { position: 'top', align: 'start' }, valueLabels: { mode: 'total' } }, scales: axes(true) }
-      });
-
-      const P = withDay.filter(c => c.day >= first);
-      const agents = {};
-      P.forEach(c => {
-        const a = agents[c.agent] ||= { name: c.agent, total: 0, today: 0, by: {} };
-        a.total++; if (c.day === today) a.today++; a.by[c.outcome] = (a.by[c.outcome] || 0) + 1;
-      });
-      const list = Object.values(agents).sort((x, y) => (y.by['Recovered'] || 0) - (x.by['Recovered'] || 0) || y.total - x.total);
-      $('agentNote').textContent = `Last ${range} days · ${P.length} actions by ${list.length} agents`;
-      $('agentChartBox').style.height = Math.max(220, list.length * 34 + 90) + 'px';
-      draw('agentChart', {
-        type: 'bar',
-        data: { labels: list.map(a => a.name), datasets: OUTCOMES.map(o => ({ label: o, data: list.map(a => a.by[o] || 0),
-          backgroundColor: OUTCOME_COLOUR[o], borderColor: C.card, borderWidth: { right: 2 }, borderSkipped: false, maxBarThickness: 22 })) },
-        options: { indexAxis: 'y', maintainAspectRatio: false, layout: { padding: { right: 28 } },
-          plugins: { legend: { position: 'top', align: 'start' }, valueLabels: { mode: 'total' } }, scales: axes(true, true) }
-      });
-      chips('agentCounts', [
-        { n: P.length, t: 'Actions', key: 'actionsP' },
-        { n: list.length, t: 'Agents' },
-        { n: DETAILS.recP.rows.length, t: 'Recovered', color: C.s1, key: 'recP' }]);
-      chips('agentTableCounts', [
-        { n: DETAILS.recP.rows.length, t: 'Recovered', key: 'recP' },
-        { n: DETAILS.renewP.rows.length, t: 'Renewed', key: 'renewP' },
-        { n: DETAILS.hubP.rows.length, t: 'To hub', key: 'hubP' }]);
-      $('agentRows').innerHTML = list.map(a => `<tr><td>${esc(a.name)}</td><td class="num">${a.today}</td><td class="num"><strong>${a.total}</strong></td>
-          <td class="num">${a.by['Recovered'] || 0}</td><td class="num">${a.by['Renewed'] || 0}</td><td class="num">${a.by['Moved to Hub'] || 0}</td>
-          <td class="num">${(a.by['No Answer'] || 0) + (a.by['Switched Off'] || 0)}</td></tr>`).join('')
-        || '<tr><td colspan="7" style="color:var(--muted)">No activity in this period.</td></tr>';
-
-      draw('ageChart', {
-        type: 'bar',
-        data: { labels: AGE_BUCKETS, datasets: [{ label: 'MFR bikes', data: AGE_BUCKETS.map(k => count(mfr, b => bucket(b.age_days) === k)),
-          backgroundColor: AGE_BUCKETS.map((_, i) => i < 5 ? C.s1 : C.red), borderRadius: 6, borderSkipped: 'start', maxBarThickness: 36 }] },
-        options: { maintainAspectRatio: false, layout: { padding: { top: 18 } },
-          plugins: { legend: { display: false }, valueLabels: { mode: 'total' } }, scales: axes() }
-      });
-      chips('ageCounts', [
-        { n: mfr.length, t: 'MFR bikes', key: 'mfr' },
-        { n: DETAILS.over10.rows.length, t: 'Over 10 days', key: 'over10' },
-        { n: DETAILS.never.rows.length, t: 'Never called', key: 'never' }]);
-      const cities = [...new Set(mfr.map(b => b.city))].sort();
-      cities.forEach(ct => { DETAILS['city:' + ct] = { title: `MFR bikes · ${ct}`, kind: 'bike', rows: byAge(mfr.filter(b => b.city === ct)), target: 'cityChart' }; });
-      chips('cityCounts', cities.map(ct => ({ n: DETAILS['city:' + ct].rows.length, t: ct, key: 'city:' + ct })));
-      draw('cityChart', {
-        type: 'bar',
-        data: { labels: cities, datasets: AGE_BANDS.map((band, i) => ({ label: band.label,
-          data: cities.map(ct => count(mfr, b => b.city === ct && band.test(b.age_days))),
-          backgroundColor: AGE_RAMP[i], borderColor: C.card, borderWidth: { top: 2 }, borderSkipped: false, maxBarThickness: 56 })) },
-        options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 18 } },
-          plugins: { legend: { position: 'top', align: 'start' }, valueLabels: { mode: 'total' } }, scales: axes(true) }
-      });
-
-      const hubs = {};
-      B.forEach(b => { const h = hubs[b.hub || '(no hub)'] ||= { hub: b.hub || '(no hub)', city: b.city, all: 0, mfr: [], rec: 0 };
-        h.all++; if (isMfr(b)) h.mfr.push(b); });
-      P.filter(c => c.outcome === 'Recovered').forEach(c => { const b = byId.get(c.bike_id); const h = hubs[b.hub || '(no hub)']; if (h) h.rec++; });
-      $('hubRows').innerHTML = Object.values(hubs).sort((x, y) => y.mfr.length - x.mfr.length || x.hub.localeCompare(y.hub)).map(h => {
-        const n = h.mfr.length, over = count(h.mfr, b => b.age_days > 10);
-        return `<tr><td>${esc(h.hub)}</td><td>${esc(h.city)}</td><td class="num">${h.all}</td><td class="num"><strong>${n}</strong></td>
-          <td class="num">${h.all ? (100 * n / h.all).toFixed(1) + '%' : '–'}</td>
-          <td class="num">${n ? (h.mfr.reduce((s, b) => s + b.age_days, 0) / n).toFixed(1) : '–'}</td>
-          <td class="num ${over ? 'bad' : ''}">${over}</td><td class="num">${count(h.mfr, b => b.total_calls === 0)}</td>
-          <td class="num">${h.rec}</td></tr>`;
-      }).join('') || '<tr><td colspan="9" style="color:var(--muted)">No bikes for this filter.</td></tr>';
-      chips('hubTableCounts', [
-        { n: Object.keys(hubs).length, t: 'Hubs' },
-        { n: B.length, t: 'Total bikes', key: 'total' },
-        { n: mfr.length, t: 'MFR bikes', key: 'mfr' },
-        { n: DETAILS.over10.rows.length, t: 'Over 10 days', key: 'over10' }]);
-
-      // ---- Donuts ----
-      const FLEET = [
-        { t: 'Active', c: C.s3, f: b => b.status === 'active' && !b.police_case },
-        { t: 'MFR', c: C.red, f: b => isMfr(b) },
-        { t: 'Recovered', c: C.s2, f: b => b.status === 'recovered' && !b.police_case },
-        { t: 'At hub', c: C.s1, f: b => b.status === 'at_hub' && !b.police_case },
-        { t: 'Police / FIR', c: C.s7, f: b => !!b.police_case }];
-      FLEET.forEach(x => { DETAILS['st:' + x.t] = { title: `${x.t} bikes`, kind: 'bike', rows: byAge(B.filter(x.f)), target: 'fleetChart' }; });
-      const donut = (id, labels, data, colors, text, sub) => draw(id, { type: 'doughnut',
-        data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: C.card, borderWidth: 2, hoverOffset: 6 }] },
-        options: { maintainAspectRatio: false, cutout: '68%',
-          plugins: { legend: { position: 'right', labels: { padding: 12 } }, centerText: { text, sub } } } });
-      donut('fleetChart', FLEET.map(x => x.t), FLEET.map(x => DETAILS['st:' + x.t].rows.length), FLEET.map(x => x.c), num(B.length), 'bikes');
-      chips('fleetCounts', FLEET.slice(0, 4).map(x => ({ n: DETAILS['st:' + x.t].rows.length, t: x.t, color: x.c, key: 'st:' + x.t })));
-      const oc = OUTCOMES.map(o => count(P, c => c.outcome === o));
-      $('outcomeNote').textContent = `All calls and actions · last ${range} days`;
-      donut('outcomeChart', OUTCOMES, oc, OUTCOMES.map(o => OUTCOME_COLOUR[o]), num(P.length), 'actions');
-      chips('outcomeCounts', [
-        { n: P.length, t: 'Actions', key: 'actionsP' },
-        { n: oc[0], t: 'Recovered', color: C.s1, key: 'recP' },
-        { n: oc[4] + oc[5], t: 'Not reached' }]);
+    async function showFor(session) {
+      const signedIn = !!session;
+      $('loginBox').classList.toggle('hidden', signedIn);
+      if (!signedIn) $('dash').classList.add('hidden');
+      $('authBox').innerHTML = signedIn ? `<span class="who">${esc(session.user.email)}</span><button type="button" id="signOutBtn">Sign Out</button>` : '<span class="who">Not signed in</span>';
+      if (signedIn) $('signOutBtn').onclick = () => db.auth.signOut();
+      const allowed = await applyRoles(session);   // Recovery team + admins only
+      if (signedIn && !allowed) { $('dash').classList.add('hidden'); return; }
+      if (signedIn) { load(); listenForChanges(); }
     }
-
-    // ---- Controls ----
-    $('cityFilter').addEventListener('change', () => { $('hubFilter').value = ''; fillFilters(); render(); });
-    $('hubFilter').addEventListener('change', render);
-    $('modelFilter').addEventListener('change', render);
-    $('rangeFilter').addEventListener('change', render);
-    $('clearBtn').addEventListener('click', () => {
-      $('cityFilter').value = ''; $('hubFilter').value = ''; $('modelFilter').value = ''; fillFilters(); render();
+    $('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); $('loginErr').textContent = '';
+      const { error } = await db.auth.signInWithPassword({ email: $('email').value.trim(), password: $('password').value });
+      if (error) $('loginErr').textContent = error.message;
     });
-    $('syncBtn').addEventListener('click', load);
-    $('menuBtn').addEventListener('click', () => $('side').classList.toggle('open'));
-    $('trendPills').addEventListener('click', (e) => {
-      const p = e.target.closest('.pill'); if (!p) return;
-      const tc = charts.trendChart, i = Number(p.dataset.i), label = tc.data.datasets[i].label;
-      const show = !tc.isDatasetVisible(i);
-      tc.setDatasetVisibility(i, show); tc.update();
-      show ? trendHidden.delete(label) : trendHidden.add(label);
-      p.classList.toggle('off', !show); p.setAttribute('aria-pressed', show);
-    });
-
-    // Clicking a KPI card or a count opens its details
-    const CARD_LOOK = [
-      ['var(--s7)', '<circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17h6l3-7h3M15 10l-2-4h-3"/>'],
-      ['var(--brand)', '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>'],
-      ['var(--s5)', '<path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/>'],
-      ['var(--s1)', '<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 20h16"/>'],
-      ['var(--s3)', '<path d="M12 21V9M7 14l5-5 5 5"/><path d="M4 4h16"/>'],
-      ['var(--s2)', '<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>'],
-      ['#0891b2', '<circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2.5.6 4 2.8 4 6"/>'],
-      ['var(--s6)', '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>'],
-      ['var(--s4)', '<path d="M3 21V9l9-6 9 6v12"/><path d="M8 21v-7h8v7"/>'],
-      ['var(--s1)', '<path d="M2 6h12v10H2zM14 10h4l3 3v3h-7"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>'],
-      ['var(--s2)', '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>'],
-      ['#b91c1c', '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>'],
-      ['#7c3aed', '<path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h8M9 17h6"/>']];
-    const CARD_KEYS = ['total', 'mfr', 'mfrPct', 'inflow', 'outflow', 'recovered', 'agents', 'active', 'hub', 'truck', 'porter', 'police', 'fir'];
-    document.querySelectorAll('.cards .card').forEach((card, i) => {
-      card.dataset.key = CARD_KEYS[i];
-      card.tabIndex = 0;
-      card.setAttribute('role', 'button');
-      card.insertAdjacentHTML('beforeend', '<div class="more">View details →</div>');
-      const [accent, icon] = CARD_LOOK[i];
-      card.style.setProperty('--k', accent);
-      const label = card.querySelector('.label'), value = card.querySelector('.value');
-      const top = document.createElement('div'); top.className = 'top'; label.before(top); top.append(label);
-      top.insertAdjacentHTML('beforeend', `<span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg></span>`);
-      const vrow = document.createElement('div'); vrow.className = 'vrow'; value.before(vrow); vrow.append(value);
-      if (['inflow', 'outflow', 'recovered', 'agents', 'active', 'hub', 'truck', 'porter'].includes(card.dataset.key))
-        vrow.insertAdjacentHTML('beforeend', '<span class="delta flat"></span>');
-    });
-
-
-    document.addEventListener('click', (e) => {
-      const el = e.target.closest('.cards .card, button.count');
-      if (el && el.dataset.key) openDetail(el.dataset.key);
-    });
-    document.addEventListener('keydown', (e) => {
-      const el = e.target.closest && e.target.closest('.cards .card');
-      if (el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openDetail(el.dataset.key); }
-    });
-    $('dClose').addEventListener('click', () => $('detail').close());
-    $('dSearch').addEventListener('input', showDetailRows);
-    $('dCsv').addEventListener('click', downloadCsv);
-    $('dChart').addEventListener('click', () => { const t = $('dChart').dataset.target; $('detail').close(); goToChart(t); });
-
-    // Live: re-sync when calls or bikes change
-    let t = null;
-    const soon = () => { clearTimeout(t); t = setTimeout(load, 500); };
-    db.channel('dashboard-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'call_logs' }, soon)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bikes' }, soon)
-      .subscribe();
-
+    let lastUid;
+    db.auth.onAuthStateChange((_ev, session) => { const id = session?.user?.id || null; if (id === lastUid) return; lastUid = id; setTimeout(() => showFor(session), 0); });
     // ---- Roles: who can see which page (the database enforces the same rules) ----
     const PAGE_ROLES = { 'dashboard.html': ['admin', 'recovery'], 'tracker.html': ['admin', 'recovery'], 'qc.html': ['admin', 'qc'], 'qc-new.html': ['admin', 'qc'], 'admin.html': ['admin'] };
     const ROLE_HOME = { qc: 'qc.html', recovery: 'dashboard.html' };
@@ -1015,12 +627,6 @@
       if (box) { box.querySelector('.na-email').textContent = email || ''; box.classList.toggle('hidden', !on); }
       document.body.classList.toggle('noacc', !!on);
     }
-    async function showAdminLink() {
-      const { data: { session } } = await db.auth.getSession();
-      return applyRoles(session);
-    }
-    showAdminLink();
-    load();
   </script>
   <script>
     // Sidebar collapse button («): remembers your choice on this browser
