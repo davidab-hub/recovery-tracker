@@ -405,7 +405,7 @@
     const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
     // Address of the Google script that writes QCs into the master sheet (NCR QC LIST → "App QCs")
-    const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwOIcQZX_LHln-SWTmQzO6iuEJW9-oINa5LLgCvV54XR9cQ2FHAcTWU6x4rYo9yF-S0/exec';
+    const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdWgQIIJ6p7mlZRyzgFw0oOfXVpe4E4OMFvuqzEiEB5itXLwgf9pf5hmFk9mHclBJX/exec';
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
