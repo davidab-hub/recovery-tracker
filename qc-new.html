@@ -273,6 +273,8 @@
     .crow:last-child { border-bottom: 0; }
     .crow.bad { background: #fff5f5; margin: 0 -12px; padding: 9px 12px; color: inherit; font-weight: inherit; }
     .crow.bad > span { color: #b91c1c; font-weight: 600; }
+    .crow.bad { flex-wrap: wrap; }
+    .cnote { flex: 1 0 100%; margin-top: 8px; padding: 9px 10px; border: 1.5px solid #f3c4c4; border-radius: 9px; font: 14px inherit; font-family: inherit; background: #fff; }
     .seg.four { display: grid; grid-template-columns: 1fr 1fr; }
     .seg.four button:nth-child(3) { border-left: 0; } .seg.four button:nth-child(n+3) { border-top: 1px solid var(--border); }
     .seg { display: flex; flex-wrap: wrap; justify-content: flex-end; border: 1.5px solid var(--border); border-radius: 9px; overflow: hidden; flex-shrink: 0; max-width: 62%; }
@@ -430,7 +432,7 @@
     const HUBS = ['OKHLA', 'INDIRAPURAM', 'GURUGRAM', 'ROHINI'];
 
     let session = null, step = 1, photoData = '', result = '';
-    const st = { hub: store.get('qc-hub') || '', tech: store.get('qc-tech') || '', checks: {} };
+    const st = { hub: store.get('qc-hub') || '', tech: store.get('qc-tech') || '', checks: {}, notes: {} };
 
     // ---------- Step 1 ----------
     function hubChips(list) {
@@ -499,14 +501,20 @@
     function renderChecks() {
       $('checks').innerHTML = CHECKS.map(([key, label, opts]) => {
         const v = st.checks[key];
-        return `<div class="crow ${v && v !== opts[0][0] ? 'bad' : ''}" data-key="${esc(key)}"><span>${esc(label)}</span><div class="seg ${opts.length > 2 ? 'four' : ''}">` +
-          opts.map(([val, txt], i) => `<button type="button" data-v="${esc(val)}" class="${v === val ? (i === 0 ? 'g' : 'x') : ''}">${esc(txt)}</button>`).join('') + '</div></div>';
+        const bad = v && v !== opts[0][0];
+        return `<div class="crow ${bad ? 'bad' : ''}" data-key="${esc(key)}"><span>${esc(label)}</span><div class="seg ${opts.length > 2 ? 'four' : ''}">` +
+          opts.map(([val, txt], i) => `<button type="button" data-v="${esc(val)}" class="${v === val ? (i === 0 ? 'g' : 'x') : ''}">${esc(txt)}</button>`).join('') + '</div>' +
+          (bad ? `<input class="cnote" data-note="${esc(key)}" maxlength="150" placeholder="Comment (optional) — e.g. rear brake loose" value="${esc(st.notes[key] || '')}">` : '') + '</div>';
       }).join('');
     }
     $('checks').addEventListener('click', (e) => {
       const b = e.target.closest('button[data-v]'); if (!b) return;
-      st.checks[b.closest('.crow').dataset.key] = b.dataset.v; $('formErr').textContent = ''; renderChecks(); suggest();
+      const key = b.closest('.crow').dataset.key; st.checks[key] = b.dataset.v;
+      if (CHECKS.find(c => c[0] === key)[2][0][0] === b.dataset.v) delete st.notes[key];   // back to OK: drop the comment
+      $('formErr').textContent = ''; renderChecks(); suggest();
+      const n = document.querySelector(`.cnote[data-note="${CSS.escape(key)}"]`); if (n) n.focus();
     });
+    $('checks').addEventListener('input', (e) => { const n = e.target.closest('.cnote'); if (n) st.notes[n.dataset.note] = n.value.trim(); });
     $('allOk').addEventListener('click', () => { $('formErr').textContent = ''; CHECKS.forEach(([k, , o]) => { if (!st.checks[k]) st.checks[k] = o[0][0]; }); renderChecks(); suggest(); });
     const badItems = () => CHECKS.filter(([k, , o]) => st.checks[k] && st.checks[k] !== o[0][0]).map(([, l]) => l);
 
@@ -526,7 +534,7 @@
     function summary() {
       const bad = badItems();
       $('summary').innerHTML = `<b>Summary</b><br>${esc(st.hub)} · ${esc(cleanVeh($('vehicle').value))} · ${esc(st.tech)} · ${photoData ? '📷 photo' : 'no photo'}` +
-        `<br>${bad.length ? 'Problems: ' + bad.map(b => `<span class="tag">${esc(b)}</span>`).join(' ') : 'No checklist problems'}` +
+        `<br>${bad.length ? 'Problems: ' + CHECKS.filter(([k, , o]) => st.checks[k] && st.checks[k] !== o[0][0]).map(([k, l]) => `<span class="tag">${esc(l)}${st.notes[k] ? ': ' + esc(st.notes[k]) : ''}</span>`).join(' ') : 'No checklist problems'}` +
         (result ? `<br>Result: <b>${result.charAt(0) + result.slice(1).toLowerCase()}</b>` : '');
     }
 
@@ -566,23 +574,24 @@
         const { data: { session: s } } = await db.auth.getSession();   // fresh login token
         const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ token: s && s.access_token, qc: { hub: st.hub, vehicle: cleanVeh($('vehicle').value), technician: st.tech,
-            checks: st.checks, remarks: $('remarks').value.trim(), result, photo: photoData } }) });
+            checks: st.checks, notes: st.notes, remarks: $('remarks').value.trim(), result, photo: photoData } }) });
         const r = await res.json();
-        if (!r.ok) throw new Error(r.error || 'Could not save');
+        if (!r.ok) { const e = new Error(r.error || 'Could not save'); e.server = true; throw e; }
         $('qcForm').classList.add('hidden'); $('doneBox').classList.remove('hidden');
         $('doneText').innerHTML = `${esc(cleanVeh($('vehicle').value))} · <b>${result.charAt(0) + result.slice(1).toLowerCase()}</b> · ${esc(st.tech)}<br>` +
           (r.live ? 'Saved to the NCR QC LIST and already on the QC Dashboard.' : 'Saved to the NCR QC LIST. It will show on the QC Dashboard within 10 minutes.');
         $('doneGrid').innerHTML = `<div><span>Your QCs today</span><b>${r.today}</b></div><div><span>Rejected</span><b>${r.today_rejected}</b></div>`;
         window.scrollTo({ top: 0 });
       } catch (e) {
-        $('formErr').textContent = 'Not saved: ' + e.message + ' — check your internet and press Submit again.';
+        $('formErr').textContent = 'Not saved: ' + e.message + (e.server ? '' : ' — check your internet and press Submit again.');
+        $('formErr').scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
       btn.disabled = false; btn.textContent = 'Submit QC';
     }
     $('againBtn').addEventListener('click', () => {   // keep hub + technician, clear the rest
       $('vehicle').value = ''; $('lastQc').textContent = ''; photoData = ''; $('photo').value = '';
       $('photoPrev').classList.add('hidden'); $('photoText').innerHTML = '📷 Take photo<small>or choose from gallery</small>';
-      st.checks = {}; result = ''; $('remarks').value = '';
+      st.checks = {}; st.notes = {}; result = ''; $('remarks').value = '';
       $('doneBox').classList.add('hidden'); $('qcForm').classList.remove('hidden'); go(1);
     });
 
