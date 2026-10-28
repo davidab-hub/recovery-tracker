@@ -18,7 +18,7 @@
     :root {
       --brand: #e3262b; --brand-dark: #b91c21; --bg: #f4f5f7; --card: #fff; --text: #111827; --muted: #6b7280;
       --border: #e5e7eb; --chip: #fff; --ok: #16a34a; --warn: #d97706; --bad: #dc2626;
-      --b1: #16a34a; --b2: #65a30d; --b3: #d97706; --b4: #ea580c; --b5: #dc2626; --b6: #7f1d1d;
+      --b1: #1a73e8; --b2: #f9b800; --b3: #f57c00; --b4: #e53935; --b5: #795548; --b6: #111111;
       --safe-b: env(safe-area-inset-bottom, 0px);
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -102,6 +102,28 @@
     .empty { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 14px; }
     .note-bar { margin: 10px 12px 0; font-size: 12px; color: var(--muted); }
 
+    /* ---------- My bikes / assignments ---------- */
+    .scopes { display: flex; gap: 6px; overflow-x: auto; padding: 0 12px 10px; background: #fff; border-bottom: 1px solid var(--border); scrollbar-width: none; flex: none; }
+    .scopes::-webkit-scrollbar { display: none; }
+    .scope { flex: none; border: 0; background: #f1f2f4; color: var(--text); border-radius: 10px; padding: 7px 12px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+    .scope i { font-style: normal; color: var(--muted); margin-left: 4px; font-weight: 600; }
+    .scope.on { background: #111827; color: #fff; }
+    .scope.on i { color: #d1d5db; }
+    .cities:has(+ .scopes:not(.hidden)) { border-bottom: 0; }
+    .owner { display: inline-block; font-size: 11.5px; font-weight: 700; border-radius: 6px; padding: 1px 6px; margin-left: 4px; background: #eef2ff; color: #3730a3; vertical-align: 1px; }
+    .owner.me { background: #e8f6ee; color: #15803d; }
+    .owner.none { background: #f3f4f6; color: var(--muted); }
+    .bike .km { font-size: 12px; font-weight: 700; color: #1a73e8; white-space: nowrap; }
+    .near-bar { display: flex; align-items: center; gap: 8px; margin: 10px 12px 0; }
+    .near-bar button { border: 1.5px solid #1a73e8; background: #fff; color: #1a73e8; border-radius: 999px; padding: 7px 12px; font-weight: 700; font-size: 13px; }
+    .near-bar button.on { background: #1a73e8; color: #fff; }
+    .near-bar small { color: var(--muted); font-size: 12px; }
+    .assigned { margin: -6px 0 12px; padding: 10px 12px; border-radius: 12px; background: #f4f5f7; font-size: 13.5px; }
+    .assigned b { font-weight: 800; }
+    .assigned .mv { display: flex; gap: 8px; margin-top: 8px; }
+    .assigned select { flex: 1; min-width: 0; border: 1.5px solid var(--border); border-radius: 10px; padding: 9px; font-size: 14px; background: #fff; }
+    .assigned button { border: 0; border-radius: 10px; background: #111827; color: #fff; font-weight: 700; padding: 0 14px; }
+
     /* ---------- Find ---------- */
     .find-box { margin: 14px 12px 4px; background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
     .find-box label { font-size: 13px; font-weight: 700; display: block; margin-bottom: 8px; }
@@ -138,6 +160,7 @@
     #menu button { width: 100%; text-align: left; border: 0; background: none; padding: 14px 16px; font-size: 15px; font-weight: 600; }
     #menu button.out { color: var(--bad); }
     .leaflet-popup-content { margin: 10px 12px; font-size: 13px; }
+    .area-lbl span { display: inline-block; transform: translate(-50%, -50%); background: rgba(255,255,255,.88); border: 1.5px solid; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 800; white-space: nowrap; }
 
     /* ---------- Google-style map ---------- */
     .pin { background: none; border: 0; }
@@ -203,6 +226,7 @@
       </button>
     </header>
     <div class="cities" id="cities"></div>
+    <div class="scopes hidden" id="scopes"></div>
     <main>
       <section class="page" id="pMap"><div id="map"></div><div class="map-count" id="mapCount"></div>
         <div class="legend" id="legend"></div>
@@ -264,17 +288,27 @@
     };
 
     let bikes = [], meta = null, city = store.get('ra-city') || 'All', tab = 'Map', me = null;
+    // Who each bike is given to (filled every morning by area), the areas, and which bikes to show
+    let assign = new Map(), zones = [], agents = [], myRole = null, scope = null, here = null, nearSort = false;
+    const ownerOf = (b) => assign.get(Number(b.bike_id)) || null;
+    const isMine = (b) => !!me && ownerOf(b)?.agent_id === me.id;
+    const mineCount = () => bikes.filter(isMine).length;
+    const canMove = () => myRole === 'admin' || myRole === 'recovery';
+    const firstName = (n) => String(n || '').trim().split(/\s+/)[0];
+    const kmTo = (b) => { if (!here || b.lat == null) return null;
+      const dy = (b.lat - here[0]) * 111.32, dx = (b.lng - here[1]) * 111.32 * Math.cos(here[0] * Math.PI / 180); return Math.hypot(dx, dy); };
+    const kmText = (k) => k == null ? '' : k < 1 ? Math.round(k * 1000) + ' m' : k.toFixed(k < 10 ? 1 : 0) + ' km';
 
     // ---------- helpers ----------
     const days = (b) => b.age_days == null ? '' : (b.age_days === 1 ? '1 day' : b.age_days + ' days');
-    function ageColor(d) {
-      if (d == null) return '#9ca3af';
-      if (d <= 2) return 'var(--b1)'; if (d <= 7) return 'var(--b2)'; if (d <= 15) return 'var(--b3)';
-      if (d <= 30) return 'var(--b4)'; if (d <= 90) return 'var(--b5)'; return 'var(--b6)';
-    }
-    const AGE_HEX = (d) => d == null ? '#9ca3af' : d <= 2 ? '#16a34a' : d <= 7 ? '#65a30d' : d <= 15 ? '#d97706' : d <= 30 ? '#ea580c' : d <= 90 ? '#dc2626' : '#7f1d1d';
+    // Ageing colours (same as the team's map): 1–2 days blue · 2–3 yellow · 3–4 orange · 4–5 red · 5–10 brown · over 10 black
+    const AGE_STEPS = [[1, '#1a73e8', '1–2 days'], [2, '#f9b800', '2–3 days'], [3, '#f57c00', '3–4 days'], [4, '#e53935', '4–5 days'], [10, '#795548', '5–10 days'], [Infinity, '#111111', 'Over 10 days']];
+    function ageColor(d) { return d == null ? '#9ca3af' : AGE_STEPS.find(([max]) => d <= max)[1]; }
+    const AGE_HEX = ageColor;
     const inCity = (b) => city === 'All' || b.city_name === city;
-    const visible = () => bikes.filter(inCity);
+    const inScope = (b) => !scope || scope === 'all' ? true : scope === 'mine' ? isMine(b)
+      : scope === 'none' ? !ownerOf(b)?.agent_id : ownerOf(b)?.agent_id === scope;
+    const visible = () => bikes.filter(b => inCity(b) && inScope(b));
     const tel = (b) => b.rider_phone ? b.rider_phone.replace(/\D/g, '').slice(-10) : '';
     function bucketsOf(list) {   // age groups in order of age, using the file's own age_bucket names
       const m = new Map();
@@ -284,11 +318,19 @@
     }
     const sortAge = (a, b) => (b.age_days ?? -1) - (a.age_days ?? -1);
 
+    function ownerTag(b) {
+      if (scope === 'mine' || !assign.size) return '';
+      const o = ownerOf(b);
+      if (isMine(b)) return '<span class="owner me">You</span>';
+      if (o?.agent_id) return `<span class="owner">${esc(firstName(o.agent_name) || 'Agent')}</span>`;
+      return canMove() && o ? '<span class="owner none">Not assigned</span>' : '';
+    }
     function bikeRow(b) {
       const p = tel(b);
       return `<div class="bike" data-id="${b.bike_id}">
-        <div class="info"><div class="reg">${esc(b.reg_number)}</div><div class="rider">${esc(b.rider_name || 'No rider name')}</div></div>
-        <span class="age" style="background:${ageColor(b.age_days)}">${esc(days(b) || '—')}</span>
+        <div class="info"><div class="reg">${esc(b.reg_number)}${ownerTag(b)}</div><div class="rider">${esc(b.rider_name || 'No rider name')}</div></div>
+        ${nearSort && kmTo(b) != null ? `<span class="km">${kmText(kmTo(b))}</span>` : ''}
+        <span class="age" style="background:${ageColor(b.age_days)}${ageColor(b.age_days) === '#f9b800' ? ';color:#111' : ''}">${esc(days(b) || '—')}</span>
         ${p ? `<a class="ibtn call" href="tel:+91${p}" aria-label="Call rider" data-stop>${ICON.call}</a>` : ''}
       </div>`;
     }
@@ -303,6 +345,22 @@
       const list = [{ key: 'All', label: 'All', n: bikes.length }].concat(CITIES.map(c => ({ ...c, n: n(c.key) })))
         .concat([...new Set(bikes.map(b => b.city_name).filter(k => k && !CITIES.some(c => c.key === k)))].map(k => ({ key: k, label: k, n: n(k) })));
       $('cities').innerHTML = list.map(c => `<button class="chip ${city === c.key ? 'on' : ''}" data-city="${esc(c.key)}">${esc(c.label)}<i>${c.n}</i></button>`).join('');
+      renderScopes();
+    }
+    // My bikes / All bikes (agents) · by agent (admin, recovery team)
+    function renderScopes() {
+      const inC = bikes.filter(inCity), n = (f) => inC.filter(f).length, opts = [];
+      if (mineCount()) opts.push(['mine', 'My bikes', n(isMine)], ['all', 'All bikes', inC.length]);
+      else if (canMove() && assign.size) {
+        opts.push(['all', 'All agents', inC.length]);
+        const seen = new Map(); inC.forEach(b => { const o = ownerOf(b); if (o?.agent_id) seen.set(o.agent_id, o.agent_name); });
+        [...seen.entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1]))).forEach(([id, nm]) => opts.push([id, firstName(nm) || 'Agent', n(b => ownerOf(b)?.agent_id === id)]));
+        const free = n(b => !ownerOf(b)?.agent_id && (b.city_name === 'Bangalore'));
+        if (free) opts.push(['none', 'Not assigned', free]);
+      }
+      if (scope && !opts.some(o => o[0] === scope)) scope = opts[0]?.[0] || null;
+      $('scopes').classList.toggle('hidden', !opts.length || tab === 'Find');
+      $('scopes').innerHTML = opts.map(([k, l, c]) => `<button type="button" class="scope ${scope === k ? 'on' : ''}" data-scope="${esc(k)}">${esc(l)}<i>${c}</i></button>`).join('');
     }
     function renderHeader() {
       const cname = city === 'All' ? 'All cities' : cityLabel(city);
@@ -311,6 +369,7 @@
       $('hSub').textContent = bikes.length ? `${visible().length} bikes${when ? ' · updated ' + when : ''}` : (when ? 'No bikes in today\'s file' : 'Loading…');
       $('nBikes').textContent = visible().length ? '· ' + visible().length : '';
       $('cities').classList.toggle('hidden', tab === 'Find');
+      if (tab === 'Find') $('scopes').classList.add('hidden');
     }
 
     // ---------- Map ----------
@@ -340,34 +399,47 @@
       let meDot, meRing;
       $('locBtn').onclick = () => { $('locBtn').classList.add('busy'); map.locate({ setView: true, maxZoom: 16, enableHighAccuracy: true }); };
       map.on('locationfound', (e) => {
-        $('locBtn').classList.remove('busy');
+        $('locBtn').classList.remove('busy'); here = [e.latlng.lat, e.latlng.lng];
         if (!meDot) { meRing = L.circle(e.latlng, { radius: e.accuracy, color: '#1a73e8', weight: 1, fillOpacity: .12 }).addTo(map);
           meDot = L.marker(e.latlng, { icon: L.divIcon({ className: '', html: '<div class="me-dot"></div>', iconSize: [16, 16] }), interactive: false }).addTo(map); }
         else { meDot.setLatLng(e.latlng); meRing.setLatLng(e.latlng).setRadius(e.accuracy); }
       });
       map.on('locationerror', () => { $('locBtn').classList.remove('busy'); alertMsg('Could not get your location. Turn on location for Chrome and try again.'); });
       // Number bubbles take the color of the oldest bike inside them
-      layer = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 45, iconCreateFunction: (c) => {
+      layer = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 45, disableClusteringAtZoom: 9, /* a city on screen: every bike as its own pin */ iconCreateFunction: (c) => {
         const ms = c.getAllChildMarkers(), n = ms.length, oldest = Math.max(...ms.map(m => m.options.age ?? -1));
         const size = n < 10 ? 36 : n < 50 ? 42 : 50;
         return L.divIcon({ className: 'clu', html: `<div style="background:${AGE_HEX(oldest < 0 ? null : oldest)}">${n}</div>`, iconSize: [size, size] });
       } });
       map.addLayer(layer);
-      $('legend').innerHTML = [['0–2 days', '#16a34a'], ['3–7', '#65a30d'], ['8–15', '#d97706'], ['16–30', '#ea580c'], ['31–90', '#dc2626'], ['90+', '#7f1d1d']]
-        .map(([t, c]) => `<div><span style="background:${c}"></span>${t}</div>`).join('');
+      $('legend').innerHTML = AGE_STEPS.map(([, c, t]) => `<div><span style="background:${c}"></span>${t}</div>`).join('');
     }
     // Google-style teardrop pin in the bike's age color
     const pinCache = {};
-    const pinIcon = (c) => pinCache[c] || (pinCache[c] = L.divIcon({ className: 'pin', iconSize: [28, 38], iconAnchor: [14, 37],
-      html: `<svg width="28" height="38" viewBox="0 0 28 38"><path d="M14 1C7 1 1.5 6.4 1.5 13.3 1.5 22.6 14 37 14 37s12.5-14.4 12.5-23.7C26.5 6.4 21 1 14 1z" fill="${c}" stroke="#fff" stroke-width="2"/><circle cx="14" cy="13.5" r="4.6" fill="#fff"/></svg>` }));
+    const pinIcon = (c, small) => pinCache[c + small] || (pinCache[c + small] = L.divIcon({ className: 'pin', iconSize: small ? [20, 27] : [28, 38], iconAnchor: small ? [10, 26] : [14, 37],
+      html: `<svg width="${small ? 20 : 28}" height="${small ? 27 : 38}" viewBox="0 0 28 38"><path d="M14 1C7 1 1.5 6.4 1.5 13.3 1.5 22.6 14 37 14 37s12.5-14.4 12.5-23.7C26.5 6.4 21 1 14 1z" fill="${c}" stroke="#fff" stroke-width="2"/><circle cx="14" cy="13.5" r="4.6" fill="#fff"/></svg>` }));
     function alertMsg(t) { const el = $('mapCount'), old = el.textContent; el.textContent = t; setTimeout(() => { if (el.textContent === t) el.textContent = old; }, 5000); }
+    // Outlines of the recovery areas (light, so the bikes stay easy to see)
+    let areaLayer;
+    function drawAreas() {
+      if (!areaLayer) areaLayer = L.layerGroup().addTo(map);
+      areaLayer.clearLayers();
+      zones.filter(z => city === 'All' || z.city === city).forEach(z => {
+        const team = (z.agent_ids || []).map(id => firstName((agents.find(a => a.id === id) || {}).name)).filter(Boolean);
+        L.polygon(z.polygon, { color: z.color, weight: 2, dashArray: '6 6', fillOpacity: .04, interactive: false }).addTo(areaLayer);
+        const c = L.polygon(z.polygon).getBounds().getCenter();
+        L.marker(c, { interactive: false, icon: L.divIcon({ className: 'area-lbl', iconSize: null,
+          html: `<span style="border-color:${z.color};color:${z.color}">${esc(z.name.split('·')[0].trim())}${team.length ? ' · ' + esc(team.join(', ')) : ''}</span>` }) }).addTo(areaLayer);
+      });
+    }
     function renderMap() {
       if (!map) initMap();
-      layer.clearLayers();
+      layer.clearLayers(); drawAreas();
       const list = visible().filter(b => b.lat != null && b.lng != null);
       const pts = [];
       list.forEach(b => {
-        const m = L.marker([b.lat, b.lng], { icon: pinIcon(AGE_HEX(b.age_days)), age: b.age_days ?? -1, title: b.reg_number });
+        const faded = scope === 'all' && mineCount() > 0 && !isMine(b);   // someone else's bike: smaller, lighter pin
+        const m = L.marker([b.lat, b.lng], { icon: pinIcon(AGE_HEX(b.age_days), faded), age: b.age_days ?? -1, title: b.reg_number, opacity: faded ? .6 : 1 });
         m.on('click', () => openSheet(b));
         layer.addLayer(m);
         pts.push([b.lat, b.lng]);
@@ -387,18 +459,31 @@
     const openGroups = new Set();
     function renderBikes() {
       const list = visible();
-      if (!list.length) { $('pBikes').innerHTML = `<div class="empty">No bikes${city === 'All' ? '' : ' in ' + esc(cityLabel(city))} in today's file.</div>`; return; }
+      const nearBar = `<div class="near-bar"><button type="button" id="nearBtn" class="${nearSort ? 'on' : ''}">📍 ${nearSort ? 'Nearest first' : 'Sort by nearest'}</button>
+        <small>${nearSort ? (here ? 'from where you are now' : 'finding you…') : 'see bikes close to you'}</small></div>`;
+      if (!list.length) { $('pBikes').innerHTML = nearBar + `<div class="empty">No bikes${city === 'All' ? '' : ' in ' + esc(cityLabel(city))} here.</div>`; return; }
+      if (nearSort && here) {   // one list, closest first, with the distance on each bike
+        const l = list.filter(b => b.lat != null).sort((a, b) => kmTo(a) - kmTo(b));
+        $('pBikes').innerHTML = nearBar + `<div class="group open"><div class="gbody">${l.slice(0, 300).map(bikeRow).join('')}</div></div>`; return;
+      }
       const byCity = new Map();
       list.forEach(b => { const k = b.city_name || ''; if (!byCity.has(k)) byCity.set(k, []); byCity.get(k).push(b); });
       const cities = [...byCity.entries()].sort((a, b) => b[1].length - a[1].length);
       const single = cities.length === 1;
-      $('pBikes').innerHTML = (single ? '' : '<div class="note-bar">Tap a city to see its bikes</div>') + cities.map(([k, l]) => {
+      $('pBikes').innerHTML = nearBar + (single ? '' : '<div class="note-bar">Tap a city to see its bikes</div>') + cities.map(([k, l]) => {
         const id = 'c:' + k, open = single || openGroups.has(id);
         const inner = bucketsOf(l).map(g => `<div class="sub">${esc(g.name)} · ${g.list.length}</div>` + g.list.sort(sortAge).map(bikeRow).join('')).join('');
         return groupHtml(id, cityLabel(k), l.length, inner, open);
       }).join('');
       $('pBikes').dataset.html = '';
     }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#nearBtn')) return;
+      nearSort = !nearSort; renderBikes();
+      if (nearSort) navigator.geolocation?.getCurrentPosition((p) => { here = [p.coords.latitude, p.coords.longitude]; if (tab === 'Bikes') renderBikes(); },
+        () => { nearSort = false; renderBikes(); alert('Could not get your location. Turn on location for Chrome and try again.'); }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+    });
 
     // ---------- Ageing (age groups collapsed) ----------
     function renderAgeing() {
@@ -453,6 +538,24 @@
       return `${inApp}<div class="sv"><a class="pano" href="${pano}" target="_blank" rel="noopener">${icon360}360° Street View</a><a class="gm" href="${gm}" target="_blank" rel="noopener">${iconPin}Google Maps</a></div>
         <p class="sv-note">Street View shows the nearest street photo to the bike's last GPS point.</p>`;
     }
+    function assignedBox(b) {
+      if (!assign.size) return '';   // areas not switched on yet
+      const o = ownerOf(b), z = zones.find(x => x.id === o?.zone_id);
+      const who = isMine(b) ? 'You' : o?.agent_id ? esc(o.agent_name || 'Agent') : 'Nobody yet';
+      const move = canMove() && agents.length ? `<div class="mv"><select id="mvSel"><option value="">Move to…</option>${agents.map(a => `<option value="${a.id}" ${a.id === o?.agent_id ? 'disabled' : ''}>${esc(a.name)}</option>`).join('')}</select>
+        <button type="button" id="mvBtn" data-bike="${b.bike_id}">Move</button></div>` : '';
+      return `<div class="assigned">Assigned to <b>${who}</b>${z ? ' · ' + esc(z.name) : ''}${o?.manual ? ' · moved by hand' : ''}${move}</div>`;
+    }
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('#mvBtn'); if (!btn) return;
+      const id = $('mvSel').value; if (!id) return;
+      const a = agents.find(x => x.id === id), bike = Number(btn.dataset.bike), prev = assign.get(bike);
+      btn.disabled = true; btn.textContent = 'Saving…';
+      const row = { bike_id: bike, agent_id: id, agent_name: a.name, zone_id: prev?.zone_id ?? null, manual: true, assigned_at: new Date().toISOString() };
+      const { error } = await db.from('mfr_assignments').upsert(row, { onConflict: 'bike_id' });
+      if (error) { btn.disabled = false; btn.textContent = 'Move'; alert('Could not move: ' + error.message); return; }
+      assign.set(bike, row); closeSheet(); render();
+    });
     function openSheet(b) {
       const p = tel(b), dir = b.lat != null ? `https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}` : '';
       const rows = [['Rider', b.rider_name], ['Rider phone', p ? '+91 ' + p : ''], ['City', cityLabel(b.city_name)], ['Days overdue', days(b)],
@@ -465,6 +568,7 @@
           <a class="${p ? '' : 'off'}" href="${p ? 'https://wa.me/91' + p : '#'}" target="_blank" rel="noopener">${ICON.wa}WhatsApp</a>
           <a class="go ${dir ? '' : 'off'}" href="${dir || '#'}" target="_blank" rel="noopener">${ICON.go}Navigate</a>
         </div>
+        ${assignedBox(b)}
         ${streetView(b)}
         <dl>${rows.filter(r => r[1]).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
         <button class="close-sheet" type="button" id="closeSheet">Close</button>`;
@@ -497,6 +601,10 @@
       const b = e.target.closest('button[data-tab]'); if (!b) return;
       tab = b.dataset.tab; render();
     });
+    $('scopes').addEventListener('click', (e) => {
+      const c = e.target.closest('.scope'); if (!c) return;
+      scope = c.dataset.scope; openGroups.clear(); render();
+    });
     $('cities').addEventListener('click', (e) => {
       const c = e.target.closest('.chip'); if (!c) return;
       city = c.dataset.city; store.set('ra-city', city); openGroups.clear(); render();
@@ -527,6 +635,12 @@
         bikes = all;
         const m = await db.from('mfr_meta').select('*').eq('id', 1).maybeSingle();
         meta = m.data || null;
+        // Assignments + areas (quietly skipped if they aren't set up)
+        const [as, zs] = await Promise.all([db.from('mfr_assignments').select('bike_id, agent_id, agent_name, zone_id, manual').limit(5000), db.from('recovery_zones').select('*').order('sort')]);
+        assign = new Map((as.data || []).map(a => [Number(a.bike_id), a])); zones = zs.data || [];
+        if (myRole === null) { const r = await db.rpc('my_role'); myRole = r.data || ''; }
+        if (!agents.length) { const r = await db.rpc('recovery_agents'); agents = r.data || []; }
+        if (scope === null) scope = mineCount() ? 'mine' : 'all';   // agents start on their own bikes
         if (city !== 'All' && !bikes.some(b => b.city_name === city) && !CITIES.some(c => c.key === city)) city = 'All';
         render();
         if (tab === 'Find' && $('findIn').value) runFind();
@@ -564,7 +678,7 @@
 
     async function show(session) {
       $('splash').classList.add('hidden');
-      me = session?.user || null;
+      me = session?.user || null; myRole = null; agents = []; scope = null; assign = new Map();
       if (!session) { $('app').classList.add('hidden'); $('login').classList.remove('hidden'); bikes = []; return; }
       $('login').classList.add('hidden'); $('app').classList.remove('hidden');
       render(); load();
