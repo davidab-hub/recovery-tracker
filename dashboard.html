@@ -252,6 +252,8 @@
     .login button { margin-top: 14px; width: 100%; padding: 9px; }
     .login .err { color: #b91c1c; font-size: 13px; min-height: 1em; margin: 8px 0 0; }
     body.noacc main > *:not(#noAccess):not(.tabs-top) { display: none !important; }
+    .bar .range { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+    .bar .range input { padding: 5px 6px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: var(--input); color: var(--text); font-family: inherit; }
   </style>
 </head>
 <body>
@@ -311,6 +313,17 @@
       <select id="cityFilter"><option value="">All Cities</option></select>
       <label for="hubFilter">Hub</label>
       <select id="hubFilter"><option value="">All Hubs</option></select>
+      <label for="periodFilter">Period</label>
+      <select id="periodFilter">
+        <option value="1">Latest day</option>
+        <option value="7">Last 7 days</option>
+        <option value="15">Last 15 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="custom">Pick dates…</option>
+      </select>
+      <span class="range hidden" id="rangeBox">
+        <input type="date" id="fromDate" aria-label="From date"><span>to</span><input type="date" id="toDate" aria-label="To date">
+      </span>
       <label for="modelFilter">Model</label>
       <select id="modelFilter" disabled title="Needs Metabase data"><option value="">All Models</option></select>
       <span class="spacer"></span>
@@ -323,8 +336,8 @@
       <div class="card na"><div class="label">Total Bikes</div><div class="value">—</div><div class="sub">needs Metabase data</div></div>
       <div class="card na"><div class="label">Bikes MFR</div><div class="value">—</div><div class="sub">needs Metabase data</div></div>
       <div class="card na"><div class="label">MFR %</div><div class="value">—</div><div class="sub">needs Metabase data</div></div>
-      <div class="card na"><div class="label">Today's Inflow</div><div class="value">—</div><div class="sub">needs Metabase data</div></div>
-      <div class="card"><div class="label">Today's Outflow</div><div class="value c-green" id="kOutflow">–</div><div class="sub" id="kOutflowSub"></div></div>
+      <div class="card na"><div class="label">Inflow</div><div class="value">—</div><div class="sub">needs Metabase data</div></div>
+      <div class="card"><div class="label">Outflow</div><div class="value c-green" id="kOutflow">–</div><div class="sub" id="kOutflowSub"></div></div>
       <div class="card"><div class="label">Recovered Bikes</div><div class="value c-orange" id="kRecovered">–</div><div class="sub" id="kRecoveredSub"></div></div>
       <div class="card"><div class="label">Available Recovery Agents</div><div class="value c-dark" id="kAgents">–</div><div class="sub" id="kAgentsSub"></div></div>
       <div class="card"><div class="label">Moved to Active</div><div class="value c-green" id="kActive">–</div><div class="sub" id="kActiveSub"></div></div>
@@ -336,12 +349,7 @@
     </section>
 
     <div class="section-head">
-      <h2>Details</h2>
-      <select id="rangeFilter" aria-label="Period for the charts below">
-        <option value="7">Last 7 days</option>
-        <option value="14">Last 14 days</option>
-        <option value="30" selected>Last 30 days</option>
-      </select>
+      <h2>Details</h2><span class="note" id="periodNote" style="margin:0"></span>
     </div>
     <section class="grid2">
       <div class="panel">
@@ -373,7 +381,7 @@
         <p class="note">Recovered, renewed and moved to hub in the period · click a column to sort</p>
         <div class="table-wrap" style="max-height:470px;overflow:auto">
           <table id="agentTable">
-            <thead><tr><th data-k="a">Agent</th><th class="num" data-k="today">Today</th><th class="num" data-k="n">Cases</th><th class="num" data-k="rec">Recovered</th>
+            <thead><tr><th data-k="a">Agent</th><th class="num" data-k="today" title="Cases on the latest day in the sheet">Latest day</th><th class="num" data-k="n">Cases</th><th class="num" data-k="rec">Recovered</th>
               <th class="num" data-k="ren">Renewed</th><th class="num" data-k="hub">To hub</th><th class="num" data-k="pol">Police stn</th></tr></thead>
             <tbody></tbody>
           </table>
@@ -459,24 +467,30 @@
     function chips(id, items) { $(id).innerHTML = items.map(it => `<div class="count"><div class="n">${num(it.n)}</div><div class="t">${it.color ? `<i style="background:${it.color}"></i>` : ''}${esc(it.t)}</div></div>`).join(''); }
 
     function render() {
-      const c = $('cityFilter').value, h = $('hubFilter').value, n = Number($('rangeFilter').value);
+      const c = $('cityFilter').value, h = $('hubFilter').value, pv = $('periodFilter').value;
       const base = DATA.filter(r => (!c || r.c === c) && (!h || r.l === h));
-      const from = addDays(TODAY, 1 - n);
-      const rows = base.filter(r => r.d >= from && r.d <= TODAY), td = base.filter(r => r.d === TODAY);
+      // One period for the whole page: cards, charts and tables
+      let from, to;
+      if (pv === 'custom') { from = $('fromDate').value || FIRST; to = $('toDate').value || TODAY; if (from > to) [from, to] = [to, from]; }
+      else { to = TODAY; from = addDays(TODAY, 1 - Number(pv)); }
+      const n = Math.round((Date.parse(to) - Date.parse(from)) / 864e5) + 1;
+      const pName = from === to ? fmtDay(to) : `${fmtDay(from < FIRST ? FIRST : from)} – ${fmtDay(to)}`;
+      $('periodNote').textContent = pName;
+      const rows = base.filter(r => r.d >= from && r.d <= to), td = rows;
       $('synced').textContent = `Latest day in sheet: ${fmtDay(TODAY)} · updated ${new Date(loadedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
       const sum = (arr) => arr.reduce((s, r) => s + r.amt, 0);
       const per = (arr) => arr.length ? rs(sum(arr) / arr.length) + '/bike' : '';
       const tRec = td.filter(isRec).length, tRen = td.filter(isRen).length;
-      $('kOutflow').textContent = num(tRec + tRen); $('kOutflowSub').textContent = `${tRec} recovered · ${tRen} renewed`;
-      $('kRecovered').textContent = num(tRec); $('kRecoveredSub').textContent = `today · ${num(rows.filter(isRec).length)} in last ${n} days`;
-      $('kAgents').textContent = num(new Set(td.map(r => r.a)).size); $('kAgentsSub').textContent = 'active today (closed ≥ 1 bike)';
-      $('kActive').textContent = num(tRen); $('kActiveSub').textContent = `rent paid today · ${num(rows.filter(isRen).length)} in last ${n} days`;
+      $('kOutflow').textContent = num(tRec + tRen); $('kOutflowSub').textContent = `${num(tRec)} recovered · ${num(tRen)} renewed`;
+      $('kRecovered').textContent = num(tRec); $('kRecoveredSub').textContent = `moved to hub + found in hub · ${pName}`;
+      $('kAgents').textContent = num(new Set(td.map(r => r.a)).size); $('kAgentsSub').textContent = n > 1 ? `avg ${Math.round(new Set(rows.map(r => r.d + '|' + r.a)).size / Math.max(1, new Set(rows.map(r => r.d)).size))} a day · ${pName}` : `closed ≥ 1 bike · ${pName}`;
+      $('kActive').textContent = num(tRen); $('kActiveSub').textContent = `rent paid · ${pName}`;
       const th = td.filter(r => r.o === 'Moved to Hub'), tv = th.filter(r => r.m === 'Van'), tp = th.filter(r => r.m === 'Porter');
-      $('kHub').textContent = num(th.length); $('kHubSub').textContent = `today · ${th.filter(r => r.m === 'Customer drop').length} dropped by customer`;
-      $('kTruck').textContent = num(tv.length); $('kTruckSub').textContent = `today · ${per(tv)}`;
-      $('kPorter').textContent = num(tp.length); $('kPorterSub').textContent = `today · ${per(tp)}`;
+      $('kHub').textContent = num(th.length); $('kHubSub').textContent = `${num(th.filter(r => r.m === 'Customer drop').length)} dropped by customer · ${pName}`;
+      $('kTruck').textContent = num(tv.length); $('kTruckSub').textContent = `${per(tv)} · ${pName}`;
+      $('kPorter').textContent = num(tp.length); $('kPorterSub').textContent = `${per(tp)} · ${pName}`;
 
-      const days = []; for (let d = from < FIRST ? FIRST : from; d <= TODAY; d = addDays(d, 1)) days.push(d);
+      const days = []; for (let d = from < FIRST ? FIRST : from; d <= to; d = addDays(d, 1)) days.push(d);
       const labels = days.map(fmtDay);
       const outD = days.map(d => rows.filter(r => r.d === d && (isRec(r) || isRen(r))).length);
       chips('trendCounts', [{ t: 'Outflow', n: outD.reduce((a, b) => a + b, 0), color: B1 }, { t: 'Recovered', n: rows.filter(isRec).length }, { t: 'Renewed', n: rows.filter(isRen).length }]);
@@ -503,7 +517,7 @@
       draw('agentChart', { type: 'bar', data: { labels: top.map(x => x.a), datasets: OUT.map(o => ({ label: LBL[o], backgroundColor: OC[o], data: top.map(x => rows.filter(r => r.a === x.a && r.o === o).length) })) }, options: { indexAxis: 'y', scales: axes(true, true) } });
 
       const oc = OUT.map(o => rows.filter(r => r.o === o).length);
-      $('outcomeNote').textContent = `All ${num(rows.length)} cases in the last ${n} days`;
+      $('outcomeNote').textContent = `All ${num(rows.length)} cases · ${pName}`;
       chips('outcomeCounts', OUT.map((o, i) => ({ t: LBL[o], n: oc[i], color: OC[o] })));
       draw('outcomeChart', { type: 'doughnut', data: { labels: OUT.map(o => LBL[o]), datasets: [{ data: oc, backgroundColor: OUT.map(o => OC[o]), borderWidth: 0 }] }, options: { cutout: '62%', plugins: { legend: { position: 'right' } } } });
 
@@ -543,8 +557,15 @@
     }
     $('pSearch').oninput = () => polTable(POLICE.filter(r => !$('cityFilter').value || r.c === $('cityFilter').value));
     $('cityFilter').onchange = () => { fillHubs(); render(); police(); };
-    $('hubFilter').onchange = render; $('rangeFilter').onchange = render;
-    $('clearBtn').onclick = () => { $('cityFilter').value = ''; fillHubs(); $('hubFilter').value = ''; $('rangeFilter').value = '30'; render(); police(); };
+    $('hubFilter').onchange = render;
+    $('periodFilter').onchange = () => {
+      const custom = $('periodFilter').value === 'custom';
+      $('rangeBox').classList.toggle('hidden', !custom);
+      if (custom && !$('fromDate').value) { $('toDate').value = TODAY; $('fromDate').value = addDays(TODAY, -29) < FIRST ? FIRST : addDays(TODAY, -29); }
+      render();
+    };
+    ['fromDate', 'toDate'].forEach(id => $(id).addEventListener('change', render));
+    $('clearBtn').onclick = () => { $('cityFilter').value = ''; fillHubs(); $('hubFilter').value = ''; $('periodFilter').value = '30'; $('rangeBox').classList.add('hidden'); $('fromDate').value = ''; $('toDate').value = ''; render(); police(); };
     $('menuBtn').onclick = () => $('side').classList.toggle('open');
 
     // ---- Load from Supabase (Recovery team + admins only; the database checks the role) ----
@@ -560,7 +581,7 @@
     async function load() {
       if (loading) return; loading = true; $('loadErr').textContent = '';
       try {
-        const since = new Date(Date.now() - 45 * 864e5).toISOString().slice(0, 10);
+        const since = new Date(Date.now() - 120 * 864e5).toISOString().slice(0, 10);   // last ~4 months (for "Pick dates")
         const cases = await pageAll(() => db.from('recovery_cases').select('case_date, reg_number, city, agent, outcome, moved_by, truck_no, amount, days_overdue, drop_loc').gte('case_date', since).order('id'));
         const pol = await pageAll(() => db.from('police_cases').select('reg_number, status, station, note, city').order('reg_number'));
         const regs = pol.map(p => p.reg_number), firstSeen = new Map();
@@ -574,6 +595,7 @@
         LAST = DATA.reduce((m, r) => r.d > m ? r.d : m, ''); FIRST = DATA.reduce((m, r) => r.d < m ? r.d : m, '9999');
         TODAY = LAST || new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10); if (!DATA.length) FIRST = TODAY;
         loadedAt = Date.now();
+        ['fromDate', 'toDate'].forEach(id => { $(id).min = FIRST; $(id).max = TODAY; });
         fillCities(); fillHubs(); render(); police();
         $('dash').classList.remove('hidden');
         if (!DATA.length) $('loadErr').textContent = 'No recovery data yet — the sheet sync has not run.';
