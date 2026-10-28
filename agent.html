@@ -16,7 +16,7 @@
     :root {
       --brand: #e3262b; --brand-dark: #b91c21; --bg: #f4f5f7; --card: #fff; --text: #111827; --muted: #6b7280;
       --border: #e5e7eb; --chip: #fff; --ok: #16a34a; --warn: #d97706; --bad: #dc2626;
-      --b1: #1a73e8; --b2: #f9b800; --b3: #f57c00; --b4: #e53935; --b5: #795548; --b6: #111111;
+      --b1: #1d67bc; --b2: #f9c134; --b3: #ed800d; --b4: #d93025; --b5: #6c4e43; --b6: #000000;
       --safe-b: env(safe-area-inset-bottom, 0px);
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -299,7 +299,7 @@
     // ---------- helpers ----------
     const days = (b) => b.age_days == null ? '' : (b.age_days === 1 ? '1 day' : b.age_days + ' days');
     // Ageing colours (same as the team's map): 1–2 days blue · 2–3 yellow · 3–4 orange · 4–5 red · 5–10 brown · over 10 black
-    const AGE_STEPS = [[1, '#1a73e8', '1–2 days'], [2, '#f9b800', '2–3 days'], [3, '#f57c00', '3–4 days'], [4, '#e53935', '4–5 days'], [10, '#795548', '5–10 days'], [Infinity, '#111111', 'Over 10 days']];
+    const AGE_STEPS = [[1, '#1d67bc', '1–2 days'], [2, '#f9c134', '2–3 days'], [3, '#ed800d', '3–4 days'], [4, '#d93025', '4–5 days'], [10, '#6c4e43', '5–10 days'], [Infinity, '#000000', 'Over 10 days']];
     function ageColor(d) { return d == null ? '#9ca3af' : AGE_STEPS.find(([max]) => d <= max)[1]; }
     const AGE_HEX = ageColor;
     const inCity = (b) => city === 'All' || b.city_name === city;
@@ -327,7 +327,7 @@
       return `<div class="bike" data-id="${b.bike_id}">
         <div class="info"><div class="reg">${esc(b.reg_number)}${ownerTag(b)}</div><div class="rider">${esc(b.rider_name || 'No rider name')}</div></div>
         ${nearSort && kmTo(b) != null ? `<span class="km">${kmText(kmTo(b))}</span>` : ''}
-        <span class="age" style="background:${ageColor(b.age_days)}${ageColor(b.age_days) === '#f9b800' ? ';color:#111' : ''}">${esc(days(b) || '—')}</span>
+        <span class="age" style="background:${ageColor(b.age_days)}${ageColor(b.age_days) === '#f9c134' ? ';color:#111' : ''}">${esc(days(b) || '—')}</span>
         ${p ? `<a class="ibtn call" href="tel:+91${p}" aria-label="Call rider" data-stop>${ICON.call}</a>` : ''}
       </div>`;
     }
@@ -410,10 +410,10 @@
     }
     // Google-style teardrop pin in the bike's age color
     const pinCache = {};
-    // Small Google-style pin, like the old AppSheet map: solid colour, thin dark edge, small dark dot
+    // Pin exactly like the old AppSheet map: solid colour teardrop with a thin white edge
     const pinIcon = (c, small) => pinCache[c + small] || (pinCache[c + small] = L.divIcon({ className: 'pin',
-      iconSize: small ? [12, 17] : [16, 23], iconAnchor: small ? [6, 17] : [8, 23],
-      html: `<svg width="${small ? 12 : 16}" height="${small ? 17 : 23}" viewBox="0 0 16 23"><path d="M8 .7C3.9.7.7 3.9.7 7.9c0 5.4 7.3 14.4 7.3 14.4s7.3-9 7.3-14.4C15.3 3.9 12.1.7 8 .7z" fill="${c}" stroke="rgba(0,0,0,.35)" stroke-width="1"/><circle cx="8" cy="7.9" r="2.6" fill="rgba(0,0,0,.35)"/></svg>` }));
+      iconSize: small ? [11, 16] : [15, 21], iconAnchor: small ? [5.5, 16] : [7.5, 21],
+      html: `<svg width="${small ? 11 : 15}" height="${small ? 16 : 21}" viewBox="0 0 16 22.4"><path d="M8 .6C3.9.6.6 3.9.6 8c0 3 1.6 5.6 3.6 8.3C5.8 18.6 7.3 20.4 8 21.8c.7-1.4 2.2-3.2 3.8-5.5 2-2.7 3.6-5.3 3.6-8.3C15.4 3.9 12.1.6 8 .6z" fill="${c}" stroke="#fff" stroke-width="1"/></svg>` }));
     function alertMsg(t) { const el = $('mapCount'), old = el.textContent; el.textContent = t; setTimeout(() => { if (el.textContent === t) el.textContent = old; }, 5000); }
     // Outlines of the recovery areas (light, so the bikes stay easy to see)
     let areaLayer;
@@ -429,7 +429,66 @@
       });
     }
     let lastFit = null;
+
+    // ---------- Real Google map (used when GOOGLE_MAPS_KEY is filled in) ----------
+    const PIN_PATH = 'M8 .6C3.9.6.6 3.9.6 8c0 3 1.6 5.6 3.6 8.3C5.8 18.6 7.3 20.4 8 21.8c.7-1.4 2.2-3.2 3.8-5.5 2-2.7 3.6-5.3 3.6-8.3C15.4 3.9 12.1.6 8 .6z';
+    let gmap = null, gMarkers = [], gAreas = [], gMe = null, gReady = null;
+    function loadGoogle() {
+      if (gReady) return gReady;
+      gReady = new Promise((ok, fail) => {
+        window.__gmReady = ok;
+        const sc = document.createElement('script'); sc.async = true; sc.onerror = fail;
+        sc.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_MAPS_KEY)}&callback=__gmReady&v=weekly&region=IN`;
+        document.head.appendChild(sc);
+      });
+      return gReady;
+    }
+    async function gRenderMap() {
+      try { await loadGoogle(); } catch (e) { gReady = null; $('mapCount').textContent = 'Could not load Google Maps'; return; }
+      const G = google.maps;
+      if (!gmap) {   // same controls as the old app: Map / Satellite, full screen, Street View man
+        gmap = new G.Map($('map'), { center: { lat: 20.6, lng: 78.9 }, zoom: 5, gestureHandling: 'greedy', clickableIcons: false,
+          mapTypeControl: true, mapTypeControlOptions: { position: G.ControlPosition.TOP_LEFT, style: G.MapTypeControlStyle.HORIZONTAL_BAR },
+          streetViewControl: true, fullscreenControl: true, zoomControl: false });
+        $('satBtn').classList.add('hidden'); $('mapCount').style.top = '62px';
+        $('legend').innerHTML = AGE_STEPS.map(([, c, t]) => `<div><span style="background:${c}"></span>${t}</div>`).join('');
+        $('locBtn').onclick = () => {
+          $('locBtn').classList.add('busy');
+          navigator.geolocation?.getCurrentPosition((p) => {
+            $('locBtn').classList.remove('busy'); here = [p.coords.latitude, p.coords.longitude];
+            const pos = { lat: here[0], lng: here[1] };
+            if (!gMe) gMe = new G.Marker({ map: gmap, clickable: false, zIndex: 9999,
+              icon: { path: G.SymbolPath.CIRCLE, scale: 8, fillColor: '#1a73e8', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 } });
+            gMe.setPosition(pos); gmap.panTo(pos); gmap.setZoom(16);
+          }, () => { $('locBtn').classList.remove('busy'); alertMsg('Could not get your location. Turn on location for Chrome and try again.'); },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+        };
+      }
+      gMarkers.forEach(m => m.setMap(null)); gMarkers = [];
+      gAreas.forEach(p => p.setMap(null)); gAreas = [];
+      zones.filter(z => city === 'All' || z.city === city).forEach(z => gAreas.push(new G.Polygon({ map: gmap, paths: z.polygon.map(([lat, lng]) => ({ lat, lng })),
+        strokeColor: z.color, strokeWeight: 2, strokeOpacity: .8, fillColor: z.color, fillOpacity: .05, clickable: false })));
+      const list = visible().filter(b => b.lat != null && b.lng != null);
+      list.forEach(b => {
+        const faded = scope === 'all' && mineCount() > 0 && !isMine(b);
+        const m = new G.Marker({ map: gmap, position: { lat: b.lat, lng: b.lng }, title: b.reg_number, optimized: true,
+          icon: { path: PIN_PATH, fillColor: AGE_HEX(b.age_days), fillOpacity: faded ? .6 : 1, strokeColor: '#fff', strokeWeight: 1, scale: faded ? .75 : 1, anchor: new G.Point(8, 22) } });
+        m.addListener('click', () => openSheet(b));
+        gMarkers.push(m);
+      });
+      $('mapCount').textContent = `${list.length} on map` + (visible().length > list.length ? ` · ${visible().length - list.length} without GPS` : '');
+      const fitKey = city + '|' + scope;
+      if (fitKey === lastFit && list.length) return;   // refreshing never moves the map
+      lastFit = fitKey;
+      const cc = CITIES.find(c => c.key === city);
+      const near = cc ? list.filter(b => km2([b.lat, b.lng], cc.c) < 60) : list;
+      if (near.length) { const bd = new G.LatLngBounds(); near.forEach(b => bd.extend({ lat: b.lat, lng: b.lng })); gmap.fitBounds(bd, 20); }
+      else if (cc) { gmap.setCenter({ lat: cc.c[0], lng: cc.c[1] }); gmap.setZoom(11); }
+    }
+    const km2 = (a, b) => Math.hypot((a[0] - b[0]) * 111.32, (a[1] - b[1]) * 111.32 * Math.cos(a[0] * Math.PI / 180));
+
     function renderMap() {
+      if (GOOGLE_MAPS_KEY) return gRenderMap();
       if (!map) initMap();
       layer.clearLayers(); drawAreas();
       const list = visible().filter(b => b.lat != null && b.lng != null);
