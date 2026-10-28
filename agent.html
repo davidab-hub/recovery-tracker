@@ -12,8 +12,6 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="manifest" href="agent.webmanifest">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css">
   <style>
     :root {
       --brand: #e3262b; --brand-dark: #b91c21; --bg: #f4f5f7; --card: #fff; --text: #111827; --muted: #6b7280;
@@ -164,7 +162,7 @@
 
     /* ---------- Google-style map ---------- */
     .pin { background: none; border: 0; }
-    .pin svg { filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+    .pin svg { filter: drop-shadow(0 1px 1px rgba(0,0,0,.3)); }
     .clu div { width: 100%; height: 100%; border-radius: 50%; color: #fff; font-weight: 800; font-size: 13px; display: grid; place-items: center;
       border: 3px solid rgba(255,255,255,.9); box-shadow: 0 2px 6px rgba(0,0,0,.35); }
     .mapbtn { position: absolute; right: 10px; z-index: 500; border: 0; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
@@ -260,7 +258,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
   <script>
     const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
@@ -406,18 +403,17 @@
       });
       map.on('locationerror', () => { $('locBtn').classList.remove('busy'); alertMsg('Could not get your location. Turn on location for Chrome and try again.'); });
       // Number bubbles take the color of the oldest bike inside them
-      layer = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 45, disableClusteringAtZoom: 9, /* a city on screen: every bike as its own pin */ iconCreateFunction: (c) => {
-        const ms = c.getAllChildMarkers(), n = ms.length, oldest = Math.max(...ms.map(m => m.options.age ?? -1));
-        const size = n < 10 ? 36 : n < 50 ? 42 : 50;
-        return L.divIcon({ className: 'clu', html: `<div style="background:${AGE_HEX(oldest < 0 ? null : oldest)}">${n}</div>`, iconSize: [size, size] });
-      } });
+      // Every bike as its own pin, like the team's Google map (no grouping into number bubbles)
+      layer = L.layerGroup();
       map.addLayer(layer);
       $('legend').innerHTML = AGE_STEPS.map(([, c, t]) => `<div><span style="background:${c}"></span>${t}</div>`).join('');
     }
     // Google-style teardrop pin in the bike's age color
     const pinCache = {};
-    const pinIcon = (c, small) => pinCache[c + small] || (pinCache[c + small] = L.divIcon({ className: 'pin', iconSize: small ? [20, 27] : [28, 38], iconAnchor: small ? [10, 26] : [14, 37],
-      html: `<svg width="${small ? 20 : 28}" height="${small ? 27 : 38}" viewBox="0 0 28 38"><path d="M14 1C7 1 1.5 6.4 1.5 13.3 1.5 22.6 14 37 14 37s12.5-14.4 12.5-23.7C26.5 6.4 21 1 14 1z" fill="${c}" stroke="#fff" stroke-width="2"/><circle cx="14" cy="13.5" r="4.6" fill="#fff"/></svg>` }));
+    // Small Google-style pin, like the old AppSheet map: solid colour, thin dark edge, small dark dot
+    const pinIcon = (c, small) => pinCache[c + small] || (pinCache[c + small] = L.divIcon({ className: 'pin',
+      iconSize: small ? [12, 17] : [16, 23], iconAnchor: small ? [6, 17] : [8, 23],
+      html: `<svg width="${small ? 12 : 16}" height="${small ? 17 : 23}" viewBox="0 0 16 23"><path d="M8 .7C3.9.7.7 3.9.7 7.9c0 5.4 7.3 14.4 7.3 14.4s7.3-9 7.3-14.4C15.3 3.9 12.1.7 8 .7z" fill="${c}" stroke="rgba(0,0,0,.35)" stroke-width="1"/><circle cx="8" cy="7.9" r="2.6" fill="rgba(0,0,0,.35)"/></svg>` }));
     function alertMsg(t) { const el = $('mapCount'), old = el.textContent; el.textContent = t; setTimeout(() => { if (el.textContent === t) el.textContent = old; }, 5000); }
     // Outlines of the recovery areas (light, so the bikes stay easy to see)
     let areaLayer;
@@ -432,6 +428,7 @@
           html: `<span style="border-color:${z.color};color:${z.color}">${esc(z.name.split('·')[0].trim())}${team.length ? ' · ' + esc(team.join(', ')) : ''}</span>` }) }).addTo(areaLayer);
       });
     }
+    let lastFit = null;
     function renderMap() {
       if (!map) initMap();
       layer.clearLayers(); drawAreas();
@@ -445,13 +442,16 @@
         pts.push([b.lat, b.lng]);
       });
       $('mapCount').textContent = `${list.length} on map` + (visible().length > list.length ? ` · ${visible().length - list.length} without GPS` : '');
-      // Zoom into the city: ignore bikes far outside it (they're still on the map, just not used for the zoom)
+      // Zoom into the city only when it's first shown or the city/filter changes — refreshing never moves the map
+      const fitKey = city + '|' + scope;
+      if (fitKey === lastFit && pts.length) { setTimeout(() => map.invalidateSize(), 50); return; }
+      lastFit = fitKey;
       const cc = CITIES.find(c => c.key === city);
       const near = cc ? pts.filter(p => map.distance(p, cc.c) < 60000) : pts;
       setTimeout(() => {
         map.invalidateSize();
-        if (near.length) map.fitBounds(L.latLngBounds(near), { padding: [30, 30], maxZoom: 15 });
-        else if (cc) map.setView(cc.c, 11);
+        if (near.length) map.fitBounds(L.latLngBounds(near), { padding: [20, 20], maxZoom: 15, animate: false });
+        else if (cc) map.setView(cc.c, 11, { animate: false });
       }, 50);
     }
 
