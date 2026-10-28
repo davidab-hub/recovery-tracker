@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#16181d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Bounce">
+  <title>Bounce</title>
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="manifest" href="app.webmanifest">
+  <!--
+    One app for everyone. People sign in once (phone + PIN, or email) and see only the sections their role allows:
+      agent    → Recovery (map, bikes, ageing, find)
+      qc       → QC (new QC, my QCs, bike history, QC dashboard)
+      recovery → Recovery, Dashboard, Tracker
+      admin    → everything + Admin
+    Each section is the existing page opened inside the app (?embed=1), so they share the same sign-in.
+  -->
+  <style>
+    :root { --brand: #e3262b; --dark: #16181d; --dark-2: #23262d; --muted: #6b7280; --border: #e5e7eb; --bad: #dc2626; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; height: 100%; background: #f4f5f7; color: #111827;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif; font-size: 15px; }
+    button { font-family: inherit; }
+    .hidden { display: none !important; }
+
+    /* Splash + login (same look as the team apps) */
+    #splash { position: fixed; inset: 0; background: var(--brand); display: flex; align-items: center; justify-content: center; z-index: 50; }
+    #splash img { width: 132px; height: 132px; border-radius: 50%; background: #fff; object-fit: cover; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+    #login { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 18px; background: var(--brand); }
+    .login-card { width: 100%; max-width: 380px; background: #fff; border-radius: 18px; padding: 26px 22px 20px; box-shadow: 0 12px 40px rgba(0,0,0,.2); }
+    .login-card .lg { width: 76px; height: 76px; border-radius: 50%; display: block; margin: -64px auto 10px; border: 4px solid #fff; background: #fff; object-fit: cover; }
+    .login-card h1 { margin: 0; text-align: center; font-size: 20px; }
+    .login-card p.lsub { margin: 4px 0 18px; text-align: center; color: var(--muted); font-size: 13.5px; }
+    .login-card label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 6px; }
+    .field { display: flex; align-items: center; border: 1.5px solid var(--border); border-radius: 12px; background: #fff; }
+    .field:focus-within { border-color: var(--brand); }
+    .field span { padding: 0 4px 0 14px; color: var(--muted); font-weight: 600; }
+    .field input { flex: 1; border: 0; outline: 0; background: transparent; padding: 14px 14px 14px 8px; font-size: 17px; letter-spacing: .5px; min-width: 0; }
+    .big-btn { width: 100%; border: 0; border-radius: 12px; padding: 15px; margin-top: 18px; background: var(--brand); color: #fff; font-size: 16px; font-weight: 700; }
+    .big-btn:disabled { opacity: .6; }
+    .err { color: var(--bad); font-size: 13px; min-height: 18px; margin: 10px 0 0; text-align: center; }
+    .link-btn { background: none; border: 0; color: var(--muted); font-size: 12.5px; text-decoration: underline; margin: 12px auto 0; display: block; }
+    .help { color: #fff; opacity: .9; font-size: 12.5px; margin-top: 16px; text-align: center; }
+
+    /* App: section bar on top (only when someone has more than one section) + the section below */
+    #app { position: fixed; inset: 0; display: flex; flex-direction: column; background: #f4f5f7; }
+    #bar { background: var(--dark); display: flex; align-items: center; gap: 6px; padding: 7px 8px; padding-top: calc(7px + env(safe-area-inset-top, 0px)); flex: none; }
+    #secs { flex: 1; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+    #secs::-webkit-scrollbar { display: none; }
+    #secs button { flex: none; border: 0; border-radius: 999px; padding: 8px 13px; background: var(--dark-2); color: #c9ccd2; font-size: 13.5px; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 6px; }
+    #secs button svg { width: 16px; height: 16px; }
+    #secs button.on { background: var(--brand); color: #fff; }
+    #moreBtn { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--dark-2); color: #fff; display: grid; place-items: center; }
+    #frames { flex: 1; position: relative; }
+    #frames iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #f4f5f7; }
+    #menu { position: fixed; right: 8px; top: calc(52px + env(safe-area-inset-top, 0px)); background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      min-width: 220px; overflow: hidden; z-index: 30; }
+    #menu .me { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
+    #menu .me b { display: block; color: #111827; font-size: 14px; }
+    #menu button { display: block; width: 100%; text-align: left; border: 0; background: #fff; padding: 13px 14px; font-size: 14.5px; }
+    #menu button.out { color: var(--bad); font-weight: 600; }
+
+    /* No access + install hint */
+    #noAccess { max-width: 380px; margin: 60px auto; background: #fff; border-radius: 16px; padding: 24px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    #noAccess h2 { margin: 0 0 8px; font-size: 18px; }
+    #noAccess p { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
+    #installTip { position: fixed; left: 10px; right: 10px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); background: #111827; color: #fff; border-radius: 12px;
+      padding: 10px 10px 10px 14px; display: flex; align-items: center; gap: 10px; font-size: 13.5px; z-index: 20; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+    #installTip span { flex: 1; }
+    #installTip button { border: 0; border-radius: 8px; padding: 8px 12px; font-weight: 700; font-size: 13px; }
+    #installTip .yes { background: var(--brand); color: #fff; }
+    #installTip .no { background: transparent; color: #c9ccd2; }
+  </style>
+</head>
+<body>
+  <div id="splash"><img src="logo.png" alt="Bounce" onerror="this.style.display='none'"></div>
+
+  <!-- ===== Login ===== -->
+  <section id="login" class="hidden">
+    <div class="login-card">
+      <img class="lg" src="logo.png" alt="Bounce" onerror="this.style.visibility='hidden'">
+      <h1>Bounce</h1>
+      <p class="lsub">Sign in with your phone number and PIN</p>
+      <form id="phoneForm" autocomplete="on">
+        <label for="lPhone">Phone number</label>
+        <div class="field"><span>+91</span><input id="lPhone" type="tel" inputmode="numeric" autocomplete="username" placeholder="10-digit number" maxlength="14" required></div>
+        <label for="lPin">PIN</label>
+        <div class="field"><input id="lPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="6-digit PIN" maxlength="6" required style="padding-left:14px"></div>
+        <button class="big-btn" id="loginBtn" type="submit">Sign in</button>
+      </form>
+      <form id="emailForm" class="hidden">
+        <label for="lEmail">Email</label>
+        <div class="field"><input id="lEmail" type="email" autocomplete="username" required style="padding-left:14px"></div>
+        <label for="lPass">Password</label>
+        <div class="field"><input id="lPass" type="password" autocomplete="current-password" required style="padding-left:14px"></div>
+        <button class="big-btn" type="submit">Sign in</button>
+      </form>
+      <p class="err" id="loginErr"></p>
+      <button class="big-btn hidden" type="button" id="installBtn" style="background:#111827">⬇ Install Bounce app</button>
+      <button class="link-btn" type="button" id="swapLogin">Office staff? Sign in with email</button>
+    </div>
+    <p class="help">Forgot your PIN? Ask your manager for a new one.</p>
+  </section>
+
+  <!-- ===== App ===== -->
+  <div id="app" class="hidden">
+    <div id="bar" class="hidden">
+      <div id="secs"></div>
+      <button id="moreBtn" type="button" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+    </div>
+    <div id="frames"></div>
+    <div id="noAccess" class="hidden">
+      <h2>You don't have access yet</h2>
+      <p>Your login doesn't have a team yet. Ask your manager to give you access.</p>
+      <button class="big-btn" type="button" id="naOut" style="margin-top:0">Sign out</button>
+    </div>
+  </div>
+  <div id="menu" class="hidden"></div>
+  <div id="installTip" class="hidden"><span>Install the Bounce app on this phone?</span><button class="yes" type="button" id="tipYes">Install</button><button class="no" type="button" id="tipNo">Later</button></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
+    const PHONE_DOMAIN = 'agent.bounce.invalid';
+    const pinPassword = (pin) => `Bnc!${pin}#rA`;   // same wrapping as the other apps (Supabase password rules)
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    // ---------- Sections and who sees them ----------
+    const ICON = {
+      bikes: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>',
+      qc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>',
+      dash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+      tracker: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>',
+      admin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>',
+    };
+    const SECTIONS = [
+      { key: 'bikes',   label: 'Recovery',  page: 'agent.html',     roles: ['agent', 'recovery', 'admin'] },
+      { key: 'qc',      label: 'QC',        page: 'qc-app.html',    roles: ['qc', 'admin'] },
+      { key: 'dash',    label: 'Dashboard', page: 'dashboard.html', roles: ['recovery', 'admin'] },
+      { key: 'tracker', label: 'Tracker',   page: 'tracker.html',   roles: ['recovery', 'admin'] },
+      { key: 'admin',   label: 'Admin',     page: 'admin.html',     roles: ['admin'] },
+    ];
+    let me = null, role = null, mine = [], current = null;
+
+    function openSection(key) {
+      const s = mine.find(x => x.key === key); if (!s) return;
+      current = key;
+      let f = document.querySelector(`#frames iframe[data-sec="${key}"]`);
+      if (!f) {   // opened the first time it's needed, then kept (so you don't lose your place when switching)
+        f = document.createElement('iframe'); f.dataset.sec = key; f.title = s.label;
+        f.allow = 'camera; geolocation; clipboard-write';
+        f.src = s.page + '?embed=1';
+        $('frames').appendChild(f);
+      }
+      document.querySelectorAll('#frames iframe').forEach(x => x.classList.toggle('hidden', x !== f));
+      document.querySelectorAll('#secs button').forEach(b => b.classList.toggle('on', b.dataset.sec === key));
+    }
+    $('secs').addEventListener('click', (e) => { const b = e.target.closest('button[data-sec]'); if (b) openSection(b.dataset.sec); });
+
+    async function showFor(session) {
+      $('splash').classList.add('hidden');
+      me = session?.user || null;
+      $('frames').innerHTML = ''; $('menu').classList.add('hidden');
+      if (!session) { $('app').classList.add('hidden'); $('login').classList.remove('hidden'); return; }
+      $('login').classList.add('hidden'); $('app').classList.remove('hidden');
+      const { data, error } = await db.rpc('my_role'); role = error ? null : data;
+      mine = SECTIONS.filter(s => s.roles.includes(role));
+      $('noAccess').classList.toggle('hidden', mine.length > 0); $('frames').classList.toggle('hidden', !mine.length);
+      // One section (agents, QC team): the app is just that section, full screen. More than one: a bar on top to switch.
+      $('bar').classList.toggle('hidden', mine.length < 2);
+      $('secs').innerHTML = mine.map(s => `<button type="button" data-sec="${s.key}">${ICON[s.key]}${s.label}</button>`).join('');
+      if (mine.length) openSection(mine[0].key);
+      offerInstall();
+    }
+    let lastId;
+    db.auth.onAuthStateChange((_ev, s) => { const id = s?.user?.id || null; if (id === lastId) return; lastId = id; setTimeout(() => showFor(s), 0); });
+    // Signed out from inside a section (its own ⋮ menu) → back to the sign-in screen here too
+    window.addEventListener('storage', async (e) => {
+      if (e.key && !/auth-token/.test(e.key)) return;
+      const { data: { session } } = await db.auth.getSession();
+      if (!session && me) { lastId = null; showFor(null); }
+    });
+
+    // ---------- Menu (only shown with the section bar) ----------
+    $('moreBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const m = $('menu'), name = me?.user_metadata?.name || '', id = me?.user_metadata?.phone || me?.email || '';
+      m.innerHTML = `<div class="me"><b>${esc(name || 'Signed in')}</b>${esc(id)} · ${esc(role || '')}</div>
+        <button type="button" id="mReload">Refresh this page</button>
+        ${installEvt ? '<button type="button" id="mInstall">⬇ Install app on this phone</button>' : ''}
+        <button type="button" class="out" id="mOut">Sign out</button>`;
+      m.classList.toggle('hidden');
+      $('mReload').onclick = () => { m.classList.add('hidden'); const f = document.querySelector(`#frames iframe[data-sec="${current}"]`); f?.contentWindow.location.reload(); };
+      if ($('mInstall')) $('mInstall').onclick = () => { m.classList.add('hidden'); install(); };
+      $('mOut').onclick = async () => { m.classList.add('hidden'); await db.auth.signOut(); };
+    });
+    document.addEventListener('click', (e) => { if (!e.target.closest('#menu')) $('menu').classList.add('hidden'); });
+    $('naOut').addEventListener('click', () => db.auth.signOut());
+
+    // ---------- Sign-in ----------
+    const phoneOf = (v) => { const d = String(v || '').replace(/\D/g, ''); return d.length >= 10 ? d.slice(-10) : ''; };
+    $('phoneForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); $('loginErr').textContent = '';
+      const ph = phoneOf($('lPhone').value), pin = $('lPin').value.trim();
+      if (!ph) { $('loginErr').textContent = 'Enter your 10-digit phone number.'; return; }
+      if (!/^\d{6}$/.test(pin)) { $('loginErr').textContent = 'Your PIN is 6 digits.'; return; }
+      $('loginBtn').disabled = true; $('loginBtn').textContent = 'Signing in…';
+      const { error } = await db.auth.signInWithPassword({ email: `${ph}@${PHONE_DOMAIN}`, password: pinPassword(pin) });
+      if (error) $('loginErr').textContent = /invalid/i.test(error.message) ? 'Wrong phone number or PIN.' : error.message;
+      $('loginBtn').disabled = false; $('loginBtn').textContent = 'Sign in';
+    });
+    $('emailForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); $('loginErr').textContent = '';
+      const { error } = await db.auth.signInWithPassword({ email: $('lEmail').value.trim(), password: $('lPass').value });
+      if (error) $('loginErr').textContent = error.message;
+    });
+    $('swapLogin').addEventListener('click', () => {
+      const toEmail = !$('phoneForm').classList.contains('hidden');
+      $('phoneForm').classList.toggle('hidden', toEmail); $('emailForm').classList.toggle('hidden', !toEmail);
+      $('swapLogin').textContent = toEmail ? 'Sign in with phone and PIN' : 'Office staff? Sign in with email';
+      $('loginErr').textContent = '';
+    });
+    $('lPhone').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/[^\d ]/g, ''); });
+    $('lPin').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6); });
+
+    // ---------- Install as an app ----------
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('agent-sw.js').catch(() => {});
+    let installEvt = null, tipShown = false;
+    async function install() { if (!installEvt) return; $('installTip').classList.add('hidden'); installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; $('installBtn').classList.add('hidden'); }
+    function offerInstall() { if (installEvt && me && !tipShown) { tipShown = true; $('installTip').classList.remove('hidden'); } }
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; $('installBtn').classList.remove('hidden'); offerInstall(); });
+    window.addEventListener('appinstalled', () => { installEvt = null; $('installBtn').classList.add('hidden'); $('installTip').classList.add('hidden'); });
+    $('installBtn').addEventListener('click', install);
+    $('tipYes').addEventListener('click', install);
+    $('tipNo').addEventListener('click', () => $('installTip').classList.add('hidden'));
+  </script>
+</body>
+</html>

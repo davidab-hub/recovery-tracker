@@ -4,6 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Recovery Tracker</title>
+  <script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');</script>
+  <style>
+    /* Inside the Bounce phone app: no sidebar / top tabs, the app has its own bar */
+    html.embed .side, html.embed .tabs-top { display: none !important; }
+    html.embed main { padding-top: 8px !important; }
+  </style>
   <!-- Leaflet: free, open-source map library (pinned version) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>

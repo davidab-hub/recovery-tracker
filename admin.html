@@ -4,6 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admin · Users</title>
+  <script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');</script>
+  <style>
+    /* Inside the Bounce phone app: no sidebar / top tabs, the app has its own bar */
+    html.embed .side, html.embed .tabs-top { display: none !important; }
+    html.embed main { padding-top: 8px !important; }
+  </style>
   <style>
     :root {
       /* Bounce brand */
@@ -363,10 +369,10 @@
         <div class="panel">
           <h3>Add a phone login</h3>
           <p class="note">For people without an email. They sign in with their phone number and a 6-digit PIN.<br>
-            <b>Recovery agent</b> → <a href="agent.html" target="_blank">Recovery Agent App</a> (today's MFR bikes, no dashboards) · <b>QC team</b> → <a href="qc-app.html" target="_blank">QC App</a> (New QC, My QCs, Bike history, QC Dashboard) · <b>Recovery team</b> → <a href="dashboard.html" target="_blank">Recovery Dashboard</a>. You can change anyone's access later with the Role dropdown below.</p>
+            Everyone uses the same <a href="app.html" target="_blank">Bounce app</a> and sees only their team's screens: <b>Recovery agent</b> → today's bikes, no dashboards · <b>QC team</b> → New QC, My QCs, Bike history, QC Dashboard · <b>Recovery team</b> → Recovery Dashboard, Tracker and today's bikes. You can change anyone's access later with the Role dropdown below.</p>
           <form id="agentForm" class="form">
             <label for="aRole">App</label>
-            <select id="aRole"><option value="agent">Recovery agent (agent app only)</option><option value="qc">QC team (QC app + QC Dashboard)</option><option value="recovery">Recovery team (Recovery Dashboard + Tracker)</option></select>
+            <select id="aRole"><option value="agent">Recovery agent (today's bikes only)</option><option value="qc">QC team (QC + QC Dashboard)</option><option value="recovery">Recovery team (dashboards + bikes)</option></select>
             <label for="aName">Name</label><input id="aName" type="text" placeholder="e.g. Ravi Kumar" maxlength="80" required>
             <label for="aPhone">Phone number</label><input id="aPhone" type="tel" inputmode="numeric" placeholder="10-digit mobile number" maxlength="14" required>
             <label for="aPin">PIN (6 digits)</label>
@@ -473,10 +479,9 @@
     $('aPin').value = newPin();
     $('genPin').addEventListener('click', () => { $('aPin').value = newPin(); });
     function showAgent({ name, phone, pin, role }) {
-      const page = { qc: 'qc-app.html', recovery: 'dashboard.html' }[role] || 'agent.html';
-      const app = 'https://davidab-hub.github.io/recovery-tracker/' + page;
-      const appName = { qc: 'Bounce QC App', recovery: 'Bounce Recovery Dashboard' }[role] || 'Bounce Recovery Agent App';
-      const msg = `Hi ${name || ''}, here is your login for the ${appName}:\n${app}\n\nPhone: ${phone}\nPIN: ${pin}\n\nOpen the link in Chrome and sign in with your phone number and PIN. Tip: ⋮ → Add to Home screen to keep it like an app.`;
+      const app = 'https://davidab-hub.github.io/recovery-tracker/app.html';   // one app for everyone; it shows each person their team's screens
+      const sees = { qc: 'New QC, My QCs, Bike history and the QC Dashboard', recovery: "the Recovery Dashboard, Tracker and today's bikes" }[role] || "today's bikes to recover";
+      const msg = `Hi ${name || ''}, here is your login for the Bounce app (${sees}):\n${app}\n\nPhone: ${phone}\nPIN: ${pin}\n\nOpen the link in Chrome and sign in with your phone number and PIN. Tip: ⋮ → Add to Home screen to keep it like an app.`;
       $('agentShare').classList.remove('hidden');
       $('agentWho').innerHTML = `For <strong>${esc(name || phone)}</strong> · ${esc(phone)}`;
       $('agentMsg').value = msg;
