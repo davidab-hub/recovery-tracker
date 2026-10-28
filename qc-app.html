@@ -117,7 +117,7 @@
     .mini { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; }
     .photo { display: block; border: 2px dashed var(--s2); border-radius: 12px; padding: 16px; text-align: center; color: var(--s3); font-weight: 700; background: var(--soft); cursor: pointer; }
     .photo small { display: block; color: var(--muted); font-weight: 500; margin-top: 3px; }
-    .photobtns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .photobtns { display: grid; grid-template-columns: 1fr; gap: 8px; }
     .photo.off { opacity: .4; pointer-events: none; }
     .thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
     .thumbs:empty { display: none; }
@@ -232,8 +232,7 @@
         <div class="qcard"><p class="lbl"><span>Vehicle photos</span><span class="lbl-note" id="photoCount">at least 1, up to 8</span></p>
           <div class="thumbs" id="thumbs"></div>
           <div class="photobtns">
-            <label class="photo"><input type="file" id="photoCam" accept="image/*" capture="environment" hidden>📷 Take photo</label>
-            <label class="photo"><input type="file" id="photoGal" accept="image/*" multiple hidden>🖼️ From gallery<small>pick several</small></label>
+            <label class="photo"><input type="file" id="photoCam" accept="image/*" capture="environment" hidden>📷 Take photo<small>live camera only · one at a time</small></label>
           </div></div>
       </section>
 
@@ -397,14 +396,18 @@
       $('photoCount').textContent = photos.length ? `${photos.length} added · up to ${MAX_PHOTOS}` : 'at least 1, up to 8';
       document.querySelectorAll('.photobtns .photo').forEach(l => l.classList.toggle('off', photos.length >= MAX_PHOTOS));
     }
+    // Photos must be taken live: no gallery button, and a file older than 10 minutes (an old gallery picture) is refused
+    const FRESH_MS = 10 * 60e3;
+    const isLive = (f) => !f.lastModified || Date.now() - f.lastModified < FRESH_MS;
+    const OLD_PHOTO = 'Old photos from the gallery are not allowed — take a new photo with the camera.';
     async function addPhotos(input) {
       const files = [...input.files].slice(0, MAX_PHOTOS - photos.length); input.value = '';
       if (!files.length) { if (photos.length >= MAX_PHOTOS) $('formErr').textContent = `Up to ${MAX_PHOTOS} photos.`; return; }
-      for (const f of files) { try { photos.push(await shrink(f)); } catch (e) { $('formErr').textContent = 'Could not read one of the photos.'; } }
-      $('formErr').textContent = ''; renderThumbs();
+      let old = false;
+      for (const f of files) { if (!isLive(f)) { old = true; continue; } try { photos.push(await shrink(f)); } catch (e) { $('formErr').textContent = 'Could not read one of the photos.'; } }
+      $('formErr').textContent = old ? OLD_PHOTO : ''; renderThumbs();
     }
     $('photoCam').addEventListener('change', () => addPhotos($('photoCam')));
-    $('photoGal').addEventListener('change', () => addPhotos($('photoGal')));
     $('thumbs').addEventListener('click', (e) => { const b = e.target.closest('[data-del]'); if (!b) return; photos.splice(Number(b.dataset.del), 1); renderThumbs(); });
 
     // ---------- Step 2 ----------
@@ -433,6 +436,7 @@
     $('checks').addEventListener('change', async (e) => {
       const inp = e.target.closest('input[data-ip]'); if (!inp || !inp.files.length) return;
       const key = inp.dataset.ip, f = inp.files[0]; inp.value = '';
+      if (!isLive(f)) { $('formErr').textContent = OLD_PHOTO; $('formErr').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
       try { st.itemPhotos[key] = await shrink(f); $('formErr').textContent = ''; } catch (err) { $('formErr').textContent = 'Could not read that photo — please try again.'; }
       renderChecks(); summary();
     });
