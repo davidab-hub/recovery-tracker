@@ -138,6 +138,26 @@
     #menu button { width: 100%; text-align: left; border: 0; background: none; padding: 14px 16px; font-size: 15px; font-weight: 600; }
     #menu button.out { color: var(--bad); }
     .leaflet-popup-content { margin: 10px 12px; font-size: 13px; }
+
+    /* ---------- Google-style map ---------- */
+    .pin { background: none; border: 0; }
+    .pin svg { filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+    .clu div { width: 100%; height: 100%; border-radius: 50%; color: #fff; font-weight: 800; font-size: 13px; display: grid; place-items: center;
+      border: 3px solid rgba(255,255,255,.9); box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+    .mapbtn { position: absolute; right: 10px; z-index: 500; border: 0; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+    #satBtn { bottom: 24px; width: 64px; height: 64px; padding: 0; overflow: hidden; border: 2px solid #fff; background-size: cover; background-position: center; }
+    #satBtn span { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(transparent, rgba(0,0,0,.65)); color: #fff; font-size: 11px; font-weight: 700; padding: 10px 0 4px; }
+    #locBtn { top: 96px; width: 40px; height: 40px; display: grid; place-items: center; color: #1a73e8; }
+    #locBtn.busy { color: #9ca3af; }
+    .leaflet-top.leaflet-right .leaflet-control-zoom { margin-top: 10px; }
+    .me-dot { width: 16px; height: 16px; border-radius: 50%; background: #1a73e8; border: 3px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.15), 0 1px 4px rgba(0,0,0,.4); }
+    .sv { display: flex; gap: 8px; margin: 0 0 12px; }
+    .sv a { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 14px; text-decoration: none; }
+    .sv a.pano { background: #1a73e8; color: #fff; }
+    .sv a.gm { background: #e8f0fe; color: #1a73e8; }
+    .sv a svg { width: 20px; height: 20px; }
+    .sv-frame { width: 100%; height: 230px; border: 0; border-radius: 12px; display: block; margin: 0 0 8px; background: #e5e7eb; }
+    .sv-note { font-size: 11.5px; color: var(--muted); margin: -4px 0 12px; }
   </style>
 </head>
 <body>
@@ -185,7 +205,9 @@
     <div class="cities" id="cities"></div>
     <main>
       <section class="page" id="pMap"><div id="map"></div><div class="map-count" id="mapCount"></div>
-        <div class="legend" id="legend"></div></section>
+        <div class="legend" id="legend"></div>
+        <button type="button" class="mapbtn" id="locBtn" aria-label="My location" title="My location"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4" fill="currentColor"/><circle cx="12" cy="12" r="8"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg></button>
+        <button type="button" class="mapbtn" id="satBtn" aria-label="Switch map type"><span>Satellite</span></button></section>
       <section class="page hidden" id="pBikes"></section>
       <section class="page hidden" id="pAgeing"></section>
       <section class="page hidden" id="pFind">
@@ -218,6 +240,8 @@
   <script>
     const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
+    // Google Maps API key (empty for now). When Bounce has one, paste it here: each bike then shows the 360° Street View inside the app.
+    const GOOGLE_MAPS_KEY = '';
     const AGENT_DOMAIN = 'agent.bounce.invalid';   // phone numbers are turned into a private login ID (no email is ever sent)
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const $ = (id) => document.getElementById(id);
@@ -294,19 +318,56 @@
     function initMap() {
       map = L.map('map', { zoomControl: false, attributionControl: true }).setView([20.6, 78.9], 5);
       L.control.zoom({ position: 'topright' }).addTo(map);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
-      layer = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 45 });
+      // Street map, or satellite photos with road and place names on top (free map sources, no key needed)
+      const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
+      const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' });
+      const sat = L.layerGroup([
+        L.tileLayer(ESRI + 'World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Imagery © Esri' }),
+        L.tileLayer(ESRI + 'Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
+        L.tileLayer(ESRI + 'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
+      ]);
+      let isSat = store.get('ra-sat') === '1';
+      // Button picture shows the other map type (like Google Maps' layer button)
+      const thumb = () => isSat ? 'https://a.tile.openstreetmap.org/15/23449/15196.png' : ESRI + 'World_Imagery/MapServer/tile/15/15196/23449';
+      const applyBase = () => {
+        map.removeLayer(isSat ? street : sat); map.addLayer(isSat ? sat : street);
+        $('satBtn').querySelector('span').textContent = isSat ? 'Map' : 'Satellite';
+        $('satBtn').style.backgroundImage = `url(${thumb()})`;
+      };
+      applyBase();
+      $('satBtn').onclick = () => { isSat = !isSat; store.set('ra-sat', isSat ? '1' : '0'); applyBase(); };
+      // My location (blue dot), like Google Maps
+      let meDot, meRing;
+      $('locBtn').onclick = () => { $('locBtn').classList.add('busy'); map.locate({ setView: true, maxZoom: 16, enableHighAccuracy: true }); };
+      map.on('locationfound', (e) => {
+        $('locBtn').classList.remove('busy');
+        if (!meDot) { meRing = L.circle(e.latlng, { radius: e.accuracy, color: '#1a73e8', weight: 1, fillOpacity: .12 }).addTo(map);
+          meDot = L.marker(e.latlng, { icon: L.divIcon({ className: '', html: '<div class="me-dot"></div>', iconSize: [16, 16] }), interactive: false }).addTo(map); }
+        else { meDot.setLatLng(e.latlng); meRing.setLatLng(e.latlng).setRadius(e.accuracy); }
+      });
+      map.on('locationerror', () => { $('locBtn').classList.remove('busy'); alertMsg('Could not get your location. Turn on location for Chrome and try again.'); });
+      // Number bubbles take the color of the oldest bike inside them
+      layer = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 45, iconCreateFunction: (c) => {
+        const ms = c.getAllChildMarkers(), n = ms.length, oldest = Math.max(...ms.map(m => m.options.age ?? -1));
+        const size = n < 10 ? 36 : n < 50 ? 42 : 50;
+        return L.divIcon({ className: 'clu', html: `<div style="background:${AGE_HEX(oldest < 0 ? null : oldest)}">${n}</div>`, iconSize: [size, size] });
+      } });
       map.addLayer(layer);
       $('legend').innerHTML = [['0–2 days', '#16a34a'], ['3–7', '#65a30d'], ['8–15', '#d97706'], ['16–30', '#ea580c'], ['31–90', '#dc2626'], ['90+', '#7f1d1d']]
         .map(([t, c]) => `<div><span style="background:${c}"></span>${t}</div>`).join('');
     }
+    // Google-style teardrop pin in the bike's age color
+    const pinCache = {};
+    const pinIcon = (c) => pinCache[c] || (pinCache[c] = L.divIcon({ className: 'pin', iconSize: [28, 38], iconAnchor: [14, 37],
+      html: `<svg width="28" height="38" viewBox="0 0 28 38"><path d="M14 1C7 1 1.5 6.4 1.5 13.3 1.5 22.6 14 37 14 37s12.5-14.4 12.5-23.7C26.5 6.4 21 1 14 1z" fill="${c}" stroke="#fff" stroke-width="2"/><circle cx="14" cy="13.5" r="4.6" fill="#fff"/></svg>` }));
+    function alertMsg(t) { const el = $('mapCount'), old = el.textContent; el.textContent = t; setTimeout(() => { if (el.textContent === t) el.textContent = old; }, 5000); }
     function renderMap() {
       if (!map) initMap();
       layer.clearLayers();
       const list = visible().filter(b => b.lat != null && b.lng != null);
       const pts = [];
       list.forEach(b => {
-        const m = L.circleMarker([b.lat, b.lng], { radius: 8, weight: 2, color: '#fff', fillColor: AGE_HEX(b.age_days), fillOpacity: 1 });
+        const m = L.marker([b.lat, b.lng], { icon: pinIcon(AGE_HEX(b.age_days)), age: b.age_days ?? -1, title: b.reg_number });
         m.on('click', () => openSheet(b));
         layer.addLayer(m);
         pts.push([b.lat, b.lng]);
@@ -379,6 +440,19 @@
     $('findForm').addEventListener('submit', (e) => { e.preventDefault(); runFind(); });
 
     // ---------- Bike details sheet ----------
+    // 360° Street View of the bike's spot: inside the app when there's a Google key, otherwise it opens Google Maps on the phone
+    function streetView(b) {
+      if (b.lat == null || b.lng == null) return '';
+      const ll = `${b.lat},${b.lng}`;
+      const pano = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${ll}`;
+      const gm = `https://www.google.com/maps/search/?api=1&query=${ll}`;
+      const icon360 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="12" rx="10" ry="4"/><path d="M12 2a4 10 0 0 1 0 20a4 10 0 0 1 0-20"/></svg>';
+      const iconPin = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
+      const inApp = GOOGLE_MAPS_KEY ? `<iframe class="sv-frame" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"
+          src="https://www.google.com/maps/embed/v1/streetview?key=${encodeURIComponent(GOOGLE_MAPS_KEY)}&location=${ll}&fov=90"></iframe>` : '';
+      return `${inApp}<div class="sv"><a class="pano" href="${pano}" target="_blank" rel="noopener">${icon360}360° Street View</a><a class="gm" href="${gm}" target="_blank" rel="noopener">${iconPin}Google Maps</a></div>
+        <p class="sv-note">Street View shows the nearest street photo to the bike's last GPS point.</p>`;
+    }
     function openSheet(b) {
       const p = tel(b), dir = b.lat != null ? `https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}` : '';
       const rows = [['Rider', b.rider_name], ['Rider phone', p ? '+91 ' + p : ''], ['City', cityLabel(b.city_name)], ['Days overdue', days(b)],
@@ -391,6 +465,7 @@
           <a class="${p ? '' : 'off'}" href="${p ? 'https://wa.me/91' + p : '#'}" target="_blank" rel="noopener">${ICON.wa}WhatsApp</a>
           <a class="go ${dir ? '' : 'off'}" href="${dir || '#'}" target="_blank" rel="noopener">${ICON.go}Navigate</a>
         </div>
+        ${streetView(b)}
         <dl>${rows.filter(r => r[1]).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
         <button class="close-sheet" type="button" id="closeSheet">Close</button>`;
       $('sheet').classList.remove('hidden'); $('sheetBg').classList.remove('hidden'); $('sheet').scrollTop = 0;
