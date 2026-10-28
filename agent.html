@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#e3262b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Bounce Recovery">
+  <title>Bounce Recovery Agent App</title>
+  <link rel="icon" href="logo.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="manifest" href="agent.webmanifest">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css">
+  <style>
+    :root {
+      --brand: #e3262b; --brand-dark: #b91c21; --bg: #f4f5f7; --card: #fff; --text: #111827; --muted: #6b7280;
+      --border: #e5e7eb; --chip: #fff; --ok: #16a34a; --warn: #d97706; --bad: #dc2626;
+      --b1: #16a34a; --b2: #65a30d; --b3: #d97706; --b4: #ea580c; --b5: #dc2626; --b6: #7f1d1d;
+      --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif; font-size: 15px; }
+    button { font-family: inherit; }
+    .hidden { display: none !important; }
+
+    /* ---------- Splash + login ---------- */
+    #splash { position: fixed; inset: 0; background: var(--brand); display: flex; align-items: center; justify-content: center; z-index: 50; }
+    #splash img { width: 132px; height: 132px; border-radius: 50%; background: #fff; object-fit: cover; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+    #login { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 18px; background: var(--brand); }
+    .login-card { width: 100%; max-width: 380px; background: #fff; border-radius: 18px; padding: 26px 22px 20px; box-shadow: 0 12px 40px rgba(0,0,0,.2); }
+    .login-card .lg { width: 76px; height: 76px; border-radius: 50%; display: block; margin: -64px auto 10px; border: 4px solid #fff; background: #fff; object-fit: cover; }
+    .login-card h1 { margin: 0; text-align: center; font-size: 20px; }
+    .login-card p.lsub { margin: 4px 0 18px; text-align: center; color: var(--muted); font-size: 13.5px; }
+    .login-card label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 6px; }
+    .field { display: flex; align-items: center; border: 1.5px solid var(--border); border-radius: 12px; background: #fff; }
+    .field:focus-within { border-color: var(--brand); }
+    .field span { padding: 0 4px 0 14px; color: var(--muted); font-weight: 600; }
+    .field input { flex: 1; border: 0; outline: 0; background: transparent; padding: 14px 14px 14px 8px; font-size: 17px; letter-spacing: .5px; min-width: 0; }
+    .big-btn { width: 100%; border: 0; border-radius: 12px; padding: 15px; margin-top: 18px; background: var(--brand); color: #fff; font-size: 16px; font-weight: 700; }
+    .big-btn:disabled { opacity: .6; }
+    .err { color: var(--bad); font-size: 13px; min-height: 18px; margin: 10px 0 0; text-align: center; }
+    .link-btn { background: none; border: 0; color: var(--muted); font-size: 12.5px; text-decoration: underline; margin: 12px auto 0; display: block; }
+    .help { color: #fff; opacity: .9; font-size: 12.5px; margin-top: 16px; text-align: center; }
+    .help a { color: #fff; font-weight: 700; }
+
+    /* ---------- App shell ---------- */
+    #app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+    header { background: var(--brand); color: #fff; padding: 10px 12px; padding-top: calc(10px + env(safe-area-inset-top, 0px));
+      display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.15); z-index: 5; }
+    header img { width: 34px; height: 34px; border-radius: 50%; background: #fff; object-fit: cover; flex: none; }
+    header .ttl { flex: 1; min-width: 0; }
+    header .ttl b { display: block; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    header .ttl small { display: block; font-size: 11.5px; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hbtn { width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(255,255,255,.15); color: #fff; font-size: 18px; display: grid; place-items: center; flex: none; }
+    .hbtn.spin svg { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .cities { display: flex; gap: 8px; overflow-x: auto; padding: 10px 12px; background: #fff; border-bottom: 1px solid var(--border); scrollbar-width: none; flex: none; }
+    .cities::-webkit-scrollbar { display: none; }
+    .chip { flex: none; border: 1.5px solid var(--border); background: var(--chip); color: var(--text); border-radius: 999px; padding: 7px 13px; font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+    .chip i { font-style: normal; font-weight: 700; color: var(--muted); margin-left: 4px; font-size: 12.5px; }
+    .chip.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .chip.on i { color: #fff; opacity: .9; }
+
+    main { flex: 1; position: relative; overflow: hidden; }
+    .page { position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 20px; }
+    #pMap { padding: 0; overflow: hidden; }
+    #map { position: absolute; inset: 0; }
+    .map-count { position: absolute; left: 10px; top: 10px; z-index: 500; background: #fff; border-radius: 999px; padding: 6px 12px; font-size: 12.5px; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+    .legend { position: absolute; left: 10px; bottom: 12px; z-index: 500; background: rgba(255,255,255,.95); border-radius: 10px; padding: 6px 9px; font-size: 11px; box-shadow: 0 2px 8px rgba(0,0,0,.15); line-height: 1.6; }
+    .legend span { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+
+    nav.tabs { display: flex; background: #fff; border-top: 1px solid var(--border); padding-bottom: var(--safe-b); flex: none; z-index: 5; }
+    nav.tabs button { flex: 1; border: 0; background: none; padding: 8px 2px 9px; color: var(--muted); font-size: 11.5px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    nav.tabs button svg { width: 22px; height: 22px; }
+    nav.tabs button.on { color: var(--brand); }
+    nav.tabs button .n { font-weight: 500; opacity: .8; }
+
+    /* ---------- Lists ---------- */
+    .group { margin: 10px 12px 0; background: var(--card); border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    .ghead { width: 100%; display: flex; align-items: center; gap: 10px; padding: 14px; border: 0; background: none; font-size: 15.5px; font-weight: 700; text-align: left; color: var(--text); }
+    .ghead .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+    .ghead .cnt { margin-left: auto; background: #f1f2f4; border-radius: 999px; padding: 3px 10px; font-size: 13px; }
+    .ghead .chev { color: var(--muted); transition: transform .15s; }
+    .group.open > .ghead .chev { transform: rotate(90deg); }
+    .gbody { border-top: 1px solid var(--border); }
+    .sub { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; padding: 10px 14px 4px; background: #fafafa; border-top: 1px solid var(--border); }
+    .sub:first-child { border-top: 0; }
+    .bike { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-top: 1px solid #f1f2f4; }
+    .bike:first-child { border-top: 0; }
+    .bike .info { flex: 1; min-width: 0; }
+    .bike .reg { font-weight: 800; font-size: 15px; letter-spacing: .3px; }
+    .bike .rider { color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bike .age { font-size: 12.5px; font-weight: 700; border-radius: 8px; padding: 3px 8px; color: #fff; white-space: nowrap; }
+    .ibtn { width: 38px; height: 38px; border-radius: 50%; border: 0; background: #f1f2f4; color: var(--text); display: grid; place-items: center; flex: none; text-decoration: none; }
+    .ibtn svg { width: 18px; height: 18px; }
+    .ibtn.call { background: #e8f6ee; color: var(--ok); }
+    .empty { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 14px; }
+    .note-bar { margin: 10px 12px 0; font-size: 12px; color: var(--muted); }
+
+    /* ---------- Find ---------- */
+    .find-box { margin: 14px 12px 4px; background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    .find-box label { font-size: 13px; font-weight: 700; display: block; margin-bottom: 8px; }
+    .find-row { display: flex; gap: 8px; }
+    .find-row input { flex: 1; min-width: 0; border: 1.5px solid var(--border); border-radius: 12px; padding: 13px 12px; font-size: 16px; outline: 0; text-transform: uppercase; }
+    .find-row input:focus { border-color: var(--brand); }
+    .find-row button { border: 0; background: var(--brand); color: #fff; font-weight: 700; font-size: 15px; border-radius: 12px; padding: 0 18px; }
+    .find-hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
+    .result-title { margin: 14px 14px 0; font-weight: 700; font-size: 14px; }
+
+    /* ---------- Bike sheet ---------- */
+    #sheetBg { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1000; }
+    #sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001; background: #fff; border-radius: 18px 18px 0 0; max-height: 88%; overflow-y: auto;
+      padding: 8px 16px calc(16px + var(--safe-b)); box-shadow: 0 -8px 30px rgba(0,0,0,.2); }
+    #sheet .grab { width: 40px; height: 5px; border-radius: 3px; background: #d1d5db; margin: 4px auto 10px; }
+    #sheet h2 { margin: 0; font-size: 22px; letter-spacing: .5px; }
+    #sheet .who { color: var(--muted); margin: 2px 0 12px; }
+    .acts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+    .acts a { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border-radius: 12px; background: #f4f5f7; color: var(--text); text-decoration: none; font-size: 12px; font-weight: 700; }
+    .acts a svg { width: 22px; height: 22px; }
+    .acts a.call { background: #e8f6ee; color: var(--ok); }
+    .acts a.go { background: #fdecec; color: var(--brand); }
+    .acts a.off { opacity: .35; pointer-events: none; }
+    dl { margin: 0; display: grid; grid-template-columns: 42% 58%; border-top: 1px solid var(--border); }
+    dl dt, dl dd { margin: 0; padding: 10px 0; border-bottom: 1px solid #f1f2f4; font-size: 14px; }
+    dl dt { color: var(--muted); }
+    dl dd { font-weight: 600; word-break: break-word; }
+    .close-sheet { width: 100%; margin-top: 14px; border: 0; border-radius: 12px; background: #f1f2f4; padding: 13px; font-weight: 700; font-size: 15px; }
+
+    /* ---------- Menu ---------- */
+    #menu { position: fixed; top: calc(56px + env(safe-area-inset-top, 0px)); right: 10px; z-index: 1002; background: #fff; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); min-width: 230px; overflow: hidden; }
+    #menu .me { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--muted); }
+    #menu .me b { color: var(--text); display: block; font-size: 15px; }
+    #menu button { width: 100%; text-align: left; border: 0; background: none; padding: 14px 16px; font-size: 15px; font-weight: 600; }
+    #menu button.out { color: var(--bad); }
+    .leaflet-popup-content { margin: 10px 12px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div id="splash"><img src="logo.png" alt="Bounce" onerror="this.style.display='none'"></div>
+
+  <!-- ===== Login ===== -->
+  <section id="login" class="hidden">
+    <div class="login-card">
+      <img class="lg" src="logo.png" alt="Bounce" onerror="this.style.visibility='hidden'">
+      <h1>Recovery Agent App</h1>
+      <p class="lsub">Sign in with your phone number and PIN</p>
+      <form id="phoneForm" autocomplete="on">
+        <label for="lPhone">Phone number</label>
+        <div class="field"><span>+91</span><input id="lPhone" type="tel" inputmode="numeric" autocomplete="username" placeholder="10-digit number" maxlength="14" required></div>
+        <label for="lPin">PIN</label>
+        <div class="field"><input id="lPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="6-digit PIN" maxlength="6" required style="padding-left:14px"></div>
+        <button class="big-btn" id="loginBtn" type="submit">Sign in</button>
+      </form>
+      <form id="emailForm" class="hidden">
+        <label for="lEmail">Email</label>
+        <div class="field"><input id="lEmail" type="email" autocomplete="username" required style="padding-left:14px"></div>
+        <label for="lPass">Password</label>
+        <div class="field"><input id="lPass" type="password" autocomplete="current-password" required style="padding-left:14px"></div>
+        <button class="big-btn" type="submit">Sign in</button>
+      </form>
+      <p class="err" id="loginErr"></p>
+      <button class="big-btn hidden" type="button" id="installBtn" style="background:#111827">⬇ Install Bounce Recovery app</button>
+      <button class="link-btn" type="button" id="swapLogin">Office staff? Sign in with email</button>
+    </div>
+    <p class="help">Forgot your PIN? Ask your manager for a new one.</p>
+  </section>
+
+  <!-- ===== App ===== -->
+  <div id="app" class="hidden">
+    <header>
+      <img src="logo.png" alt="" onerror="this.style.visibility='hidden'">
+      <div class="ttl"><b id="hTitle">Map</b><small id="hSub">Loading…</small></div>
+      <button class="hbtn" id="refreshBtn" aria-label="Refresh" title="Refresh">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      </button>
+      <button class="hbtn" id="menuBtn" aria-label="Menu" title="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+      </button>
+    </header>
+    <div class="cities" id="cities"></div>
+    <main>
+      <section class="page" id="pMap"><div id="map"></div><div class="map-count" id="mapCount"></div>
+        <div class="legend" id="legend"></div></section>
+      <section class="page hidden" id="pBikes"></section>
+      <section class="page hidden" id="pAgeing"></section>
+      <section class="page hidden" id="pFind">
+        <form class="find-box" id="findForm">
+          <label for="findIn">Reg number or rider phone</label>
+          <div class="find-row">
+            <input id="findIn" type="search" enterkeyhint="search" autocomplete="off" autocapitalize="characters" placeholder="e.g. KA05AS5964">
+            <button type="submit">Search</button>
+          </div>
+          <div class="find-hint">Part of the number is enough. Spaces don't matter. Searches all cities.</div>
+        </form>
+        <div id="findOut"></div>
+      </section>
+    </main>
+    <nav class="tabs">
+      <button data-tab="Map" class="on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>Map</button>
+      <button data-tab="Bikes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5.5" cy="17" r="3.5"/><circle cx="18.5" cy="17" r="3.5"/><path d="M5.5 17l4-8h5l4 8M12 9l2-4h3"/></svg><span>Bikes <span class="n" id="nBikes"></span></span></button>
+      <button data-tab="Ageing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2h12M6 22h12M7 2c0 6 10 6 10 10S7 16 7 22M17 2c0 6-10 6-10 10s10 4 10 10"/></svg>Ageing</button>
+      <button data-tab="Find"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Find</button>
+    </nav>
+  </div>
+
+  <div id="sheetBg" class="hidden"></div>
+  <div id="sheet" class="hidden"></div>
+  <div id="menu" class="hidden"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
+    const AGENT_DOMAIN = 'agent.bounce.invalid';   // phone numbers are turned into a private login ID (no email is ever sent)
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+    // Cities: the data says "NCR", agents know it as Delhi. Centers are used to zoom the map into the city.
+    const CITIES = [
+      { key: 'Bangalore', label: 'Bangalore', c: [12.9716, 77.5946] },
+      { key: 'NCR', label: 'Delhi', c: [28.6139, 77.2090] },
+      { key: 'Hyderabad', label: 'Hyderabad', c: [17.3850, 78.4867] },
+      { key: 'Mumbai', label: 'Mumbai', c: [19.0760, 72.8777] },
+    ];
+    const cityLabel = (k) => (CITIES.find(c => c.key === k) || {}).label || k || 'Unknown city';
+    const ICON = {
+      call: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>',
+      sms: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM7 9h10v2H7zm6 5H7v-2h6zm4-6H7V6h10z"/></svg>',
+      wa: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.2 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.1.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>',
+      go: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.7 11.3l-9-9a1 1 0 0 0-1.4 0l-9 9a1 1 0 0 0 0 1.4l9 9a1 1 0 0 0 1.4 0l9-9a1 1 0 0 0 0-1.4zM14 14.5V12h-4v3H8v-4a1 1 0 0 1 1-1h5V7.5l3.5 3.5z"/></svg>',
+    };
+
+    let bikes = [], meta = null, city = store.get('ra-city') || 'All', tab = 'Map', me = null;
+
+    // ---------- helpers ----------
+    const days = (b) => b.age_days == null ? '' : (b.age_days === 1 ? '1 day' : b.age_days + ' days');
+    function ageColor(d) {
+      if (d == null) return '#9ca3af';
+      if (d <= 2) return 'var(--b1)'; if (d <= 7) return 'var(--b2)'; if (d <= 15) return 'var(--b3)';
+      if (d <= 30) return 'var(--b4)'; if (d <= 90) return 'var(--b5)'; return 'var(--b6)';
+    }
+    const AGE_HEX = (d) => d == null ? '#9ca3af' : d <= 2 ? '#16a34a' : d <= 7 ? '#65a30d' : d <= 15 ? '#d97706' : d <= 30 ? '#ea580c' : d <= 90 ? '#dc2626' : '#7f1d1d';
+    const inCity = (b) => city === 'All' || b.city_name === city;
+    const visible = () => bikes.filter(inCity);
+    const tel = (b) => b.rider_phone ? b.rider_phone.replace(/\D/g, '').slice(-10) : '';
+    function bucketsOf(list) {   // age groups in order of age, using the file's own age_bucket names
+      const m = new Map();
+      list.forEach(b => { const k = b.age_bucket || 'No age'; if (!m.has(k)) m.set(k, { name: k, min: Infinity, list: [] });
+        const g = m.get(k); g.list.push(b); if (b.age_days != null) g.min = Math.min(g.min, b.age_days); });
+      return [...m.values()].sort((a, b) => a.min - b.min);
+    }
+    const sortAge = (a, b) => (b.age_days ?? -1) - (a.age_days ?? -1);
+
+    function bikeRow(b) {
+      const p = tel(b);
+      return `<div class="bike" data-id="${b.bike_id}">
+        <div class="info"><div class="reg">${esc(b.reg_number)}</div><div class="rider">${esc(b.rider_name || 'No rider name')}</div></div>
+        <span class="age" style="background:${ageColor(b.age_days)}">${esc(days(b) || '—')}</span>
+        ${p ? `<a class="ibtn call" href="tel:+91${p}" aria-label="Call rider" data-stop>${ICON.call}</a>` : ''}
+      </div>`;
+    }
+    const groupHtml = (id, title, count, inner, open, dot) => `<div class="group ${open ? 'open' : ''}" data-g="${esc(id)}">
+        <button class="ghead" type="button">${dot ? `<span class="dot" style="background:${dot}"></span>` : ''}${esc(title)}<span class="cnt">${count}</span>
+        <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M9 6l6 6-6 6"/></svg></button>
+        <div class="gbody ${open ? '' : 'hidden'}">${open ? inner : ''}</div></div>`;
+
+    // ---------- header + cities ----------
+    function renderChips() {
+      const n = (k) => bikes.filter(b => b.city_name === k).length;
+      const list = [{ key: 'All', label: 'All', n: bikes.length }].concat(CITIES.map(c => ({ ...c, n: n(c.key) })))
+        .concat([...new Set(bikes.map(b => b.city_name).filter(k => k && !CITIES.some(c => c.key === k)))].map(k => ({ key: k, label: k, n: n(k) })));
+      $('cities').innerHTML = list.map(c => `<button class="chip ${city === c.key ? 'on' : ''}" data-city="${esc(c.key)}">${esc(c.label)}<i>${c.n}</i></button>`).join('');
+    }
+    function renderHeader() {
+      const cname = city === 'All' ? 'All cities' : cityLabel(city);
+      $('hTitle').textContent = { Map: 'Map', Bikes: 'Bikes', Ageing: 'Ageing', Find: 'Find a bike' }[tab] + (tab === 'Find' ? '' : ' · ' + cname);
+      const when = meta?.synced_at ? new Date(meta.synced_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+      $('hSub').textContent = bikes.length ? `${visible().length} bikes${when ? ' · updated ' + when : ''}` : (when ? 'No bikes in today\'s file' : 'Loading…');
+      $('nBikes').textContent = visible().length ? '· ' + visible().length : '';
+      $('cities').classList.toggle('hidden', tab === 'Find');
+    }
+
+    // ---------- Map ----------
+    let map, layer;
+    function initMap() {
+      map = L.map('map', { zoomControl: false, attributionControl: true }).setView([20.6, 78.9], 5);
+      L.control.zoom({ position: 'topright' }).addTo(map);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+      layer = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 45 });
+      map.addLayer(layer);
+      $('legend').innerHTML = [['0–2 days', '#16a34a'], ['3–7', '#65a30d'], ['8–15', '#d97706'], ['16–30', '#ea580c'], ['31–90', '#dc2626'], ['90+', '#7f1d1d']]
+        .map(([t, c]) => `<div><span style="background:${c}"></span>${t}</div>`).join('');
+    }
+    function renderMap() {
+      if (!map) initMap();
+      layer.clearLayers();
+      const list = visible().filter(b => b.lat != null && b.lng != null);
+      const pts = [];
+      list.forEach(b => {
+        const m = L.circleMarker([b.lat, b.lng], { radius: 8, weight: 2, color: '#fff', fillColor: AGE_HEX(b.age_days), fillOpacity: 1 });
+        m.on('click', () => openSheet(b));
+        layer.addLayer(m);
+        pts.push([b.lat, b.lng]);
+      });
+      $('mapCount').textContent = `${list.length} on map` + (visible().length > list.length ? ` · ${visible().length - list.length} without GPS` : '');
+      // Zoom into the city: ignore bikes far outside it (they're still on the map, just not used for the zoom)
+      const cc = CITIES.find(c => c.key === city);
+      const near = cc ? pts.filter(p => map.distance(p, cc.c) < 60000) : pts;
+      setTimeout(() => {
+        map.invalidateSize();
+        if (near.length) map.fitBounds(L.latLngBounds(near), { padding: [30, 30], maxZoom: 15 });
+        else if (cc) map.setView(cc.c, 11);
+      }, 50);
+    }
+
+    // ---------- Bikes (cities collapsed → age groups) ----------
+    const openGroups = new Set();
+    function renderBikes() {
+      const list = visible();
+      if (!list.length) { $('pBikes').innerHTML = `<div class="empty">No bikes${city === 'All' ? '' : ' in ' + esc(cityLabel(city))} in today's file.</div>`; return; }
+      const byCity = new Map();
+      list.forEach(b => { const k = b.city_name || ''; if (!byCity.has(k)) byCity.set(k, []); byCity.get(k).push(b); });
+      const cities = [...byCity.entries()].sort((a, b) => b[1].length - a[1].length);
+      const single = cities.length === 1;
+      $('pBikes').innerHTML = (single ? '' : '<div class="note-bar">Tap a city to see its bikes</div>') + cities.map(([k, l]) => {
+        const id = 'c:' + k, open = single || openGroups.has(id);
+        const inner = bucketsOf(l).map(g => `<div class="sub">${esc(g.name)} · ${g.list.length}</div>` + g.list.sort(sortAge).map(bikeRow).join('')).join('');
+        return groupHtml(id, cityLabel(k), l.length, inner, open);
+      }).join('');
+      $('pBikes').dataset.html = '';
+    }
+
+    // ---------- Ageing (age groups collapsed) ----------
+    function renderAgeing() {
+      const list = visible();
+      if (!list.length) { $('pAgeing').innerHTML = '<div class="empty">No bikes.</div>'; return; }
+      $('pAgeing').innerHTML = '<div class="note-bar">Days since the bike was marked for recovery · tap a group</div>' + bucketsOf(list).map(g => {
+        const id = 'a:' + g.name;
+        return groupHtml(id, g.name, g.list.length, g.list.sort(sortAge).map(bikeRow).join(''), openGroups.has(id), AGE_HEX(g.min === Infinity ? null : g.min));
+      }).join('');
+    }
+    // Open/close groups (bodies are filled only when opened, so big lists stay fast)
+    document.addEventListener('click', (e) => {
+      const h = e.target.closest('.ghead'); if (!h) return;
+      const g = h.parentElement, id = g.dataset.g, body = g.querySelector('.gbody');
+      const open = !g.classList.contains('open');
+      g.classList.toggle('open', open); body.classList.toggle('hidden', !open);
+      if (open) openGroups.add(id); else openGroups.delete(id);
+      if (open && !body.innerHTML) {
+        const list = visible();
+        if (id.startsWith('c:')) { const l = list.filter(b => (b.city_name || '') === id.slice(2));
+          body.innerHTML = bucketsOf(l).map(x => `<div class="sub">${esc(x.name)} · ${x.list.length}</div>` + x.list.sort(sortAge).map(bikeRow).join('')).join(''); }
+        else { const x = bucketsOf(list).find(y => 'a:' + y.name === id); body.innerHTML = x ? x.list.sort(sortAge).map(bikeRow).join('') : ''; }
+      }
+    });
+
+    // ---------- Find ----------
+    const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    function runFind() {
+      const q = norm($('findIn').value), qd = q.replace(/\D/g, '');
+      if (!q) { $('findOut').innerHTML = ''; return; }
+      const hits = bikes.filter(b => norm(b.reg_number).includes(q) || (qd.length >= 4 && qd === q && (b.rider_phone || '').includes(qd)))
+        .sort(sortAge).slice(0, 100);
+      $('findOut').innerHTML = hits.length
+        ? `<div class="result-title">${hits.length === 1 ? '1 bike found' : hits.length + ' bikes found'}</div><div class="group open"><div class="gbody">${hits.map(bikeRow).join('')}</div></div>`
+        : `<div class="empty"><b>No bike found</b><br>Check the number and try again. Only bikes in today's file are listed.</div>`;
+      $('findIn').blur();
+      if (hits.length === 1) openSheet(hits[0]);
+    }
+    $('findForm').addEventListener('submit', (e) => { e.preventDefault(); runFind(); });
+
+    // ---------- Bike details sheet ----------
+    function openSheet(b) {
+      const p = tel(b), dir = b.lat != null ? `https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}` : '';
+      const rows = [['Rider', b.rider_name], ['Rider phone', p ? '+91 ' + p : ''], ['City', cityLabel(b.city_name)], ['Days overdue', days(b)],
+        ['Age group', b.age_bucket], ['Model', b.model_name], ['Chassis number', b.chassis_number], ['Last GPS update', b.gps_at],
+        ['Marked for recovery on', b.marked_for_recovery_since], ['Booking ended', b.booking_end_time], ['Police case', b.police_case]];
+      $('sheet').innerHTML = `<div class="grab"></div><h2>${esc(b.reg_number)}</h2><div class="who">${esc(b.rider_name || '')}${b.age_days != null ? ' · ' + esc(days(b)) + ' overdue' : ''}</div>
+        <div class="acts">
+          <a class="call ${p ? '' : 'off'}" href="${p ? 'tel:+91' + p : '#'}">${ICON.call}Call</a>
+          <a class="${p ? '' : 'off'}" href="${p ? 'sms:+91' + p : '#'}">${ICON.sms}SMS</a>
+          <a class="${p ? '' : 'off'}" href="${p ? 'https://wa.me/91' + p : '#'}" target="_blank" rel="noopener">${ICON.wa}WhatsApp</a>
+          <a class="go ${dir ? '' : 'off'}" href="${dir || '#'}" target="_blank" rel="noopener">${ICON.go}Navigate</a>
+        </div>
+        <dl>${rows.filter(r => r[1]).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+        <button class="close-sheet" type="button" id="closeSheet">Close</button>`;
+      $('sheet').classList.remove('hidden'); $('sheetBg').classList.remove('hidden'); $('sheet').scrollTop = 0;
+      $('closeSheet').onclick = closeSheet;
+      history.pushState({ sheet: 1 }, '');
+    }
+    function closeSheet(fromBack) {
+      if ($('sheet').classList.contains('hidden')) return;
+      $('sheet').classList.add('hidden'); $('sheetBg').classList.add('hidden');
+      if (fromBack !== true && history.state?.sheet) history.back();
+    }
+    $('sheetBg').addEventListener('click', closeSheet);
+    window.addEventListener('popstate', () => closeSheet(true));
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('[data-stop]')) return;           // call button inside a row
+      const r = e.target.closest('.bike'); if (!r) return;
+      const b = bikes.find(x => String(x.bike_id) === r.dataset.id); if (b) openSheet(b);
+    });
+
+    // ---------- tabs, cities, menu ----------
+    function render() {
+      renderChips(); renderHeader();
+      ['Map', 'Bikes', 'Ageing', 'Find'].forEach(t => $('p' + t).classList.toggle('hidden', t !== tab));
+      document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+      if (tab === 'Map') renderMap(); if (tab === 'Bikes') renderBikes(); if (tab === 'Ageing') renderAgeing();
+      if (tab === 'Find') setTimeout(() => $('findIn').focus(), 50);
+    }
+    document.querySelector('nav.tabs').addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-tab]'); if (!b) return;
+      tab = b.dataset.tab; render();
+    });
+    $('cities').addEventListener('click', (e) => {
+      const c = e.target.closest('.chip'); if (!c) return;
+      city = c.dataset.city; store.set('ra-city', city); openGroups.clear(); render();
+      c.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+    });
+    $('menuBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const m = $('menu'), name = me?.user_metadata?.name || '', ph = me?.user_metadata?.phone || me?.email || '';
+      m.innerHTML = `<div class="me"><b>${esc(name || 'Signed in')}</b>${esc(ph)}</div><button type="button" id="mRefresh">Refresh data</button>${installEvt ? '<button type="button" id="mInstall">⬇ Install app on this phone</button>' : ''}<button type="button" class="out" id="mOut">Sign out</button>`;
+      m.classList.toggle('hidden');
+      $('mRefresh').onclick = () => { m.classList.add('hidden'); load(); };
+      if ($('mInstall')) $('mInstall').onclick = async () => { m.classList.add('hidden'); installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; };
+      $('mOut').onclick = async () => { m.classList.add('hidden'); await db.auth.signOut(); };
+    });
+    document.addEventListener('click', (e) => { if (!e.target.closest('#menu')) $('menu').classList.add('hidden'); });
+    $('refreshBtn').addEventListener('click', () => load());
+
+    // ---------- data ----------
+    async function load() {
+      $('refreshBtn').classList.add('spin');
+      try {
+        const all = [];
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await db.from('mfr_bikes').select('*').order('age_days', { ascending: false }).range(from, from + 999);
+          if (error) throw error;
+          all.push(...data); if (data.length < 1000) break;
+        }
+        bikes = all;
+        const m = await db.from('mfr_meta').select('*').eq('id', 1).maybeSingle();
+        meta = m.data || null;
+        if (city !== 'All' && !bikes.some(b => b.city_name === city) && !CITIES.some(c => c.key === city)) city = 'All';
+        render();
+        if (tab === 'Find' && $('findIn').value) runFind();
+      } catch (e) {
+        $('hSub').textContent = 'Could not load bikes: ' + (e.message || e);
+      }
+      $('refreshBtn').classList.remove('spin');
+    }
+
+    // ---------- sign-in ----------
+    const phoneOf = (v) => { const d = String(v || '').replace(/\D/g, ''); return d.length >= 10 ? d.slice(-10) : ''; };
+    $('phoneForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); $('loginErr').textContent = '';
+      const ph = phoneOf($('lPhone').value), pin = $('lPin').value.trim();
+      if (!ph) { $('loginErr').textContent = 'Enter your 10-digit phone number.'; return; }
+      if (!/^\d{6}$/.test(pin)) { $('loginErr').textContent = 'Your PIN is 6 digits.'; return; }
+      $('loginBtn').disabled = true; $('loginBtn').textContent = 'Signing in…';
+      const { error } = await db.auth.signInWithPassword({ email: `${ph}@${AGENT_DOMAIN}`, password: pin });
+      if (error) $('loginErr').textContent = /invalid/i.test(error.message) ? 'Wrong phone number or PIN.' : error.message;
+      $('loginBtn').disabled = false; $('loginBtn').textContent = 'Sign in';
+    });
+    $('emailForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); $('loginErr').textContent = '';
+      const { error } = await db.auth.signInWithPassword({ email: $('lEmail').value.trim(), password: $('lPass').value });
+      if (error) $('loginErr').textContent = error.message;
+    });
+    $('swapLogin').addEventListener('click', () => {
+      const toEmail = !$('phoneForm').classList.contains('hidden');
+      $('phoneForm').classList.toggle('hidden', toEmail); $('emailForm').classList.toggle('hidden', !toEmail);
+      $('swapLogin').textContent = toEmail ? 'Recovery agent? Sign in with phone' : 'Office staff? Sign in with email';
+      $('loginErr').textContent = '';
+    });
+    $('lPhone').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/[^\d ]/g, ''); });
+    $('lPin').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6); });
+
+    async function show(session) {
+      $('splash').classList.add('hidden');
+      me = session?.user || null;
+      if (!session) { $('app').classList.add('hidden'); $('login').classList.remove('hidden'); bikes = []; return; }
+      $('login').classList.add('hidden'); $('app').classList.remove('hidden');
+      render(); load();
+    }
+    let lastUser;
+    db.auth.onAuthStateChange((_ev, session) => {
+      const id = session?.user?.id || null; if (id === lastUser) return; lastUser = id;
+      setTimeout(() => show(session), 0);
+    });
+    // Come back to the app after a while → fetch the latest bikes
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && me) load(); });
+
+    // ---------- Install as an app ----------
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('agent-sw.js').catch(() => {});
+    let installEvt = null;
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; $('installBtn')?.classList.remove('hidden'); });
+    window.addEventListener('appinstalled', () => { installEvt = null; $('installBtn')?.classList.add('hidden'); });
+    document.addEventListener('click', async (e) => {
+      if (!e.target.closest('#installBtn') || !installEvt) return;
+      installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; $('installBtn').classList.add('hidden');
+    });
+  </script>
+</body>
+</html>

@@ -628,8 +628,8 @@
     let lastUid;
     db.auth.onAuthStateChange((_ev, session) => { const id = session?.user?.id || null; if (id === lastUid) return; lastUid = id; setTimeout(() => showFor(session), 0); });
     // ---- Roles: who can see which page (the database enforces the same rules) ----
-    const PAGE_ROLES = { 'dashboard.html': ['admin', 'recovery'], 'tracker.html': ['admin', 'recovery'], 'qc.html': ['admin', 'qc'], 'qc-new.html': ['admin', 'qc'], 'admin.html': ['admin'] };
-    const ROLE_HOME = { qc: 'qc.html', recovery: 'dashboard.html' };
+    const PAGE_ROLES = { 'dashboard.html': ['admin', 'recovery'], 'tracker.html': ['admin', 'recovery'], 'qc.html': ['admin', 'qc'], 'qc-new.html': ['admin', 'qc'], 'admin.html': ['admin'], 'agent.html': ['admin', 'agent', 'recovery'] };
+    const ROLE_HOME = { qc: 'qc.html', recovery: 'dashboard.html', agent: 'agent.html' };
     let myRoleCache = { uid: null, role: null };
     // Shows only the menu links this person may use. Returns true if they may use THIS page.
     async function applyRoles(session) {
