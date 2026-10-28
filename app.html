@@ -46,19 +46,32 @@
     .link-btn { background: none; border: 0; color: var(--muted); font-size: 12.5px; text-decoration: underline; margin: 12px auto 0; display: block; }
     .help { color: #fff; opacity: .9; font-size: 12.5px; margin-top: 16px; text-align: center; }
 
-    /* App: section bar on top (only when someone has more than one section) + the section below */
+    /* App. One section (agents, QC team): that section full screen.
+       Several (recovery team, admin): a home screen with tiles; each section opens full screen with a Home button. */
     #app { position: fixed; inset: 0; display: flex; flex-direction: column; background: #f4f5f7; }
-    #bar { background: var(--dark); display: flex; align-items: center; gap: 6px; padding: 7px 8px; padding-top: calc(7px + env(safe-area-inset-top, 0px)); flex: none; }
-    #secs { flex: 1; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
-    #secs::-webkit-scrollbar { display: none; }
-    #secs button { flex: none; border: 0; border-radius: 999px; padding: 8px 13px; background: var(--dark-2); color: #c9ccd2; font-size: 13.5px; font-weight: 700;
-      display: inline-flex; align-items: center; gap: 6px; }
-    #secs button svg { width: 16px; height: 16px; }
-    #secs button.on { background: var(--brand); color: #fff; }
-    #moreBtn { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--dark-2); color: #fff; display: grid; place-items: center; }
+    #home { position: absolute; inset: 0; overflow-y: auto; background: #f4f5f7; z-index: 3; }
+    .hhead { background: var(--brand); color: #fff; padding: 14px 14px 18px; padding-top: calc(14px + env(safe-area-inset-top, 0px)); display: flex; align-items: center; gap: 12px; }
+    .hhead img { width: 42px; height: 42px; border-radius: 50%; background: #fff; object-fit: cover; flex: none; }
+    .hhead .t { flex: 1; min-width: 0; }
+    .hhead .t b { display: block; font-size: 19px; }
+    .hhead .t small { display: block; font-size: 12.5px; opacity: .9; margin-top: 2px; }
+    .hbtn { width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(255,255,255,.16); color: #fff; display: grid; place-items: center; flex: none; }
+    .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 4px 14px 24px; }
+    .tile { border: 0; text-align: left; background: #fff; border-radius: 16px; padding: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.07); display: flex; flex-direction: column; gap: 8px; min-height: 132px; color: #111827; }
+    .tile .ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; }
+    .tile .ic svg { width: 22px; height: 22px; }
+    .tile b { font-size: 15px; }
+    .tile small { color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .tile .num { margin-top: auto; font-size: 12px; font-weight: 700; color: #111827; }
+    .tile.wide { grid-column: 1 / -1; min-height: 0; flex-direction: row; align-items: center; }
+    .tile.wide .tx { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+    .sec-title { padding: 18px 16px 8px; font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; grid-column: 1 / -1; margin: 0 -14px; }
+    #topbar { background: var(--dark); color: #fff; display: flex; align-items: center; gap: 10px; padding: 7px 10px; padding-top: calc(7px + env(safe-area-inset-top, 0px)); flex: none; }
+    #topbar b { flex: 1; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #topbar .hbtn { background: rgba(255,255,255,.12); }
     #frames { flex: 1; position: relative; }
     #frames iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #f4f5f7; }
-    #menu { position: fixed; right: 8px; top: calc(52px + env(safe-area-inset-top, 0px)); background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    #menu { position: fixed; right: 10px; top: calc(58px + env(safe-area-inset-top, 0px)); background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.25);
       min-width: 220px; overflow: hidden; z-index: 30; }
     #menu .me { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
     #menu .me b { display: block; color: #111827; font-size: 14px; }
@@ -109,9 +122,18 @@
 
   <!-- ===== App ===== -->
   <div id="app" class="hidden">
-    <div id="bar" class="hidden">
-      <div id="secs"></div>
-      <button id="moreBtn" type="button" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+    <div id="home" class="hidden">
+      <div class="hhead">
+        <img src="logo.png" alt="" onerror="this.style.visibility='hidden'">
+        <div class="t"><b id="hello">Bounce</b><small id="helloSub"></small></div>
+        <button class="hbtn" id="moreBtn" type="button" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+      </div>
+      <div class="tiles" id="tiles"></div>
+    </div>
+    <div id="topbar" class="hidden">
+      <button class="hbtn" id="backHome" type="button" aria-label="Home"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg></button>
+      <b id="topTitle"></b>
+      <button class="hbtn" id="topReload" type="button" aria-label="Refresh"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
     </div>
     <div id="frames"></div>
     <div id="noAccess" class="hidden">
@@ -141,15 +163,25 @@
       tracker: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>',
       admin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>',
     };
+    ICON.qcdash = ICON.dash;
+    // own: the page has its own red header (we add a Home button to it). Others get the dark bar with Home.
     const SECTIONS = [
-      { key: 'bikes',   label: 'Recovery',  page: 'agent.html',     roles: ['agent', 'recovery', 'admin'] },
-      { key: 'qc',      label: 'QC',        page: 'qc-app.html',    roles: ['qc', 'admin'] },
-      { key: 'dash',    label: 'Dashboard', page: 'dashboard.html', roles: ['recovery', 'admin'] },
-      { key: 'tracker', label: 'Tracker',   page: 'tracker.html',   roles: ['recovery', 'admin'] },
-      { key: 'admin',   label: 'Admin',     page: 'admin.html',     roles: ['admin'] },
+      { key: 'bikes',   label: 'Recovery bikes',     page: 'agent.html',     own: true, roles: ['agent', 'recovery', 'admin'], group: 'Recovery', color: '#e3262b', bg: '#fdecec', desc: "Today's bikes: map, list by city, ageing, search" },
+      { key: 'dash',    label: 'Recovery Dashboard', page: 'dashboard.html', roles: ['recovery', 'admin'], group: 'Recovery', color: '#2563eb', bg: '#e8f0fe', desc: 'Recovered / moved bikes, trends, police cases' },
+      { key: 'tracker', label: 'Tracker',            page: 'tracker.html',   roles: ['recovery', 'admin'], group: 'Recovery', color: '#7c3aed', bg: '#f1ebfe', desc: 'Calls, outcomes and moving bikes to hub' },
+      { key: 'qc',      label: 'New QC',             page: 'qc-app.html',    own: true, roles: ['qc', 'admin'], group: 'QC', color: '#16a34a', bg: '#e8f6ee', desc: 'Do a QC, my QCs, bike history' },
+      { key: 'qcdash',  label: 'QC Dashboard',       page: 'qc.html',        roles: ['admin'], group: 'QC', color: '#d97706', bg: '#fdf3e2', desc: 'QCs, mistakes and photos by hub and technician' },
+      { key: 'admin',   label: 'Team & access',      page: 'admin.html',     roles: ['admin'], group: 'Admin', color: '#111827', bg: '#eceef1', desc: 'Add people, phone logins, PINs and who sees what', wide: true },
     ];
     let me = null, role = null, mine = [], current = null;
+    const multi = () => mine.length > 1;
 
+    function showHome() {
+      current = null;
+      $('home').classList.remove('hidden'); $('topbar').classList.add('hidden');
+      document.querySelectorAll('#frames iframe').forEach(x => x.classList.add('hidden'));
+      loadCounts();
+    }
     function openSection(key) {
       const s = mine.find(x => x.key === key); if (!s) return;
       current = key;
@@ -157,13 +189,46 @@
       if (!f) {   // opened the first time it's needed, then kept (so you don't lose your place when switching)
         f = document.createElement('iframe'); f.dataset.sec = key; f.title = s.label;
         f.allow = 'camera; geolocation; clipboard-write';
-        f.src = s.page + '?embed=1';
+        f.src = s.page + '?embed=1' + (multi() ? '&home=1' : '');
         $('frames').appendChild(f);
       }
       document.querySelectorAll('#frames iframe').forEach(x => x.classList.toggle('hidden', x !== f));
-      document.querySelectorAll('#secs button').forEach(b => b.classList.toggle('on', b.dataset.sec === key));
+      $('home').classList.add('hidden');
+      $('topbar').classList.toggle('hidden', !multi() || !!s.own); $('topTitle').textContent = s.label;
     }
-    $('secs').addEventListener('click', (e) => { const b = e.target.closest('button[data-sec]'); if (b) openSection(b.dataset.sec); });
+    function renderTiles() {
+      let html = '', lastGroup = '';
+      const groups = new Set(mine.map(s => s.group));
+      for (const s of mine) {
+        if (groups.size > 1 && s.group !== lastGroup && !s.wide) { html += `<div class="sec-title">${esc(s.group)}</div>`; }
+        if (s.wide && groups.size > 1) html += `<div class="sec-title">${esc(s.group)}</div>`;
+        lastGroup = s.group;
+        html += s.wide
+          ? `<button type="button" class="tile wide" data-sec="${s.key}"><span class="ic" style="background:${s.bg};color:${s.color}">${ICON[s.key]}</span><span class="tx"><b>${esc(s.label)}</b><small>${esc(s.desc)}</small></span></button>`
+          : `<button type="button" class="tile" data-sec="${s.key}"><span class="ic" style="background:${s.bg};color:${s.color}">${ICON[s.key]}</span><b>${esc(s.label)}</b><small>${esc(s.desc)}</small><span class="num" id="n-${s.key}"></span></button>`;
+      }
+      $('tiles').innerHTML = html;
+    }
+    $('tiles').addEventListener('click', (e) => { const b = e.target.closest('[data-sec]'); if (b) openSection(b.dataset.sec); });
+    $('backHome').addEventListener('click', showHome);
+    $('topReload').addEventListener('click', () => { const f = document.querySelector(`#frames iframe[data-sec="${current}"]`); f?.contentWindow.location.reload(); });
+    window.addEventListener('message', (e) => { if (e.origin === location.origin && e.data?.type === 'bnc-home' && multi()) showHome(); });
+    // Small live numbers on the tiles (skipped quietly if anything fails)
+    async function loadCounts() {
+      const put = (k, t) => { const el = $('n-' + k); if (el) el.textContent = t; };
+      try {
+        if (mine.some(s => s.key === 'bikes')) {
+          const { data } = await db.from('mfr_meta').select('bikes, synced_at').eq('id', 1).maybeSingle();
+          if (data) put('bikes', `${data.bikes} bikes today`);
+        }
+        if (mine.some(s => s.key === 'qc' || s.key === 'qcdash')) {
+          const d = new Date(); const ist = new Date(d.getTime() + 330 * 60e3); ist.setUTCHours(0, 0, 0, 0);
+          const since = new Date(ist.getTime() - 330 * 60e3).toISOString();
+          const { count } = await db.from('qc_checks').select('id', { count: 'exact', head: true }).gte('qc_at', since);
+          if (count != null) { put('qcdash', `${count} QCs today`); put('qc', `${count} QCs today`); }
+        }
+      } catch (e) {}
+    }
 
     async function showFor(session) {
       $('splash').classList.add('hidden');
@@ -174,10 +239,12 @@
       const { data, error } = await db.rpc('my_role'); role = error ? null : data;
       mine = SECTIONS.filter(s => s.roles.includes(role));
       $('noAccess').classList.toggle('hidden', mine.length > 0); $('frames').classList.toggle('hidden', !mine.length);
-      // One section (agents, QC team): the app is just that section, full screen. More than one: a bar on top to switch.
-      $('bar').classList.toggle('hidden', mine.length < 2);
-      $('secs').innerHTML = mine.map(s => `<button type="button" data-sec="${s.key}">${ICON[s.key]}${s.label}</button>`).join('');
-      if (mine.length) openSection(mine[0].key);
+      // One section (agents, QC team): the app is just that section, full screen. More than one: home screen with tiles.
+      const first = String(me.user_metadata?.name || '').trim().split(' ')[0];
+      $('hello').textContent = first ? `Hi ${first.charAt(0).toUpperCase() + first.slice(1).toLowerCase()}` : 'Bounce';
+      $('helloSub').textContent = { admin: 'Admin · you see everything', recovery: 'Recovery team', qc: 'QC team', agent: 'Recovery agent' }[role] || '';
+      $('home').classList.add('hidden'); $('topbar').classList.add('hidden');
+      if (multi()) { renderTiles(); showHome(); } else if (mine.length) openSection(mine[0].key);
       offerInstall();
     }
     let lastId;
@@ -189,16 +256,16 @@
       if (!session && me) { lastId = null; showFor(null); }
     });
 
-    // ---------- Menu (only shown with the section bar) ----------
+    // ---------- Menu (on the home screen) ----------
     $('moreBtn').addEventListener('click', (e) => {
       e.stopPropagation();
       const m = $('menu'), name = me?.user_metadata?.name || '', id = me?.user_metadata?.phone || me?.email || '';
       m.innerHTML = `<div class="me"><b>${esc(name || 'Signed in')}</b>${esc(id)} · ${esc(role || '')}</div>
-        <button type="button" id="mReload">Refresh this page</button>
+        <button type="button" id="mReload">Refresh numbers</button>
         ${installEvt ? '<button type="button" id="mInstall">⬇ Install app on this phone</button>' : ''}
         <button type="button" class="out" id="mOut">Sign out</button>`;
       m.classList.toggle('hidden');
-      $('mReload').onclick = () => { m.classList.add('hidden'); const f = document.querySelector(`#frames iframe[data-sec="${current}"]`); f?.contentWindow.location.reload(); };
+      $('mReload').onclick = () => { m.classList.add('hidden'); showHome(); };
       if ($('mInstall')) $('mInstall').onclick = () => { m.classList.add('hidden'); install(); };
       $('mOut').onclick = async () => { m.classList.add('hidden'); await db.auth.signOut(); };
     });
