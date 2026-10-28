@@ -361,26 +361,29 @@
 
       <section class="grid2 admin-grid" style="margin-top:10px">
         <div class="panel">
-          <h3>Add a recovery agent</h3>
-          <p class="note">Agents don't need an email. They sign in to the <a href="agent.html" target="_blank">Recovery Agent App</a> with their phone number and a 6-digit PIN, and see only today's MFR bikes (Map, Bikes, Ageing, Find).</p>
+          <h3>Add a phone login</h3>
+          <p class="note">For people without an email. They sign in with their phone number and a 6-digit PIN.<br>
+            <b>Recovery agent</b> → <a href="agent.html" target="_blank">Recovery Agent App</a> (today's MFR bikes, no dashboards) · <b>QC team</b> → <a href="qc-app.html" target="_blank">QC App</a> (New QC, My QCs, Bike history, QC Dashboard) · <b>Recovery team</b> → <a href="dashboard.html" target="_blank">Recovery Dashboard</a>. You can change anyone's access later with the Role dropdown below.</p>
           <form id="agentForm" class="form">
+            <label for="aRole">App</label>
+            <select id="aRole"><option value="agent">Recovery agent (agent app only)</option><option value="qc">QC team (QC app + QC Dashboard)</option><option value="recovery">Recovery team (Recovery Dashboard + Tracker)</option></select>
             <label for="aName">Name</label><input id="aName" type="text" placeholder="e.g. Ravi Kumar" maxlength="80" required>
             <label for="aPhone">Phone number</label><input id="aPhone" type="tel" inputmode="numeric" placeholder="10-digit mobile number" maxlength="14" required>
             <label for="aPin">PIN (6 digits)</label>
             <div style="display:flex;gap:8px"><input id="aPin" type="text" inputmode="numeric" maxlength="6" pattern="\d{6}" required style="flex:1"><button class="btn btn-light" type="button" id="genPin">New PIN</button></div>
-            <button class="btn btn-clear" type="submit" id="agentBtn" style="margin-top:12px">Create agent login</button>
+            <button class="btn btn-clear" type="submit" id="agentBtn" style="margin-top:12px">Create phone login</button>
             <p class="err" id="agentErr"></p>
           </form>
         </div>
         <div class="panel hidden" id="agentShare">
-          <h3>Send the agent their login</h3>
+          <h3>Send them their login</h3>
           <div class="who-line" id="agentWho"></div>
           <textarea id="agentMsg" readonly rows="6"></textarea>
           <div class="share-btns">
             <button class="btn btn-clear" type="button" id="agentCopy">Copy message</button>
             <a class="btn btn-wa" id="agentWa" target="_blank" rel="noopener">WhatsApp</a>
           </div>
-          <p class="note">Send the PIN only to that agent. If they forget it, click "New PIN" next to their name.</p>
+          <p class="note">Send the PIN only to that person. If they forget it, click "New PIN" next to their name.</p>
         </div>
       </section>
 
@@ -469,9 +472,11 @@
     const newPin = () => String(Math.floor(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000)));
     $('aPin').value = newPin();
     $('genPin').addEventListener('click', () => { $('aPin').value = newPin(); });
-    function showAgent({ name, phone, pin }) {
-      const app = 'https://davidab-hub.github.io/recovery-tracker/agent.html';
-      const msg = `Hi ${name || ''}, here is your login for the Bounce Recovery Agent App:\n${app}\n\nPhone: ${phone}\nPIN: ${pin}\n\nTip: open the link in Chrome and choose "Add to Home screen" to use it like an app.`;
+    function showAgent({ name, phone, pin, role }) {
+      const page = { qc: 'qc-app.html', recovery: 'dashboard.html' }[role] || 'agent.html';
+      const app = 'https://davidab-hub.github.io/recovery-tracker/' + page;
+      const appName = { qc: 'Bounce QC App', recovery: 'Bounce Recovery Dashboard' }[role] || 'Bounce Recovery Agent App';
+      const msg = `Hi ${name || ''}, here is your login for the ${appName}:\n${app}\n\nPhone: ${phone}\nPIN: ${pin}\n\nOpen the link in Chrome and sign in with your phone number and PIN. Tip: ⋮ → Add to Home screen to keep it like an app.`;
       $('agentShare').classList.remove('hidden');
       $('agentWho').innerHTML = `For <strong>${esc(name || phone)}</strong> · ${esc(phone)}`;
       $('agentMsg').value = msg;
@@ -485,10 +490,10 @@
       if (!/^\d{6}$/.test(pin)) { $('agentErr').textContent = 'The PIN must be exactly 6 digits.'; return; }
       $('agentBtn').disabled = true; $('agentBtn').textContent = 'Creating…';
       try {
-        const r = await call('create_agent', { name: $('aName').value, phone: $('aPhone').value, pin });
-        showAgent({ ...r, pin }); $('agentForm').reset(); $('aPin').value = newPin(); loadUsers();
+        const r = await call('create_agent', { name: $('aName').value, phone: $('aPhone').value, pin, role: $('aRole').value });
+        showAgent({ ...r, pin }); const keep = $('aRole').value; $('agentForm').reset(); $('aRole').value = keep; $('aPin').value = newPin(); loadUsers();
       } catch (err) { $('agentErr').textContent = err.message; }
-      $('agentBtn').disabled = false; $('agentBtn').textContent = 'Create agent login';
+      $('agentBtn').disabled = false; $('agentBtn').textContent = 'Create phone login';
     });
     $('agentCopy').addEventListener('click', async () => {
       try { await navigator.clipboard.writeText($('agentMsg').value); } catch (e) { $('agentMsg').select(); document.execCommand('copy'); }

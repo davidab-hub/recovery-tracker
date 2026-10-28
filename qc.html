@@ -4,7 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>QC Dashboard</title>
+  <script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');</script>
   <style>
+    /* Inside the phone app: no sidebar / top tabs, the app has its own header and bottom bar */
+    html.embed .side, html.embed .tabs-top { display: none !important; }
+    html.embed main { padding-top: 8px !important; }
     :root {
       /* Bounce brand */
       --brand: #e3262b; --brand-dark: #b91c21; --brand-tint: #3a1517; --side: #16181d; --side-2: #1f2228; --side-text: #9aa0aa;
@@ -295,8 +299,8 @@
       <h3>Sign in to see QC data</h3>
       <p class="note">This page uses real QC data, so it is only visible after signing in. Use the same login as the Recovery app.</p>
       <form id="loginForm">
-        <label for="email">Email</label><input id="email" type="email" autocomplete="username" required>
-        <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required>
+        <label for="email">Email or phone number</label><input id="email" type="text" inputmode="email" autocomplete="username" required>
+        <label for="password">Password or 6-digit PIN</label><input id="password" type="password" autocomplete="current-password" required>
         <button class="btn btn-clear" type="submit">Sign in</button>
         <p class="err" id="loginErr"></p>
       </form>
@@ -542,12 +546,14 @@
       return { header: ['Technician', 'Hub', 'QCs', 'Approved', 'Rejected', 'Rejection %', 'Mistakes', '#1 mistake', '#2 mistake', '#3 mistake'], numeric: [2, 3, 4, 6],
         rows: d.rows.map(t => [t.name, t.hubs, t.n, t.ok, t.rej, pct(t.rej, t.n), t.mis, t.top[0] || '', t.top[1] || '', t.top[2] || '']) };
     }
+    // Problem photos from the QC app appear as "| photo: <link>" in the noted text: show them as links
+    const linkify = (v) => esc(v).replace(/\|\s*photo:\s*(https?:\/\/[^\s<]+)/g, (m, u) => `· <a href="${u}" target="_blank" rel="noopener">📷 photo</a>`);
     function showDetailRows() {
       const q = $('dSearch').value.trim().toLowerCase();
       const rows = q ? current.rows.filter(r => r.join(' ').toLowerCase().includes(q)) : current.rows;
       $('dShown').textContent = q ? `${rows.length} of ${current.rows.length} match` : '';
       $('dRows').innerHTML = rows.slice(0, 500).map(r => '<tr>' + r.map((v, i) =>
-        `<td class="${current.numeric.includes(i) ? 'num' : ''}${current.header[i] === 'Remarks' || current.header[i] === 'What the QC noted' ? ' wrap' : ''}">${esc(v)}</td>`).join('') + '</tr>').join('')
+        `<td class="${current.numeric.includes(i) ? 'num' : ''}${current.header[i] === 'Remarks' || current.header[i] === 'What the QC noted' ? ' wrap' : ''}">${linkify(v)}</td>`).join('') + '</tr>').join('')
         || `<tr><td colspan="${current.header.length}" style="color:var(--muted)">Nothing to show.</td></tr>`;
       if (rows.length > 500) $('dShown').textContent = `Showing 500 of ${rows.length} · download Excel for all`;
     }
@@ -770,7 +776,12 @@
     }
     $('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault(); $('loginErr').textContent = '';
-      const { error } = await db.auth.signInWithPassword({ email: $('email').value.trim(), password: $('password').value });
+      // Phone logins (no email): phone number + 6-digit PIN, same as the phone apps
+      const idv = $('email').value.trim(), digits = idv.replace(/\D/g, ''), pw = $('password').value;
+      const phoneLogin = !idv.includes('@') && digits.length >= 10;
+      const { error } = await db.auth.signInWithPassword(phoneLogin
+        ? { email: digits.slice(-10) + '@agent.bounce.invalid', password: /^\d{6}$/.test(pw.trim()) ? `Bnc!${pw.trim()}#rA` : pw }
+        : { email: idv, password: pw });
       if (error) $('loginErr').textContent = error.message;
     });
     // ---- Roles: who can see which page (the database enforces the same rules) ----

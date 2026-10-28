@@ -281,6 +281,10 @@
     .crow.bad > span { color: #b91c1c; font-weight: 600; }
     .crow.bad { flex-wrap: wrap; }
     .cnote { flex: 1 0 100%; margin-top: 8px; padding: 9px 10px; border: 1.5px solid #f3c4c4; border-radius: 9px; font: 14px inherit; font-family: inherit; background: #fff; }
+    .iphoto { flex: 1 0 100%; display: flex; gap: 8px; align-items: stretch; margin-top: 8px; }
+    .iphoto img { width: 64px; height: 64px; object-fit: cover; border-radius: 9px; flex: none; }
+    .iphoto .photo.ip { flex: 1; padding: 10px; font-size: 13.5px; border-color: #dc2626; color: #b91c1c; background: #fff; }
+    .iphoto.has .photo.ip { border-style: solid; border-color: #16a34a; color: #15803d; }
     .seg.four { display: grid; grid-template-columns: 1fr 1fr; }
     .seg.four button:nth-child(3) { border-left: 0; } .seg.four button:nth-child(n+3) { border-top: 1px solid var(--border); }
     .seg { display: flex; flex-wrap: wrap; justify-content: flex-end; border: 1.5px solid var(--border); border-radius: 9px; overflow: hidden; flex-shrink: 0; max-width: 62%; }
@@ -385,7 +389,7 @@
       <!-- Step 2: checklist -->
       <section class="step hidden" data-step="2">
         <div class="qcard"><p class="lbl"><span>Checklist</span><span class="lbl-note" id="checkCount"></span></p>
-          <p class="mini" style="margin:0 0 6px">Inspect each item and tap its answer — every item must be checked.</p>
+          <p class="mini" style="margin:0 0 6px">Inspect each item and tap its answer — every item must be checked. Anything not OK needs a photo of the problem.</p>
           <div id="checks"></div></div>
       </section>
 
@@ -451,7 +455,7 @@
 
     let session = null, step = 1, photos = [], result = '';
     const MAX_PHOTOS = 8;
-    const st = { hub: store.get('qc-hub') || '', tech: store.get('qc-tech') || '', checks: {}, notes: {} };
+    const st = { hub: store.get('qc-hub') || '', tech: store.get('qc-tech') || '', checks: {}, notes: {}, itemPhotos: {} };
 
     // ---------- Step 1 ----------
     function hubChips(list) {
@@ -538,17 +542,27 @@
         const bad = v && v !== opts[0][0];
         return `<div class="crow ${bad ? 'bad' : ''}" data-key="${esc(key)}"><span>${esc(label)}</span><div class="seg ${opts.length > 2 ? 'four' : ''}">` +
           opts.map(([val, txt], i) => `<button type="button" data-v="${esc(val)}" class="${v === val ? (i === 0 ? 'g' : 'x') : ''}">${esc(txt)}</button>`).join('') + '</div>' +
-          (bad ? `<input class="cnote" data-note="${esc(key)}" maxlength="150" placeholder="Comment (optional) — e.g. rear brake loose" value="${esc(st.notes[key] || '')}">` : '') + '</div>';
+          (bad ? `<input class="cnote" data-note="${esc(key)}" maxlength="150" placeholder="Comment (optional) — e.g. rear brake loose" value="${esc(st.notes[key] || '')}">` +
+            `<div class="iphoto ${st.itemPhotos[key] ? 'has' : ''}">${st.itemPhotos[key] ? `<img src="${st.itemPhotos[key]}" alt="Photo of the problem">` : ''}` +
+            `<label class="photo ip"><input type="file" accept="image/*" capture="environment" data-ip="${esc(key)}" hidden>📷 ${st.itemPhotos[key] ? 'Retake photo' : 'Take photo of the problem'}<small>${st.itemPhotos[key] ? 'photo added ✓' : 'required'}</small></label></div>` : '') + '</div>';
       }).join('');
     }
     $('checks').addEventListener('click', (e) => {
       const b = e.target.closest('button[data-v]'); if (!b) return;
       const key = b.closest('.crow').dataset.key; st.checks[key] = b.dataset.v;
-      if (CHECKS.find(c => c[0] === key)[2][0][0] === b.dataset.v) delete st.notes[key];   // back to OK: drop the comment
+      if (CHECKS.find(c => c[0] === key)[2][0][0] === b.dataset.v) { delete st.notes[key]; delete st.itemPhotos[key]; }   // back to OK: drop comment + photo
       $('formErr').textContent = ''; renderChecks(); suggest();
       const n = document.querySelector(`.cnote[data-note="${CSS.escape(key)}"]`); if (n) n.focus();
     });
     $('checks').addEventListener('input', (e) => { const n = e.target.closest('.cnote'); if (n) st.notes[n.dataset.note] = n.value.trim(); });
+    // Photo of each problem (required for anything not OK)
+    $('checks').addEventListener('change', async (e) => {
+      const inp = e.target.closest('input[data-ip]'); if (!inp || !inp.files.length) return;
+      const key = inp.dataset.ip, f = inp.files[0]; inp.value = '';
+      try { st.itemPhotos[key] = await shrink(f); $('formErr').textContent = ''; } catch (err) { $('formErr').textContent = 'Could not read that photo — please try again.'; }
+      renderChecks(); summary();
+    });
+    const missingItemPhotos = () => CHECKS.filter(([k, , o]) => st.checks[k] && st.checks[k] !== o[0][0] && !st.itemPhotos[k]).map(([, l]) => l);
     // (no 'Mark all OK' — every item must be inspected and answered one by one)
     const badItems = () => CHECKS.filter(([k, , o]) => st.checks[k] && st.checks[k] !== o[0][0]).map(([, l]) => l);
 
@@ -567,7 +581,7 @@
     }
     function summary() {
       const bad = badItems();
-      $('summary').innerHTML = `<b>Summary</b><br>${esc(st.hub)} · ${esc(cleanVeh($('vehicle').value))} · ${esc(st.tech)} · ${photos.length ? '📷 ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '') : 'no photo'}` +
+      $('summary').innerHTML = `<b>Summary</b><br>${esc(st.hub)} · ${esc(cleanVeh($('vehicle').value))} · ${esc(st.tech)} · ${photos.length ? '📷 ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '') : 'no photo'}${Object.keys(st.itemPhotos).length ? ' + ' + Object.keys(st.itemPhotos).length + ' problem photo' + (Object.keys(st.itemPhotos).length > 1 ? 's' : '') : ''}` +
         `<br>${bad.length ? 'Problems: ' + CHECKS.filter(([k, , o]) => st.checks[k] && st.checks[k] !== o[0][0]).map(([k, l]) => `<span class="tag">${esc(l)}${st.notes[k] ? ': ' + esc(st.notes[k]) : ''}</span>`).join(' ') : 'No checklist problems'}` +
         (result ? `<br>Result: <b>${result.charAt(0) + result.slice(1).toLowerCase()}</b>` : '');
     }
@@ -580,7 +594,8 @@
         if (!st.tech) return 'Choose or type the technician.';
         if (!photos.length) return 'Add at least one vehicle photo.';
       }
-      if (stepNo === 2) { const miss = CHECKS.filter(([k]) => !st.checks[k]); if (miss.length) return `Answer all checks (${miss.length} left: ${miss[0][1]}…).`; }
+      if (stepNo === 2) { const miss = CHECKS.filter(([k]) => !st.checks[k]); if (miss.length) return `Answer all checks (${miss.length} left: ${miss[0][1]}…).`;
+        const np = missingItemPhotos(); if (np.length) return `Take a photo of each problem (${np.length} missing: ${np[0]}${np.length > 1 ? '…' : ''}).`; }
       if (stepNo === 3 && !result) return 'Choose the QC result.';
       return '';
     }
@@ -657,7 +672,8 @@
     function submit() {
       if (!APP_SCRIPT_URL || APP_SCRIPT_URL.indexOf('script.google.com') < 0) { $('formErr').textContent = 'The QC app is not connected to the sheet yet. Contact the admin.'; return; }
       const qc = { client_id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), hub: st.hub, vehicle: cleanVeh($('vehicle').value),
-        technician: st.tech, checks: { ...st.checks }, notes: { ...st.notes }, remarks: $('remarks').value.trim(), result, photos: photos.slice() };
+        technician: st.tech, checks: { ...st.checks }, notes: { ...st.notes }, remarks: $('remarks').value.trim(), result, photos: photos.slice(),
+        item_photos: Object.fromEntries(Object.entries(st.itemPhotos).filter(([k]) => { const c = CHECKS.find(x => x[0] === k); return c && st.checks[k] && st.checks[k] !== c[2][0][0]; })) };
       const q = loadQ(); q.push({ id: qc.client_id, qc });
       if (!saveQ(q)) { $('formErr').textContent = 'Phone storage is full — please wait for earlier QCs to finish uploading.'; return; }
       // Count for the "saved" screen (this phone, today)
@@ -674,7 +690,7 @@
     }
     $('againBtn').addEventListener('click', () => {   // keep hub + technician, clear the rest
       $('vehicle').value = ''; $('lastQc').textContent = ''; photos = []; renderThumbs();
-      st.checks = {}; st.notes = {}; result = ''; $('remarks').value = '';
+      st.checks = {}; st.notes = {}; st.itemPhotos = {}; result = ''; $('remarks').value = '';
       $('doneBox').classList.add('hidden'); $('qcForm').classList.remove('hidden'); go(1);
     });
 

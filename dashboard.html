@@ -4,7 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Recovery Dashboard</title>
+  <script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');</script>
   <style>
+    /* Inside the phone app: no sidebar / top tabs, the app has its own header and bottom bar */
+    html.embed .side, html.embed .tabs-top { display: none !important; }
+    html.embed main { padding-top: 8px !important; }
     :root {
       /* Bounce brand */
       --brand: #e3262b; --brand-dark: #b91c21; --brand-tint: #3a1517; --side: #16181d; --side-2: #1f2228; --side-text: #9aa0aa;
@@ -296,8 +300,8 @@
       <h3>Sign in to see recovery data</h3>
       <p class="note">This page uses real recovery data, so it is only visible after signing in.</p>
       <form id="loginForm">
-        <label for="email">Email</label><input id="email" type="email" autocomplete="username" required>
-        <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required>
+        <label for="email">Email or phone number</label><input id="email" type="text" inputmode="email" autocomplete="username" required>
+        <label for="password">Password or 6-digit PIN</label><input id="password" type="password" autocomplete="current-password" required>
         <button class="btn btn-clear" type="submit">Sign in</button>
         <p class="err" id="loginErr"></p>
       </form>
@@ -622,7 +626,12 @@
     }
     $('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault(); $('loginErr').textContent = '';
-      const { error } = await db.auth.signInWithPassword({ email: $('email').value.trim(), password: $('password').value });
+      // Phone logins (no email): phone number + 6-digit PIN, same as the phone apps
+      const idv = $('email').value.trim(), digits = idv.replace(/\D/g, ''), pw = $('password').value;
+      const phoneLogin = !idv.includes('@') && digits.length >= 10;
+      const { error } = await db.auth.signInWithPassword(phoneLogin
+        ? { email: digits.slice(-10) + '@agent.bounce.invalid', password: /^\d{6}$/.test(pw.trim()) ? `Bnc!${pw.trim()}#rA` : pw }
+        : { email: idv, password: pw });
       if (error) $('loginErr').textContent = error.message;
     });
     let lastUid;
