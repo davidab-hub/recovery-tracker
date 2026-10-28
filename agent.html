@@ -469,7 +469,7 @@
       if (!ph) { $('loginErr').textContent = 'Enter your 10-digit phone number.'; return; }
       if (!/^\d{6}$/.test(pin)) { $('loginErr').textContent = 'Your PIN is 6 digits.'; return; }
       $('loginBtn').disabled = true; $('loginBtn').textContent = 'Signing in…';
-      const { error } = await db.auth.signInWithPassword({ email: `${ph}@${AGENT_DOMAIN}`, password: pin });
+      const { error } = await db.auth.signInWithPassword({ email: `${ph}@${AGENT_DOMAIN}`, password: `Bnc!${pin}#rA` });
       if (error) $('loginErr').textContent = /invalid/i.test(error.message) ? 'Wrong phone number or PIN.' : error.message;
       $('loginBtn').disabled = false; $('loginBtn').textContent = 'Sign in';
     });
