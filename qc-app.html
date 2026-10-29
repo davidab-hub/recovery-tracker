@@ -760,5 +760,56 @@
       const img = h.querySelector('img'); if (img) img.replaceWith(b); else h.prepend(b);
     })();
   </script>
+  <script>
+    // ---------- Phone Back button: go to the previous screen; on the first screen ask before closing ----------
+    const BACK = (() => {
+      const embedded = parent !== window;
+      let armed = false, timer = null;
+      function toast(t) {
+        let el = document.getElementById('backToast');
+        if (!el) { el = document.createElement('div'); el.id = 'backToast';
+          el.style.cssText = 'position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:999px;font:600 13.5px system-ui,sans-serif;z-index:99999;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:opacity .2s';
+          document.body.appendChild(el); }
+        el.textContent = t; el.style.opacity = '1'; clearTimeout(el._t); el._t = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+      }
+      return {
+        embedded,
+        // the first screen: one "root" entry plus one extra entry, so Back lands on root instead of closing the app
+        start(state) {
+          if (embedded) { history.replaceState(state, ''); return; }
+          history.replaceState({ ...state, root: 1 }, ''); history.pushState(state, '');
+        },
+        // Back reached the root entry: first time show a message, second time (within 2.5 s) really close
+        atRoot(state) {
+          if (armed) { clearTimeout(timer); armed = false; history.back(); return; }
+          armed = true; timer = setTimeout(() => { armed = false; }, 2500);
+          toast('Press back again to close the app');
+          history.pushState(state, '');
+        },
+        // inside the Bounce app: tell it which section moved, so that section is the one on screen
+        shown() { if (embedded) parent.postMessage({ type: 'bnc-shown' }, location.origin); },
+      };
+    })();
+
+    // QC app: Back goes to the previous step of the QC (3 → 2 → 1), then to the previous tab
+    (function () {
+      let restoring = false;
+      const _go = go, _showTab = showTab;
+      const cur = () => ({ tab, step });
+      go = function (n) { const was = step; _go(n); if (!restoring && n !== was) history.pushState(cur(), ''); };
+      showTab = function (t) { const was = tab; _showTab(t); if (!restoring && t !== was) history.pushState(cur(), ''); };
+      BACK.start({ tab: 'New', step: 1 });
+      window.addEventListener('popstate', (e) => {
+        const st = e.state || {};
+        if (st.root) { BACK.atRoot(cur()); return; }
+        restoring = true;
+        try {
+          if (st.tab && st.tab !== tab) showTab(st.tab);
+          if (st.step && st.step !== step && tab === 'New' && $('doneBox').classList.contains('hidden')) go(st.step);
+        } finally { restoring = false; }
+        BACK.shown();
+      });
+    })();
+  </script>
 </body>
 </html>

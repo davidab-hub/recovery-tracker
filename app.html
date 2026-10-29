@@ -209,10 +209,56 @@
       }
       $('tiles').innerHTML = html;
     }
-    $('tiles').addEventListener('click', (e) => { const b = e.target.closest('[data-sec]'); if (b) openSection(b.dataset.sec); });
-    $('backHome').addEventListener('click', showHome);
+    $('tiles').addEventListener('click', (e) => { const b = e.target.closest('[data-sec]'); if (!b) return; openSection(b.dataset.sec); history.pushState({ sec: b.dataset.sec }, ''); });
+    const goHome = () => { if (current) { showHome(); history.pushState({ home: 1 }, ''); } };
+    $('backHome').addEventListener('click', goHome);
     $('topReload').addEventListener('click', () => { const f = document.querySelector(`#frames iframe[data-sec="${current}"]`); f?.contentWindow.location.reload(); });
-    window.addEventListener('message', (e) => { if (e.origin === location.origin && e.data?.type === 'bnc-home' && multi()) showHome(); });
+    window.addEventListener('message', (e) => {
+      if (e.origin !== location.origin) return;
+      if (e.data?.type === 'bnc-home' && multi()) goHome();
+      // Back moved something inside a section → make sure that section is the one showing
+      if (e.data?.type === 'bnc-shown') {
+        const f = [...document.querySelectorAll('#frames iframe')].find(x => x.contentWindow === e.source);
+        if (f && f.dataset.sec !== current) openSection(f.dataset.sec);
+      }
+    });
+    // ---------- Phone Back button: go to the previous screen; on the first screen ask before closing ----------
+    const BACK = (() => {
+      const embedded = parent !== window;
+      let armed = false, timer = null;
+      function toast(t) {
+        let el = document.getElementById('backToast');
+        if (!el) { el = document.createElement('div'); el.id = 'backToast';
+          el.style.cssText = 'position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:999px;font:600 13.5px system-ui,sans-serif;z-index:99999;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:opacity .2s';
+          document.body.appendChild(el); }
+        el.textContent = t; el.style.opacity = '1'; clearTimeout(el._t); el._t = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+      }
+      return {
+        embedded,
+        // the first screen: one "root" entry plus one extra entry, so Back lands on root instead of closing the app
+        start(state) {
+          if (embedded) { history.replaceState(state, ''); return; }
+          history.replaceState({ ...state, root: 1 }, ''); history.pushState(state, '');
+        },
+        // Back reached the root entry: first time show a message, second time (within 2.5 s) really close
+        atRoot(state) {
+          if (armed) { clearTimeout(timer); armed = false; history.back(); return; }
+          armed = true; timer = setTimeout(() => { armed = false; }, 2500);
+          toast('Press back again to close the app');
+          history.pushState(state, '');
+        },
+        // inside the Bounce app: tell it which section moved, so that section is the one on screen
+        shown() { if (embedded) parent.postMessage({ type: 'bnc-shown' }, location.origin); },
+      };
+    })();
+
+    // Phone Back: section → home screen → "press again to close"
+    window.addEventListener('popstate', (e) => {
+      const st = e.state || {};
+      if (st.root) { BACK.atRoot({ home: 1 }); return; }
+      if (st.sec) { if (st.sec !== current) openSection(st.sec); return; }
+      if (multi() && current) showHome();
+    });
     // Small live numbers on the tiles (skipped quietly if anything fails)
     async function loadCounts() {
       const put = (k, t) => { const el = $('n-' + k); if (el) el.textContent = t; };
@@ -245,6 +291,7 @@
       $('helloSub').textContent = { admin: 'Admin · you see everything', recovery: 'Recovery team', qc: 'QC team', agent: 'Recovery agent' }[role] || '';
       $('home').classList.add('hidden'); $('topbar').classList.add('hidden');
       if (multi()) { renderTiles(); showHome(); } else if (mine.length) openSection(mine[0].key);
+      BACK.start({ home: 1 });
       offerInstall();
     }
     let lastId;

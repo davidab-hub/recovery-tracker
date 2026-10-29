@@ -694,12 +694,51 @@
       if (fromBack !== true && history.state?.sheet) history.back();
     }
     $('sheetBg').addEventListener('click', closeSheet);
-    window.addEventListener('popstate', () => closeSheet(true));
+    window.addEventListener('popstate', (e) => {
+      if (!$('sheet').classList.contains('hidden')) { closeSheet(true); BACK.shown(); return; }   // Back closes an open bike first
+      const st = e.state || {};
+      if (st.root) { BACK.atRoot({ tab }); return; }
+      const t = st.tab || 'Map';
+      if (t !== tab) { tab = t; render(); }
+      BACK.shown();
+    });
     document.addEventListener('click', (e) => {
       if (e.target.closest('[data-stop]')) return;           // call button inside a row
       const r = e.target.closest('.bike'); if (!r) return;
       const b = bikes.find(x => String(x.bike_id) === r.dataset.id); if (b) openSheet(b);
     });
+
+    // ---------- Phone Back button: go to the previous screen; on the first screen ask before closing ----------
+    const BACK = (() => {
+      const embedded = parent !== window;
+      let armed = false, timer = null;
+      function toast(t) {
+        let el = document.getElementById('backToast');
+        if (!el) { el = document.createElement('div'); el.id = 'backToast';
+          el.style.cssText = 'position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:999px;font:600 13.5px system-ui,sans-serif;z-index:99999;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:opacity .2s';
+          document.body.appendChild(el); }
+        el.textContent = t; el.style.opacity = '1'; clearTimeout(el._t); el._t = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+      }
+      return {
+        embedded,
+        // the first screen: one "root" entry plus one extra entry, so Back lands on root instead of closing the app
+        start(state) {
+          if (embedded) { history.replaceState(state, ''); return; }
+          history.replaceState({ ...state, root: 1 }, ''); history.pushState(state, '');
+        },
+        // Back reached the root entry: first time show a message, second time (within 2.5 s) really close
+        atRoot(state) {
+          if (armed) { clearTimeout(timer); armed = false; history.back(); return; }
+          armed = true; timer = setTimeout(() => { armed = false; }, 2500);
+          toast('Press back again to close the app');
+          history.pushState(state, '');
+        },
+        // inside the Bounce app: tell it which section moved, so that section is the one on screen
+        shown() { if (embedded) parent.postMessage({ type: 'bnc-shown' }, location.origin); },
+      };
+    })();
+
+    BACK.start({ tab: 'Map' });
 
     // ---------- tabs, cities, menu ----------
     function render() {
@@ -711,7 +750,8 @@
     }
     document.querySelector('nav.tabs').addEventListener('click', (e) => {
       const b = e.target.closest('button[data-tab]'); if (!b) return;
-      tab = b.dataset.tab; render();
+      if (b.dataset.tab === tab) return;
+      tab = b.dataset.tab; render(); history.pushState({ tab }, '');   // so the phone's Back returns to the previous tab
     });
     $('scopes').addEventListener('click', (e) => {
       const c = e.target.closest('.scope'); if (!c) return;
