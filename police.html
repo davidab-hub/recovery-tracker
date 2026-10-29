@@ -674,6 +674,13 @@
         shown() { if (embedded) parent.postMessage({ type: 'bnc-shown' }, location.origin); },
       };
     })();
+    // On the website (not inside the app): the logo goes back to the dashboards
+    (function () {
+      if (parent !== window) return;
+      const img = document.querySelector('#mainHead img'); if (!img) return;
+      const a = document.createElement('a'); a.href = 'dashboard.html'; a.title = 'Back to dashboards'; a.style.display = 'flex';
+      img.replaceWith(a); a.appendChild(img);
+    })();
     // Inside the Bounce app (several sections): a Home button replaces the logo
     (function () {
       if (!/[?&]home=1/.test(location.search) || parent === window) return;

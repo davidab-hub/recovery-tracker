@@ -276,6 +276,8 @@
       <a href="qc.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>QC Dashboard</a>
       <a href="qc-new.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v3h6V3M12 10v6M9 13h6"/></svg>New QC</a>
       <a href="tracker.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Recovery Tracker</a>
+          <a href="agent.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>Recovery bikes (map)</a>
+      <a href="police.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/><path d="M9 12l2 2 4-4"/></svg>Police cases</a>
     </nav>
     <div class="foot">
       <div class="contact-side">Need help? Contact admin<br><a href="tel:+919180260780">+91 91802 60780</a><br><a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a></div>
@@ -540,7 +542,7 @@
     function detailTable(d) {
       if (d.kind === 'qc') return { header: ['QC time', 'Hub', 'Technician', 'QC by', 'Vehicle', 'Result', 'Mistakes', 'Remarks'], numeric: [],
         rows: d.rows.map(q => [fmtTime(q.qc_at), q.hub, q.technician, q.qc_name || '', q.vehicle_number, q.result,
-                               (misByQc.get(q.id) || []).map(m => m.mistake).join(', '), q.remarks || '']) };
+                               (misByQc.get(q.id) || []).map(m => m.mistake).join(', '), [q.remarks, q.qc_note ? 'QC note: ' + q.qc_note : ''].filter(Boolean).join(' · ')]) };
       if (d.kind === 'mistake') return { header: ['QC time', 'Hub', 'Technician', 'Vehicle', 'Mistake', 'What the QC noted'], numeric: [],
         rows: d.rows.map(m => { const q = qcById.get(m.qc_id) || {}; return [fmtTime(q.qc_at), q.hub, q.technician, q.vehicle_number, m.mistake, m.evidence || '']; }) };
       return { header: ['Technician', 'Hub', 'QCs', 'Approved', 'Rejected', 'Rejection %', 'Mistakes', '#1 mistake', '#2 mistake', '#3 mistake'], numeric: [2, 3, 4, 6],
@@ -600,7 +602,7 @@
       const s = $('synced'); s.className = 'synced'; s.querySelector('span').textContent = 'Syncing…';
       try {
         [qcs, mistakes] = await Promise.all([
-          fetchAll('qc_checks', 'id, qc_at, hub, qc_name, technician, vehicle_number, result, remarks', 'qc_at'),
+          fetchAll('qc_checks', 'id, qc_at, hub, qc_name, technician, vehicle_number, result, remarks, qc_note', 'qc_at'),
           fetchAll('qc_mistakes', 'id, qc_id, mistake, evidence', 'id')]);
       } catch (e) { s.className = 'synced err'; s.querySelector('span').textContent = 'Sync failed: ' + e.message; return; }
       qcs.forEach(q => { q.day = istDay(q.qc_at); q.city = q.city || HUB_CITY[q.hub] || 'Other'; });
