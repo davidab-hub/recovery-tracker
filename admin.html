@@ -273,6 +273,8 @@
     .btn-clear { background: #5b9cf6 !important; color: #fff !important; }
     .btn-sync { background: #2563eb !important; color: #fff !important; }
     .contact a { color: #2563eb !important; }
+      .jc-prog { height: 8px; background: var(--input, #f3f4f6); border-radius: 99px; overflow: hidden; margin-top: 8px; max-width: 420px; }
+    .jc-prog > div { height: 100%; width: 0; background: var(--brand, #e3262b); transition: width .2s; }
   </style>
 </head>
 <body>
@@ -391,6 +393,16 @@
           </div>
           <p class="note">Send the PIN only to that person. If they forget it, click "New PIN" next to their name.</p>
         </div>
+      </section>
+
+      <section class="panel" style="margin-top:10px" id="jcPanel">
+        <h3>Job cards for QC</h3>
+        <p class="note">Upload the job card export from Metabase (CSV or Excel). The New QC page uses it to show each bike's latest job card and its parts.
+          Upload it every morning (or whenever you want fresher job cards); each upload replaces the previous list.</p>
+        <p class="note" id="jcMeta">Loading…</p>
+        <label class="btn btn-clear" style="display:inline-flex;cursor:pointer">⬆ Upload job card file<input type="file" id="jcFile" accept=".csv,.xlsx,.xls,text/csv" hidden></label>
+        <div class="jc-prog hidden" id="jcProg"><div id="jcBar"></div></div>
+        <p class="note" id="jcMsg" style="margin-top:6px"></p>
       </section>
 
       <section class="panel" style="margin-top:10px">
@@ -538,6 +550,128 @@
       await loadUsers(); $('listErr').innerHTML = msg;
     });
 
+    // ---- Job cards for the QC app: Metabase export (CSV or Excel) → one row per job card with its final parts ----
+    // Works with the "job card status log" export (one row per status change) and with the short daily export
+    // (one row per job card). Only what the QC app needs is sent to Supabase.
+    const JC_CAT = { P: 'Rider-payable', W: 'Warranty', A: 'Wear & tear', C: 'Non-warranty', F: 'Free' };
+    const KEEP_DAYS = 45;
+    const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+    function istTime(v) {   // "October 29, 2026, 4:55 PM" / "2026-10-29 16:55" / Excel date number (all India time) → ISO
+      if (v == null || v === '') return null;
+      if (typeof v === 'number' && v > 20000 && v < 80000) return new Date(Math.round((v - 25569) * 864e5) - 330 * 6e4).toISOString();
+      const s = String(v).trim();
+      let m = s.match(/^([A-Za-z]{3})[a-z]*\.? (\d{1,2}),? (\d{4}),? (\d{1,2}):(\d{2})(?::(\d{2}))? ?([AP]M)?$/i), y, mo, d, h, mi, se;
+      if (m) { mo = MONTHS[m[1].toLowerCase()]; d = +m[2]; y = +m[3]; h = m[7] ? (+m[4] % 12) + (/p/i.test(m[7]) ? 12 : 0) : +m[4]; mi = +m[5]; se = +(m[6] || 0); }
+      else if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/))) { y = +m[1]; mo = +m[2]; d = +m[3]; h = +m[4]; mi = +m[5]; se = +(m[6] || 0); }
+      else return null;
+      if (!mo) return null;
+      return new Date(Date.UTC(y, mo - 1, d, h, mi, se) - 330 * 6e4).toISOString();
+    }
+    function jcItems(raw) {   // iitemdata → [{name, code, qty, cat}] (labour-only lines and "--SELECT--" dropped)
+      let list; try { list = JSON.parse(raw || '[]'); } catch (e) { return []; }
+      if (!Array.isArray(list)) return [];
+      const out = new Map();
+      for (const it of list) {
+        const no = String(it?.iItemNo ?? '').replace(/�/g, '').trim();
+        if (!no || /^-+select-+$/i.test(no)) continue;
+        const k = no.indexOf('::'), code = (k >= 0 ? no.slice(0, k) : no).trim(), name = (k >= 0 ? no.slice(k + 2) : '').trim() || code;
+        const qty = Math.max(1, Math.round(Number(it.iQty) || 0)), cat = String(it.iCatg || '').trim().toUpperCase();
+        const key = name.toLowerCase() + '|' + cat;
+        if (out.has(key)) out.get(key).qty += qty; else out.set(key, { name: name.slice(0, 120), code: code.slice(0, 40), qty, cat });
+      }
+      return [...out.values()];
+    }
+    function JobCardReducer() {
+      const cards = new Map(); let rows = 0;
+      const low = (r) => { const o = {}; for (const k in r) o[String(k).replace(/^﻿/, '').trim().toLowerCase()] = r[k]; return o; };
+      return {
+        add(raw) {
+          const r = low(raw), num = String(r.job_card_number ?? '').trim();
+          if (!num) return; rows++;
+          const step = Number(r.step_no) || 0;
+          let c = cards.get(num);
+          if (!c) { c = { step: -1, istep: -1, itemsNamed: false }; cards.set(num, c); }
+          if (step >= c.step) { c.step = step; c.last = r; }
+          if (r.technician_name && String(r.technician_name).trim() && step >= (c.tstep ?? -1)) { c.tstep = step; c.tech = String(r.technician_name).trim(); }
+          const its = jcItems(r.iitemdata);
+          if (its.length) {   // the latest status that lists parts with names = the final parts
+            const named = its.some(i => i.name !== i.code);
+            if ((named && (!c.itemsNamed || step >= c.istep)) || (!c.itemsNamed && step >= c.istep)) { c.items = its; c.istep = step; c.itemsNamed = named; }
+          }
+        },
+        finish() {
+          const now = new Date().toISOString(), list = [], names = new Set();
+          for (const [num, c] of cards) {
+            const r = c.last, status = String(r.new_status || r.job_card_current_status || '').trim();
+            const veh = String(r.reg_number || r.vehicle_number || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (!veh) continue;
+            const closed = /^(billed|closed)/i.test(status);
+            const items = c.items || [];   // [{name, code, qty, cat}] — cat: P rider-payable · W warranty · A wear & tear · C non-warranty
+            items.forEach(i => names.add(i.name));
+            const n = (v) => { const x = Number(String(v ?? '').replace(/,/g, '')); return String(v ?? '').trim() !== '' && Number.isFinite(x) ? x : null; };
+            list.push({ job_card_number: num.slice(0, 60), vehicle_number: veh, status: status.slice(0, 80) || null, billed: /^billed$/i.test(status),
+              fleet_status: String(r.bike_current_status || '').trim() || null, model_name: String(r.model_name || '').trim() || null,
+              hub_name: String(r.job_card_hub_name || r.bike_hub_name || '').trim() || null, technician: c.tech || null,
+              created_at_text: String(r.job_card_created_at_ist || '').trim() || null, closed_at_text: closed ? String(r.status_changed_at_ist || '').trim() || null : null,
+              bike_odo: n(r.bike_odo) == null ? null : Math.round(n(r.bike_odo)), total_cost: n(r.total_cost), rider_payable: n(r.rider_payable),
+              items, card_time: istTime(r.job_card_created_at_ist) || istTime(r.status_changed_at_ist), uploaded_at: now });
+          }
+          // Keep what the QC can still be checking: every card from the last KEEP_DAYS days + each bike's latest card
+          const cut = new Date(Date.now() - KEEP_DAYS * 864e5).toISOString(), latest = new Map();
+          for (const c of list) { const p = latest.get(c.vehicle_number); if (!p || (c.card_time || '') > (p.card_time || '')) latest.set(c.vehicle_number, c); }
+          const keep = list.filter(c => (c.card_time || '') >= cut || latest.get(c.vehicle_number) === c);
+          return { rows, all: list.length, cards: keep, partNames: [...names].sort((a, b) => a.localeCompare(b)) };
+        },
+      };
+    }
+
+    const loadScript = (src) => new Promise((ok, bad) => { const t = document.createElement('script'); t.src = src; t.onload = ok; t.onerror = () => bad(new Error('Could not load ' + src)); document.head.appendChild(t); });
+    async function loadJcMeta() {
+      const { data, error } = await db.from('job_cards_meta').select('file_name, cards, uploaded_at, uploaded_by').eq('id', 1).maybeSingle();
+      $('jcMeta').innerHTML = error ? 'Job card tables are not set up yet.' : data ? `Current list: <b>${esc(data.file_name || 'file')}</b> · ${Number(data.cards || 0).toLocaleString('en-IN')} job cards · uploaded ${when(data.uploaded_at)}${data.uploaded_by ? ' by ' + esc(data.uploaded_by) : ''}` : 'No job card file uploaded yet.';
+    }
+    const jcProgress = (pct, text) => { $('jcProg').classList.remove('hidden'); $('jcBar').style.width = Math.max(2, Math.min(100, pct)) + '%'; if (text) $('jcMsg').textContent = text; };
+    async function readJobCardFile(file) {
+      const R = JobCardReducer();
+      if (/\.xlsx?$/i.test(file.name)) {
+        if (!window.XLSX) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+        jcProgress(10, 'Reading the Excel file…');
+        const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+        XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: true }).forEach(r => R.add(r));
+      } else {
+        if (!window.Papa) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js');
+        await new Promise((ok, bad) => Papa.parse(file, { header: true, skipEmptyLines: true, chunkSize: 4 * 1024 * 1024,
+          chunk: (res) => { res.data.forEach(r => R.add(r)); jcProgress(60 * (res.meta.cursor || 0) / file.size, `Reading the file… ${Math.round(100 * (res.meta.cursor || 0) / file.size)}%`); },
+          complete: ok, error: bad }));
+      }
+      return R.finish();
+    }
+    $('jcFile').addEventListener('change', async (e) => {
+      const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+      const lbl = e.target.closest('label'); lbl.style.pointerEvents = 'none'; lbl.style.opacity = .5;
+      try {
+        jcProgress(1, 'Reading the file…');
+        const out = await readJobCardFile(file);
+        if (!out.rows) throw new Error('No job card rows found. The file needs a "job_card_number" column.');
+        if (out.cards.length < 50) throw new Error(`Only ${out.cards.length} job cards in this file — kept the previous list. Check it's the right export.`);
+        const started = new Date().toISOString(), cards = out.cards.map(c => ({ ...c, uploaded_at: started }));
+        for (let i = 0; i < cards.length; i += 500) {
+          const { error } = await db.from('job_cards').upsert(cards.slice(i, i + 500), { onConflict: 'job_card_number' });
+          if (error) throw new Error('Could not save: ' + error.message);
+          jcProgress(60 + 38 * (i + 500) / cards.length, `Saving job cards… ${Math.min(i + 500, cards.length).toLocaleString('en-IN')} of ${cards.length.toLocaleString('en-IN')}`);
+        }
+        const del = await db.from('job_cards').delete().lt('uploaded_at', started);   // cards not in this file
+        if (del.error) throw new Error('Saved, but could not remove old job cards: ' + del.error.message);
+        const me = (await db.auth.getUser()).data.user;
+        const meta = await db.from('job_cards_meta').upsert({ id: 1, file_name: file.name.slice(0, 200), cards: cards.length, uploaded_at: started,
+          uploaded_by: me?.user_metadata?.name || me?.email || null, part_names: out.partNames });
+        if (meta.error) throw new Error('Saved, but could not update the file details: ' + meta.error.message);
+        jcProgress(100); $('jcMsg').innerHTML = `<span style="color:#15803d">✓ Done: ${cards.length.toLocaleString('en-IN')} job cards saved (latest card of every bike + all cards from the last ${KEEP_DAYS} days, from ${out.rows.toLocaleString('en-IN')} rows).</span>`;
+        loadJcMeta();
+      } catch (err) { $('jcMsg').innerHTML = `<span class="err">${esc(err.message || err)}</span>`; }
+      finally { lbl.style.pointerEvents = ''; lbl.style.opacity = ''; }
+    });
+
     // ---- Sign-in ----
     async function showFor(session) {
       $('loginBox').classList.toggle('hidden', !!session);
@@ -549,7 +683,7 @@
       const { data } = await db.from('app_admins').select('user_id').eq('user_id', session.user.id).maybeSingle();
       $('adminArea').classList.toggle('hidden', !data);
       $('notAdmin').classList.toggle('hidden', !!data);
-      if (data) loadUsers();
+      if (data) loadUsers().then(loadJcMeta);
     }
     $('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault(); $('loginErr').textContent = '';

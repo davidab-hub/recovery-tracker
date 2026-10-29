@@ -285,6 +285,47 @@
     .iphoto img { width: 64px; height: 64px; object-fit: cover; border-radius: 9px; flex: none; }
     .iphoto .photo.ip { flex: 1; padding: 10px; font-size: 13.5px; border-color: #dc2626; color: #b91c1c; background: #fff; }
     .iphoto.has .photo.ip { border-style: solid; border-color: #16a34a; color: #15803d; }
+    /* Job card step */
+    .jc-line { margin-top: 6px; font-size: 13px; }
+    .jc-line.ok { color: #15803d; } .jc-line.none { color: var(--muted); }
+    .jc-card { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: var(--card); margin-bottom: 14px; }
+    .jc-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .jc-top b { font-size: 22px; letter-spacing: .3px; }
+    .jc-top span { color: var(--muted); font-size: 13.5px; }
+    .jc-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 12px; }
+    .jc-tags span { border-radius: 999px; padding: 4px 11px; font-size: 13px; font-weight: 700; background: #eef0f3; color: #374151; }
+    .jc-tags .billed { background: #e8eaff; color: #3730a3; } .jc-tags .notbilled { background: #fff3e0; color: #b45309; } .jc-tags .fleet { background: #e8f0fe; color: #1d4ed8; }
+    .jc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+    .jc-grid small { display: block; color: var(--muted); font-size: 12.5px; } .jc-grid b { font-size: 14.5px; }
+    .jc-h { margin: 18px 0 2px; font-size: 18px; font-weight: 800; } .jc-sub { margin: 0 0 10px; color: var(--muted); font-size: 13.5px; }
+    .jc-list { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--card); }
+    .jc-item { padding: 12px 14px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .jc-item:first-child { border-top: 0; }
+    .jc-item.bad { background: #fef2f2; }
+    .jc-item .nm { flex: 1; min-width: 150px; } .jc-item .nm b { display: block; font-weight: 600; font-size: 15px; }
+    .jc-item .nm small { color: var(--muted); font-size: 12.5px; }
+    .jc-item .pb { display: inline-block; min-width: 18px; text-align: center; border-radius: 5px; background: #fef3c7; color: #92400e; font-weight: 800; font-size: 11px; padding: 1px 4px; margin-right: 4px; }
+    .jc-fit { display: flex; gap: 6px; }
+    .jc-fit button { border: 1.5px solid var(--border); background: #fff; border-radius: 10px; padding: 9px 14px; font: 600 14px inherit; font-family: inherit; cursor: pointer; color: var(--text); }
+    .jc-fit button.y.on { background: #16a34a; border-color: #16a34a; color: #fff; }
+    .jc-fit button.n.on { background: #dc2626; border-color: #dc2626; color: #fff; }
+    .jc-more { flex: 1 0 100%; display: grid; gap: 8px; }
+    .jc-more select, .jc-more input[type=text], .jc-extra-add input, .jc-note { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 11px; font-size: 15px; font-family: inherit; background: #fff; }
+    .jc-more select.miss { border-color: #dc2626; }
+    .jc-ph { display: flex; gap: 8px; align-items: stretch; }
+    .jc-ph img { width: 64px; height: 64px; object-fit: cover; border-radius: 9px; flex: none; }
+    .jc-ph .photo { flex: 1; padding: 10px; font-size: 13.5px; border-color: #dc2626; color: #b91c1c; background: #fff; }
+    .jc-ph.has .photo { border-style: solid; border-color: #16a34a; color: #15803d; }
+    .jc-extra-add { padding: 12px 14px; position: relative; }
+    .jc-sugg { position: absolute; left: 14px; right: 14px; top: 58px; z-index: 20; background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.15); max-height: 240px; overflow-y: auto; }
+    .jc-sugg button { display: block; width: 100%; text-align: left; border: 0; border-top: 1px solid #f1f2f4; background: #fff; padding: 11px 12px; font-size: 14.5px; font-family: inherit; cursor: pointer; }
+    .jc-sugg button:first-child { border-top: 0; }
+    .jc-qty { display: flex; align-items: center; gap: 6px; }
+    .jc-qty button { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--border); background: #fff; font-size: 17px; font-weight: 700; cursor: pointer; }
+    .jc-qty b { min-width: 22px; text-align: center; }
+    .jc-x { border: 0; background: none; color: var(--muted); font-size: 22px; cursor: pointer; padding: 0 4px; }
+    .jc-empty { text-align: center; color: var(--muted); padding: 18px 14px; font-size: 14px; }
+    .jc-pad { padding: 12px 14px; display: grid; gap: 10px; }
     .seg.four { display: grid; grid-template-columns: 1fr 1fr; }
     .seg.four button:nth-child(3) { border-left: 0; } .seg.four button:nth-child(n+3) { border-top: 1px solid var(--border); }
     .seg { display: flex; flex-wrap: wrap; justify-content: flex-end; border: 1.5px solid var(--border); border-radius: 9px; overflow: hidden; flex-shrink: 0; max-width: 62%; }
@@ -293,11 +334,12 @@
     .seg button.g { background: #16a34a; color: #fff; } .seg button.x { background: #dc2626; color: #fff; }
     textarea#remarks { width: 100%; min-height: 70px; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px; font: 14px inherit; font-family: inherit; }
     .quick { font-size: 12px; color: var(--muted); margin-top: 6px; }
-    .res { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .res { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .res button { border: 1.5px solid var(--border); border-radius: 10px; padding: 13px 4px; background: #fff; font: 700 14px inherit; font-family: inherit; color: var(--text); cursor: pointer; }
     .res button[data-r="APPROVED"].sel { background: #16a34a; border-color: #16a34a; color: #fff; }
     .res button[data-r="REJECTED"].sel { background: #dc2626; border-color: #dc2626; color: #fff; }
-    .res button[data-r="HOLD"].sel { background: #d97706; border-color: #d97706; color: #fff; }
+    textarea#qcNote { width: 100%; min-height: 64px; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px; margin-top: 10px; font-family: inherit; font-size: 14px; }
+    textarea#qcNote:focus { outline: 0; border-color: var(--brand); }
     .summary { font-size: 13px; line-height: 1.7; }
     .tag { background: #fde8e8; color: #b91c1c; border-radius: 999px; padding: 1px 8px; font-size: 12px; font-weight: 700; }
     .actionbar { position: sticky; bottom: 0; display: flex; gap: 8px; padding: 10px 0 14px; background: linear-gradient(to top, var(--page) 75%, transparent); }
@@ -367,14 +409,14 @@
     </section>
 
     <form id="qcForm" class="hidden" autocomplete="off">
-      <div class="steps"><span class="on" data-s="1">1 · Bike</span><span data-s="2">2 · Checklist</span><span data-s="3">3 · Result</span></div>
+      <div class="steps"><span class="on" data-s="1">1 · Bike</span><span data-s="2">2 · Checklist</span><span data-s="3">3 · Job card</span><span data-s="4">4 · Result</span></div>
 
       <!-- Step 1: hub, vehicle, technician, photo -->
       <section class="step" data-step="1">
         <div class="qcard"><p class="lbl">Hub</p><div class="chips" id="hubChips"></div></div>
         <div class="qcard"><p class="lbl">Vehicle number</p>
           <input id="vehicle" class="big" inputmode="text" autocapitalize="characters" placeholder="DL9SCV2401" maxlength="14">
-          <p class="mini" id="lastQc"></p></div>
+          <p class="mini" id="lastQc"></p><p class="mini jc-line" id="jcLine"></p></div>
         <div class="qcard"><p class="lbl"><span>Technician</span><span class="lbl-note" id="techNote"></span></p>
           <div class="chips" id="techChips"></div>
           <input id="techOther" class="hidden" placeholder="Type technician name" maxlength="60"></div>
@@ -393,13 +435,17 @@
       </section>
 
       <!-- Step 3: remarks + result -->
-      <section class="step hidden" data-step="3">
+      <!-- Step 3: job card inspection -->
+      <section class="step hidden" data-step="3"><div id="jcBox"></div></section>
+
+      <section class="step hidden" data-step="4">
         <div class="qcard"><p class="lbl">Body parts not fitted / other remarks</p>
           <textarea id="remarks" maxlength="500" placeholder="e.g. Rear fender screw missing"></textarea>
           <div class="quick" id="quick"></div></div>
         <div class="qcard"><p class="lbl">QC result</p>
-          <div class="res" id="results"><button type="button" data-r="APPROVED">Approved</button><button type="button" data-r="REJECTED">Rejected</button><button type="button" data-r="HOLD">Hold</button></div>
-          <p class="mini" id="suggest"></p></div>
+          <div class="res" id="results"><button type="button" data-r="APPROVED">Approved</button><button type="button" data-r="REJECTED">Rejected</button></div>
+          <p class="mini" id="suggest"></p>
+          <textarea id="qcNote" maxlength="500" placeholder="Note (optional) — e.g. why you approved or rejected"></textarea></div>
         <div class="qcard summary" id="summary"></div>
       </section>
 
@@ -426,7 +472,7 @@
     const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
     // Address of the Google script that writes QCs into the master sheet (NCR QC LIST → "App QCs")
-    const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzpeY1SsIPi7JbaIKVAjeEQgOJKwOIAxhiKwvZn6XOtWlAdv-yEshXjpbML7rdP0kF8/exec';
+    const SUBMIT_URL = SUPABASE_URL + '/functions/v1/qc-submit';   // QCs go straight to Supabase (it also copies them to the Google Sheet)
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -491,8 +537,8 @@
     let vehTimer = null;
     $('vehicle').addEventListener('input', () => {
       const v = cleanVeh($('vehicle').value); if ($('vehicle').value !== v) $('vehicle').value = v;
-      clearTimeout(vehTimer); $('lastQc').textContent = '';
-      if (v.length >= 6) vehTimer = setTimeout(() => lastQc(v), 400);
+      clearTimeout(vehTimer); $('lastQc').textContent = ''; jcReset(); $('jcLine').textContent = '';
+      if (v.length >= 6) vehTimer = setTimeout(() => { lastQc(v); loadJC(v); }, 400);
     });
     async function lastQc(v) {
       const { data } = await db.from('qc_checks').select('qc_at, result, technician, id').eq('vehicle_number', v).order('qc_at', { ascending: false }).limit(1);
@@ -574,20 +620,164 @@
     $('quick').innerHTML = 'Quick add: ' + QUICK.map(q => `<button type="button" class="chip sm">${q}</button>`).join('');
     $('quick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return;
       const t = $('remarks').value.trim(); $('remarks').value = t ? t + ', ' + b.textContent : b.textContent; suggest(); });
-    $('results').addEventListener('click', (e) => { const b = e.target.closest('[data-r]'); if (!b) return; result = b.dataset.r; paintResult(); summary(); });
+    $('results').addEventListener('click', (e) => { const b = e.target.closest('[data-r]'); if (!b) return; result = b.dataset.r; paintResult(); summary();
+      $('qcNote').placeholder = result === 'APPROVED' ? 'Note (optional) — e.g. minor scratch, approved' : 'Note (optional) — why you rejected it'; });
     $('remarks').addEventListener('input', () => { suggest(); summary(); });
     function paintResult() { document.querySelectorAll('#results [data-r]').forEach(b => b.classList.toggle('sel', b.dataset.r === result)); }
     function suggest() {
       const bad = badItems().length;
-      $('suggest').innerHTML = bad ? `${bad} item${bad > 1 ? 's' : ''} marked bad → suggested: <b>Rejected</b>`
-        : ($('remarks').value.trim() ? 'All checks OK, but there are remarks — Approved or Rejected?' : 'All checks OK → suggested: <b>Approved</b>');
+      // The QC decides Approved or Rejected; the app only reminds them what they found
+      $('suggest').innerHTML = (bad ? `${bad} checklist item${bad > 1 ? 's' : ''} not OK` : 'All checklist items OK')
+        + ($('remarks').value.trim() ? ' · remarks added' : '') + ' — choose <b>Approved</b> or <b>Rejected</b>.';
       summary();
     }
     function summary() {
       const bad = badItems();
       $('summary').innerHTML = `<b>Summary</b><br>${esc(st.hub)} · ${esc(cleanVeh($('vehicle').value))} · ${esc(st.tech)} · ${photos.length ? '📷 ' + photos.length + ' photo' + (photos.length > 1 ? 's' : '') : 'no photo'}${Object.keys(st.itemPhotos).length ? ' + ' + Object.keys(st.itemPhotos).length + ' problem photo' + (Object.keys(st.itemPhotos).length > 1 ? 's' : '') : ''}` +
         `<br>${bad.length ? 'Problems: ' + CHECKS.filter(([k, , o]) => st.checks[k] && st.checks[k] !== o[0][0]).map(([k, l]) => `<span class="tag">${esc(l)}${st.notes[k] ? ': ' + esc(st.notes[k]) : ''}</span>`).join(' ') : 'No checklist problems'}` +
+        jcSummary() +
         (result ? `<br>Result: <b>${result.charAt(0) + result.slice(1).toLowerCase()}</b>` : '');
+    }
+
+
+    // =================== Job card inspection (step 3) ===================
+    // The bike's latest job card (uploaded from Metabase on the Admin page) is loaded as soon as the vehicle number is typed.
+    // The QC marks each billed part Fitted / Not fitted (reason + photo when not fitted), adds parts fitted but missing
+    // from the job card (inventory), and takes a vehicle photo.
+    const JC_CAT = { P: 'Rider-payable', W: 'Warranty', A: 'Wear & tear', C: 'Non-warranty', F: 'Free' };
+    const JC_REASONS = ['Old part still on the bike', 'Part not available in store', 'Entered by mistake', 'Part fitted on another bike', 'Other'];
+    let jcSeq = 0, jcNames = null;
+    const jc = { veh: '', card: null, parts: [], labour: [], fit: {}, reason: {}, other: {}, photo: {}, extra: [], vphoto: null, note: '', loading: false, meta: null };
+    function jcReset() { Object.assign(jc, { veh: '', card: null, parts: [], labour: [], fit: {}, reason: {}, other: {}, photo: {}, extra: [], vphoto: null, note: '', loading: false }); }
+    const rupee = (n) => n == null || n === '' || isNaN(n) ? '' : '₹' + Math.round(Number(n)).toLocaleString('en-IN');
+    const isLabour = (it) => /labou?r|service|charge/i.test(String(it.type || ''));
+    async function loadJC(v) {
+      const my = ++jcSeq; jc.loading = true; jc.veh = v;
+      $('jcLine').className = 'mini jc-line'; $('jcLine').textContent = 'Looking for the job card…';
+      try {
+        const [{ data, error }, m] = await Promise.all([
+          db.from('job_cards').select('*').eq('vehicle_number', v).order('card_time', { ascending: false, nullsFirst: false }).limit(1),
+          jc.meta ? Promise.resolve({ data: jc.meta }) : db.from('job_cards_meta').select('file_name, cards, uploaded_at').eq('id', 1).maybeSingle()]);
+        if (my !== jcSeq) return;               // the QC typed another number meanwhile
+        jc.meta = m.data || jc.meta;
+        if (error) throw error;
+        jc.card = data && data[0] || null;
+        const items = Array.isArray(jc.card?.items) ? jc.card.items : [];
+        jc.parts = items.filter(it => !isLabour(it)); jc.labour = items.filter(isLabour);
+      } catch (e) { if (my !== jcSeq) return; jc.card = null; jc.parts = []; jc.labour = []; }
+      jc.loading = false;
+      const up = jc.meta?.uploaded_at ? ' (list updated ' + new Date(jc.meta.uploaded_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ')' : '';
+      if (jc.card) { $('jcLine').className = 'mini jc-line ok';
+        $('jcLine').innerHTML = `Job card <b>${esc(jc.card.job_card_number)}</b> · ${jc.card.billed ? 'Billed' : esc(jc.card.status || 'Not billed')} · ${jc.parts.length} part${jc.parts.length === 1 ? '' : 's'}`; }
+      else { $('jcLine').className = 'mini jc-line none'; $('jcLine').textContent = (jc.meta ? 'No job card found for this bike' + up : 'Job card list not uploaded yet') + '.'; }
+      if (step === 3) renderJC();
+    }
+    async function partNames() {   // suggestions for "fitted but not on the job card": every part name seen on job cards
+      if (jcNames) return jcNames;   // list of every part name, saved with each job card upload
+      const { data } = await db.from('job_cards_meta').select('part_names').eq('id', 1).maybeSingle();
+      jcNames = Array.isArray(data?.part_names) ? data.part_names : []; return jcNames;
+    }
+    function photoBox(key, has, label) {
+      return `<div class="jc-ph ${has ? 'has' : ''}">${has ? `<img src="${has}" alt="">` : ''}
+        <label class="photo"><input type="file" accept="image/*" capture="environment" data-jcph="${key}" hidden>📷 ${has ? 'Retake photo' : label}<small>${has ? 'photo added ✓' : 'required'}</small></label></div>`;
+    }
+    function renderJC() {
+      const c = jc.card, veh = cleanVeh($('vehicle').value);
+      let h = '';
+      if (jc.loading) h = '<div class="jc-card jc-empty">Loading the job card…</div>';
+      else if (!c) h = `<div class="jc-card"><div class="jc-top"><b>${esc(veh)}</b></div>
+          <p class="jc-sub" style="margin:8px 0 0">${jc.meta ? 'No job card found for this bike in the uploaded list.' : 'The job card list has not been uploaded yet.'} You can still add parts you see fitted below.</p></div>`;
+      else {
+        const meta = [c.model_name, c.hub_name].filter(Boolean).map(esc).join(' · ');
+        h = `<div class="jc-card"><div class="jc-top"><b>${esc(c.vehicle_number)}</b><span>${meta}</span></div>
+          <div class="jc-tags"><span class="${c.billed ? 'billed' : 'notbilled'}">${c.billed ? 'Billed' : 'Not billed'}</span>${c.status && !/^(not\s*)?billed$/i.test(c.status) ? `<span>${esc(c.status)}</span>` : ''}${c.fleet_status ? `<span class="fleet">Fleet: ${esc(c.fleet_status)}</span>` : ''}</div>
+          <div class="jc-grid"><div><small>Job card</small><b>${esc(c.job_card_number)}</b></div><div><small>Technician</small><b>${esc(c.technician || '—')}</b></div>
+            <div><small>${c.closed_at_text ? 'Closed at' : 'Opened at'}</small><b>${esc(c.closed_at_text || c.created_at_text || '—')}</b></div><div><small>Odometer</small><b>${c.bike_odo != null ? Number(c.bike_odo).toLocaleString('en-IN') + ' km' : '—'}</b></div></div></div>`;
+        h += `<p class="jc-h">${c.billed ? 'Billed parts' : 'Parts on the job card'}</p><p class="jc-sub">Is each part actually fitted on the bike?</p><div class="jc-list">` +
+          (jc.parts.length ? jc.parts.map((it, i) => {
+            const f = jc.fit[i], bad = f === 'N';
+            const cat = JC_CAT[it.cat] || (it.rider_payable ? 'Rider-payable' : it.warranty ? 'Warranty' : '');
+            const sub = [cat === 'Rider-payable' ? '<span class="pb">P</span>Rider-payable' : cat, 'Qty ' + (it.qty ?? 1), rupee(it.cost)].filter(Boolean).join(' · ');
+            return `<div class="jc-item ${bad ? 'bad' : ''}"><div class="nm"><b>${esc(it.name)}</b><small>${sub}</small></div>
+              <div class="jc-fit"><button type="button" class="y ${f === 'Y' ? 'on' : ''}" data-fit="${i}" data-v="Y">Fitted</button><button type="button" class="n ${bad ? 'on' : ''}" data-fit="${i}" data-v="N">Not fitted</button></div>
+              ${bad ? `<div class="jc-more"><select data-reason="${i}" class="${jc.reason[i] ? '' : 'miss'}"><option value="">Reason (required)</option>${JC_REASONS.map(r => `<option ${jc.reason[i] === r ? 'selected' : ''}>${r}</option>`).join('')}</select>
+                ${jc.reason[i] === 'Other' ? `<input type="text" data-other="${i}" maxlength="120" placeholder="Type the reason" value="${esc(jc.other[i] || '')}">` : ''}
+                ${photoBox('p' + i, jc.photo[i], 'Add photo')}</div>` : ''}</div>`; }).join('')
+            : '<div class="jc-empty">No parts on this job card.</div>') + '</div>';
+        if (jc.labour.length) h += `<p class="jc-sub" style="margin-top:8px">Labour on the job card: ${jc.labour.map(l => esc(l.name)).join(', ')}</p>`;
+      }
+      // Parts fitted but not on the job card (inventory)
+      h += `<p class="jc-h">Fitted but not on the job card</p><p class="jc-sub">Any part changed on the bike that the job card does not show?</p>
+        <div class="jc-list"><div class="jc-extra-add"><input type="text" id="jcExtraIn" autocomplete="off" placeholder="+ Add part: type at least 2 letters"><div class="jc-sugg hidden" id="jcSugg"></div></div>` +
+        jc.extra.map((x, i) => `<div class="jc-item"><div class="nm"><b>${esc(x.name)}</b><small>Not on the job card</small></div>
+          <div class="jc-qty"><button type="button" data-xq="${i}" data-d="-1">−</button><b>${x.qty}</b><button type="button" data-xq="${i}" data-d="1">+</button></div>
+          <button type="button" class="jc-x" data-xdel="${i}" aria-label="Remove">×</button>
+          <div class="jc-more">${photoBox('x' + i, x.photo, 'Photo of the fitted part')}</div></div>`).join('') + '</div>';
+      // Vehicle photo + note
+      if (c || jc.extra.length) h += `<p class="jc-h">Vehicle photo</p><div class="jc-list"><div class="jc-pad">${photoBox('v', jc.vphoto, 'Take vehicle photo')}
+          <textarea class="jc-note" id="jcNote" rows="2" maxlength="300" placeholder="Note (optional)">${esc(jc.note)}</textarea></div></div>`;
+      $('jcBox').innerHTML = h;
+    }
+    $('jcBox').addEventListener('click', (e) => {
+      const f = e.target.closest('[data-fit]'), q = e.target.closest('[data-xq]'), d = e.target.closest('[data-xdel]'), sg = e.target.closest('[data-sug]');
+      if (f) { const i = f.dataset.fit; jc.fit[i] = f.dataset.v; if (f.dataset.v === 'Y') { delete jc.reason[i]; delete jc.other[i]; delete jc.photo[i]; } renderJC(); }
+      if (q) { const x = jc.extra[q.dataset.xq]; x.qty = Math.max(1, Math.min(20, x.qty + Number(q.dataset.d))); renderJC(); }
+      if (d) { jc.extra.splice(Number(d.dataset.xdel), 1); renderJC(); }
+      if (sg) addExtra(sg.dataset.sug);
+    });
+    function addExtra(name) {
+      name = String(name || '').replace(/\s+/g, ' ').trim().slice(0, 80); if (name.length < 2) return;
+      const same = jc.extra.find(x => x.name.toLowerCase() === name.toLowerCase());
+      if (same) same.qty = Math.min(20, same.qty + 1); else jc.extra.push({ name, qty: 1, photo: null });
+      renderJC(); $('formErr').textContent = '';
+    }
+    $('jcBox').addEventListener('input', async (e) => {
+      if (e.target.matches('[data-other]')) { jc.other[e.target.dataset.other] = e.target.value.trim(); return; }
+      if (e.target.id === 'jcNote') { jc.note = e.target.value; return; }
+      if (e.target.id !== 'jcExtraIn') return;
+      const t = e.target.value.trim().toLowerCase(), box = $('jcSugg');
+      if (t.length < 2) { box.classList.add('hidden'); return; }
+      const names = await partNames(); if (e.target.value.trim().toLowerCase() !== t) return;
+      const hits = names.filter(n => n.toLowerCase().includes(t)).slice(0, 8);
+      box.innerHTML = hits.map(n => `<button type="button" data-sug="${esc(n)}">${esc(n)}</button>`).join('') + `<button type="button" data-sug="${esc(e.target.value.trim())}">➕ Add “${esc(e.target.value.trim())}”</button>`;
+      box.classList.remove('hidden');
+    });
+    $('jcBox').addEventListener('keydown', (e) => { if (e.target.id === 'jcExtraIn' && e.key === 'Enter') { e.preventDefault(); addExtra(e.target.value); } });
+    $('jcBox').addEventListener('change', async (e) => {
+      if (e.target.matches('[data-reason]')) { jc.reason[e.target.dataset.reason] = e.target.value; renderJC(); return; }
+      const inp = e.target.closest('input[data-jcph]'); if (!inp || !inp.files.length) return;
+      const key = inp.dataset.jcph, file = inp.files[0]; inp.value = '';
+      if (!isLive(file)) { $('formErr').textContent = OLD_PHOTO; return; }
+      let ph; try { ph = await shrink(file); } catch (err) { $('formErr').textContent = 'Could not read that photo — please try again.'; return; }
+      if (key === 'v') jc.vphoto = ph; else if (key[0] === 'x') jc.extra[Number(key.slice(1))].photo = ph; else jc.photo[key.slice(1)] = ph;
+      $('formErr').textContent = ''; renderJC();
+    });
+    function checkJC() {
+      if (jc.loading) return 'Still loading the job card — one moment.';
+      const left = jc.parts.filter((_, i) => !jc.fit[i]).length;
+      if (left) return `Mark each part Fitted or Not fitted (${left} not checked yet).`;
+      for (const i in jc.fit) if (jc.fit[i] === 'N') {
+        const nm = jc.parts[i]?.name || 'part';
+        if (!jc.reason[i]) return `Choose the reason for "${nm}" not fitted.`;
+        if (jc.reason[i] === 'Other' && !jc.other[i]) return `Type the reason for "${nm}" not fitted.`;
+        if (!jc.photo[i]) return `Take a photo for "${nm}" (not fitted).`;
+      }
+      const np = jc.extra.find(x => !x.photo); if (np) return `Take a photo of "${np.name}" (fitted but not on the job card).`;
+      if ((jc.card || jc.extra.length) && !jc.vphoto) return 'Take the vehicle photo on the Job card page.';
+      return '';
+    }
+    function jcPayload() {
+      if (!jc.card && !jc.extra.length) return null;
+      return { number: jc.card?.job_card_number || '', status: jc.card ? (jc.card.billed ? 'Billed' : (jc.card.status || 'Not billed')) : 'No job card',
+        items: jc.parts.map((it, i) => ({ name: it.name, code: it.code || '', cat: it.cat || '', qty: it.qty ?? 1, rider_payable: it.cat === 'P' || !!it.rider_payable, fitted: jc.fit[i] === 'Y',
+          reason: jc.fit[i] === 'N' ? (jc.reason[i] === 'Other' ? 'Other: ' + (jc.other[i] || '') : jc.reason[i]) : '', photo: jc.fit[i] === 'N' ? jc.photo[i] : '' })),
+        extra: jc.extra.map(x => ({ name: x.name, qty: x.qty, photo: x.photo })), photo: jc.vphoto, note: jc.note.trim() };
+    }
+    function jcSummary() {
+      if (!jc.card && !jc.extra.length) return '';
+      const nf = jc.parts.filter((_, i) => jc.fit[i] === 'N').map(p => p.name), fit = jc.parts.filter((_, i) => jc.fit[i] === 'Y').length;
+      return `<br>Job card ${jc.card ? esc(jc.card.job_card_number) : '— none'}: ${fit} fitted` + (nf.length ? ` · <b>${nf.length} not fitted</b> (${esc(nf.join(', '))})` : '')
+        + (jc.extra.length ? ` · <b>${jc.extra.length} not on job card</b> (${esc(jc.extra.map(x => x.name + (x.qty > 1 ? ' ×' + x.qty : '')).join(', '))})` : '');
     }
 
     // ---------- Steps ----------
@@ -600,7 +790,8 @@
       }
       if (stepNo === 2) { const miss = CHECKS.filter(([k]) => !st.checks[k]); if (miss.length) return `Answer all checks (${miss.length} left: ${miss[0][1]}…).`;
         const np = missingItemPhotos(); if (np.length) return `Take a photo of each problem (${np.length} missing: ${np[0]}${np.length > 1 ? '…' : ''}).`; }
-      if (stepNo === 3 && !result) return 'Choose the QC result.';
+      if (stepNo === 3) return checkJC();
+      if (stepNo === 4 && !result) return 'Choose the QC result.';
       return '';
     }
     function go(n) {
@@ -608,20 +799,21 @@
       document.querySelectorAll('.step').forEach(s => s.classList.toggle('hidden', Number(s.dataset.step) !== n));
       document.querySelectorAll('.steps span').forEach(s => s.classList.toggle('on', Number(s.dataset.s) <= n));
       $('backBtn').classList.toggle('hidden', n === 1);
-      $('nextBtn').textContent = n === 1 ? 'Next: checklist →' : n === 2 ? 'Next: result →' : 'Submit QC';
+      $('nextBtn').textContent = n === 1 ? 'Next: checklist →' : n === 2 ? 'Next: job card →' : n === 3 ? 'Next: result →' : 'Submit QC';
       if (n === 2) renderChecks();
-      if (n === 3) { if (!result) result = badItems().length ? 'REJECTED' : ''; paintResult(); suggest(); }
+      if (n === 3) { const v = cleanVeh($('vehicle').value); if (v !== jc.veh && !jc.loading) loadJC(v); renderJC(); }
+      if (n === 4) { paintResult(); suggest(); }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     $('backBtn').addEventListener('click', () => go(step - 1));
     $('nextBtn').addEventListener('click', async () => {
       const err = check(step); if (err) { $('formErr').textContent = err; return; }
-      if (step < 3) return go(step + 1);
+      if (step < 4) return go(step + 1);
       await submit();
     });
 
     // ---------- Saving in the background ----------
-    // Each QC is kept on this phone until Google confirms it's in the sheet, so nothing is lost
+    // Each QC is kept on this phone until Supabase confirms it's saved, so nothing is lost
     // if the signal drops or the page is closed. It retries by itself.
     const QKEY = 'qc-queue', LKEY = 'qc-log';
     const loadQ = () => { try { return JSON.parse(store.get(QKEY) || '[]'); } catch (e) { return []; } };
@@ -658,13 +850,15 @@
           if (!s) break;                                          // will send after sign-in
           let r;
           try {
-            const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify({ token: s.access_token, qc: item.qc }) });
-            r = await res.json();
+            const res = await fetch(SUBMIT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + s.access_token },
+              body: JSON.stringify({ qc: item.qc }) });
+            r = await res.json().catch(() => ({ ok: false, retry: true }));
+            if (r.auth) { await db.auth.refreshSession().catch(() => {}); r = { ok: false, retry: true }; }   // expired sign-in: refresh and try again
           } catch (e) { retryTimer = setTimeout(processQ, 15000); break; }   // no signal: try again in 15 s
           const now = loadQ();
           if (r.ok) saveQ(now.filter(x => x.id !== item.id));
-          else if (r.retry) { retryTimer = setTimeout(processQ, 5000); break; }
+          else if (r.retry) { item.tries = (item.tries || 0) + 1; const q2 = loadQ(), x2 = q2.find(i => i.id === item.id); if (x2) { x2.tries = item.tries; if (item.tries >= 6) x2.error = r.error || 'Could not save'; saveQ(q2); }
+            retryTimer = setTimeout(processQ, Math.min(60000, 5000 * item.tries)); badge(); break; }
           else { const x = now.find(i => i.id === item.id); if (x) x.error = r.error || 'Could not save'; saveQ(now); }
           badge();
         }
@@ -674,9 +868,8 @@
     window.addEventListener('beforeunload', (e) => { if (loadQ().some(x => !x.error)) { e.preventDefault(); e.returnValue = ''; } });
 
     function submit() {
-      if (!APP_SCRIPT_URL || APP_SCRIPT_URL.indexOf('script.google.com') < 0) { $('formErr').textContent = 'The QC app is not connected to the sheet yet. Contact the admin.'; return; }
       const qc = { client_id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), hub: st.hub, vehicle: cleanVeh($('vehicle').value),
-        technician: st.tech, checks: { ...st.checks }, notes: { ...st.notes }, remarks: $('remarks').value.trim(), result, photos: photos.slice(),
+        technician: st.tech, checks: { ...st.checks }, notes: { ...st.notes }, remarks: $('remarks').value.trim(), qc_note: $('qcNote').value.trim(), result, photos: photos.slice(), job_card: jcPayload(),
         item_photos: Object.fromEntries(Object.entries(st.itemPhotos).filter(([k]) => { const c = CHECKS.find(x => x[0] === k); return c && st.checks[k] && st.checks[k] !== c[2][0][0]; })) };
       const q = loadQ(); q.push({ id: qc.client_id, qc });
       if (!saveQ(q)) { $('formErr').textContent = 'Phone storage is full — please wait for earlier QCs to finish uploading.'; return; }
@@ -687,14 +880,14 @@
       log.n++; if (result === 'REJECTED') log.rej++; store.set(LKEY, JSON.stringify(log));
       $('qcForm').classList.add('hidden'); $('doneBox').classList.remove('hidden');
       $('doneText').innerHTML = `${esc(qc.vehicle)} · <b>${result.charAt(0) + result.slice(1).toLowerCase()}</b> · ${esc(st.tech)}<br>` +
-        'Uploading to the sheet in the background — you can start the next QC now.';
+        'Saving in the background — you can start the next QC now.';
       $('doneGrid').innerHTML = `<div><span>Your QCs today (this phone)</span><b>${log.n}</b></div><div><span>Rejected</span><b>${log.rej}</b></div>`;
       $('qBadge').dataset.justSaved = '1'; badge(); window.scrollTo({ top: 0 });
       processQ();
     }
     $('againBtn').addEventListener('click', () => {   // keep hub + technician, clear the rest
       $('vehicle').value = ''; $('lastQc').textContent = ''; photos = []; renderThumbs();
-      st.checks = {}; st.notes = {}; st.itemPhotos = {}; result = ''; $('remarks').value = '';
+      st.checks = {}; st.notes = {}; st.itemPhotos = {}; result = ''; $('remarks').value = ''; $('qcNote').value = ''; jcReset(); $('jcLine').textContent = '';
       $('doneBox').classList.add('hidden'); $('qcForm').classList.remove('hidden'); go(1);
     });
 
