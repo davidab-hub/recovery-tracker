@@ -158,6 +158,14 @@
     #menu button { width: 100%; text-align: left; border: 0; background: none; padding: 14px 16px; font-size: 15px; font-weight: 600; }
     #menu button.out { color: var(--bad); }
     .leaflet-popup-content { margin: 10px 12px; font-size: 13px; }
+    .hub-ic { background: none; border: 0; }
+    .hub-ic svg { filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); display: block; }
+    .hub-pop b { display: block; font-size: 13.5px; margin-bottom: 6px; }
+    .hub-pop a { display: inline-block; background: #111827; color: #fff !important; text-decoration: none; font-weight: 700; font-size: 12.5px; border-radius: 8px; padding: 6px 10px; }
+    .hubline { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: #f4f5f7; font-size: 13.5px; }
+    .hubline .t { flex: 1; min-width: 0; }
+    .hubline .t small { display: block; color: var(--muted); font-size: 12px; }
+    .hubline a { flex: none; background: #111827; color: #fff; text-decoration: none; font-weight: 700; font-size: 13px; border-radius: 10px; padding: 9px 12px; }
     .area-lbl span { display: inline-block; transform: translate(-50%, -50%); background: rgba(255,255,255,.88); border: 1.5px solid; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 800; white-space: nowrap; }
 
     /* ---------- Google-style map ---------- */
@@ -277,6 +285,30 @@
       { key: 'Mumbai', label: 'Mumbai', c: [19.0760, 72.8777] },
     ];
     const cityLabel = (k) => (CITIES.find(c => c.key === k) || {}).label || k || 'Unknown city';
+    // Bounce Daily hubs (from "Bounce Daily all Hubs data.xlsx", plus codes turned into map points)
+    const HUBS = [
+      { name: 'Hoodi', city: 'Bangalore', lat: 12.969313, lng: 77.706437 },
+      { name: 'RR Nagar', city: 'Bangalore', lat: 12.917063, lng: 77.499313 },
+      { name: 'Bilekahalli', city: 'Bangalore', lat: 12.898687, lng: 77.604438 },
+      { name: 'HSR Layout', city: 'Bangalore', lat: 12.903563, lng: 77.631563 },
+      { name: 'E-City', city: 'Bangalore', lat: 12.865687, lng: 77.651813 },
+      { name: 'Yeshwantpur', city: 'Bangalore', lat: 13.019813, lng: 77.540688 },
+      { name: 'Indiranagar', city: 'Bangalore', lat: 12.979188, lng: 77.631313 },
+      { name: 'Hebbal', city: 'Bangalore', lat: 13.042938, lng: 77.598938 },
+      { name: 'Banaswadi', city: 'Bangalore', lat: 13.006562, lng: 77.639938 },
+      { name: 'Bellandur', city: 'Bangalore', lat: 12.924437, lng: 77.666937 },
+      { name: 'Fatehnagar', city: 'Hyderabad', lat: 17.450812, lng: 78.450812 },
+      { name: 'Miyapur', city: 'Hyderabad', lat: 17.497188, lng: 78.356563 },
+      { name: 'Sakinaka', city: 'Mumbai', lat: 19.102812, lng: 72.883937 },
+      { name: 'Saket', city: 'NCR', lat: 28.509562, lng: 77.202437 },
+      { name: 'Rohini', city: 'NCR', lat: 28.721937, lng: 77.103813 },
+      { name: 'Gurugram', city: 'NCR', lat: 28.472687, lng: 77.034313 },
+      { name: 'Okhla', city: 'NCR', lat: 28.537812, lng: 77.279187 },
+      { name: 'Indirapuram', city: 'NCR', lat: 28.640663, lng: 77.359453 }
+    ];
+    const hubKm = (h, lat, lng) => Math.hypot((h.lat - lat) * 111.32, (h.lng - lng) * 111.32 * Math.cos(lat * Math.PI / 180));
+    const nearestHub = (b) => b.lat == null ? null : HUBS.map(h => ({ h, km: hubKm(h, b.lat, b.lng) })).sort((x, y) => x.km - y.km)[0];
+    const HUB_SVG = '<svg width="26" height="26" viewBox="0 0 26 26"><rect x="1" y="1" width="24" height="24" rx="7" fill="#111827" stroke="#fff" stroke-width="2"/><path d="M7 12.5L13 7.5l6 5V19h-4.2v-4h-3.6v4H7z" fill="#fff"/></svg>';
     const ICON = {
       call: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>',
       sms: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM7 9h10v2H7zm6 5H7v-2h6zm4-6H7V6h10z"/></svg>',
@@ -406,7 +438,7 @@
       // Every bike as its own pin, like the team's Google map (no grouping into number bubbles)
       layer = L.layerGroup();
       map.addLayer(layer);
-      $('legend').innerHTML = AGE_STEPS.map(([, c, t]) => `<div><span style="background:${c}"></span>${t}</div>`).join('');
+      $('legend').innerHTML = AGE_STEPS.map(([, c, t]) => `<div><span style="background:${c}"></span>${t}</div>`).join('') + HUB_LEGEND;
     }
     // Google-style teardrop pin in the bike's age color
     const pinCache = {};
@@ -427,6 +459,17 @@
         L.marker(c, { interactive: false, icon: L.divIcon({ className: 'area-lbl', iconSize: null,
           html: `<span style="border-color:${z.color};color:${z.color}">${esc(z.name.split('·')[0].trim())}${team.length ? ' · ' + esc(team.join(', ')) : ''}</span>` }) }).addTo(areaLayer);
       });
+    }
+    const HUB_LEGEND = '<div><span style="background:#111827;border-radius:3px"></span>Bounce hub</div>';
+    const hubDir = (h, b) => `https://www.google.com/maps/dir/?api=1${b ? `&origin=${b.lat},${b.lng}` : ''}&destination=${h.lat},${h.lng}`;
+    const hubPopup = (h) => `<div class="hub-pop"><b>🏠 Bounce Daily Hub ${esc(h.name)}</b><a href="${hubDir(h)}" target="_blank" rel="noopener">Navigate to hub</a></div>`;
+    // Hubs on the Leaflet map (always on top of bikes)
+    let hubLayer;
+    function drawHubs() {
+      if (!hubLayer) hubLayer = L.layerGroup().addTo(map);
+      hubLayer.clearLayers();
+      HUBS.filter(h => city === 'All' || h.city === city).forEach(h => L.marker([h.lat, h.lng], { zIndexOffset: 1000, title: 'Hub ' + h.name,
+        icon: L.divIcon({ className: 'hub-ic', html: HUB_SVG, iconSize: [26, 26], iconAnchor: [13, 13] }) }).bindPopup(hubPopup(h)).addTo(hubLayer));
     }
     let lastFit = null;
 
@@ -451,7 +494,7 @@
           mapTypeControl: true, mapTypeControlOptions: { position: G.ControlPosition.TOP_LEFT, style: G.MapTypeControlStyle.HORIZONTAL_BAR },
           streetViewControl: true, fullscreenControl: true, zoomControl: false });
         $('satBtn').classList.add('hidden'); $('mapCount').style.top = '62px';
-        $('legend').innerHTML = AGE_STEPS.map(([, c, t]) => `<div><span style="background:${c}"></span>${t}</div>`).join('');
+        $('legend').innerHTML = AGE_STEPS.map(([, c, t]) => `<div><span style="background:${c}"></span>${t}</div>`).join('') + HUB_LEGEND;
         $('locBtn').onclick = () => {
           $('locBtn').classList.add('busy');
           navigator.geolocation?.getCurrentPosition((p) => {
@@ -466,6 +509,14 @@
       }
       gMarkers.forEach(m => m.setMap(null)); gMarkers = [];
       gAreas.forEach(p => p.setMap(null)); gAreas = [];
+      (window.__gHubs || []).forEach(m => m.setMap(null));
+      window.__gHubInfo = window.__gHubInfo || new G.InfoWindow();
+      window.__gHubs = HUBS.filter(h => city === 'All' || h.city === city).map(h => {
+        const m = new G.Marker({ map: gmap, position: { lat: h.lat, lng: h.lng }, title: 'Hub ' + h.name, zIndex: 5000,
+          icon: { url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(HUB_SVG), scaledSize: new G.Size(26, 26), anchor: new G.Point(13, 13) } });
+        m.addListener('click', () => { window.__gHubInfo.setContent(hubPopup(h)); window.__gHubInfo.open({ map: gmap, anchor: m }); });
+        return m;
+      });
       zones.filter(z => city === 'All' || z.city === city).forEach(z => gAreas.push(new G.Polygon({ map: gmap, paths: z.polygon.map(([lat, lng]) => ({ lat, lng })),
         strokeColor: z.color, strokeWeight: 2, strokeOpacity: .8, fillColor: z.color, fillOpacity: .05, clickable: false })));
       const list = visible().filter(b => b.lat != null && b.lng != null);
@@ -490,7 +541,7 @@
     function renderMap() {
       if (GOOGLE_MAPS_KEY) return gRenderMap();
       if (!map) initMap();
-      layer.clearLayers(); drawAreas();
+      layer.clearLayers(); drawAreas(); drawHubs();
       const list = visible().filter(b => b.lat != null && b.lng != null);
       const pts = [];
       list.forEach(b => {
@@ -627,6 +678,8 @@
           <a class="${p ? '' : 'off'}" href="${p ? 'https://wa.me/91' + p : '#'}" target="_blank" rel="noopener">${ICON.wa}WhatsApp</a>
           <a class="go ${dir ? '' : 'off'}" href="${dir || '#'}" target="_blank" rel="noopener">${ICON.go}Navigate</a>
         </div>
+        ${(() => { const n = nearestHub(b); return n ? `<div class="hubline"><div class="t">Nearest hub: <b>${esc(n.h.name)}</b><small>about ${kmText(n.km)} away (straight line)</small></div>
+          <a href="${hubDir(n.h, b)}" target="_blank" rel="noopener">Route to hub</a></div>` : ''; })()}
         ${assignedBox(b)}
         ${streetView(b)}
         <dl>${rows.filter(r => r[1]).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
