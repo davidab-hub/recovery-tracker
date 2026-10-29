@@ -221,6 +221,7 @@
     .form label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
     .form input[type=text], .form input[type=email], .form select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
     .rolesel { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: var(--input); color: var(--text); font-family: inherit; }
+    .kyc-tg { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
     .rolesel.none { border-color: #f0b35a; background: #fff8ec; }
     .role-help { font-size: 12px; color: var(--muted); margin: 4px 0 10px; line-height: 1.5; }
     .form input[type=text], .form input[type=email] { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
@@ -344,6 +345,7 @@
               <option value="" disabled selected>Choose a role…</option>
               <option value="qc">QC team</option>
               <option value="recovery">Recovery team</option>
+              <option value="police">Police team</option>
               <option value="admin">Admin</option>
             </select>
             <p class="role-help"><b>QC team:</b> QC Dashboard + New QC · <b>Recovery team:</b> Recovery Dashboard + Tracker + Agent App · <b>Admin:</b> everything, incl. managing users</p>
@@ -374,7 +376,7 @@
             Everyone uses the same <a href="app.html" target="_blank">Bounce app</a> and sees only their team's screens: <b>Recovery agent</b> → today's bikes, no dashboards · <b>QC team</b> → New QC, My QCs, Bike history, QC Dashboard · <b>Recovery team</b> → Recovery Dashboard, Tracker and today's bikes. You can change anyone's access later with the Role dropdown below.</p>
           <form id="agentForm" class="form">
             <label for="aRole">App</label>
-            <select id="aRole"><option value="agent">Recovery agent (today's bikes only)</option><option value="qc">QC team (QC + QC Dashboard)</option><option value="recovery">Recovery team (dashboards + bikes)</option></select>
+            <select id="aRole"><option value="agent">Recovery agent (today's bikes only)</option><option value="qc">QC team (QC + QC Dashboard)</option><option value="recovery">Recovery team (dashboards + bikes)</option><option value="police">Police team (Police cases)</option></select>
             <label for="aName">Name</label><input id="aName" type="text" placeholder="e.g. Ravi Kumar" maxlength="80" required>
             <label for="aPhone">Phone number</label><input id="aPhone" type="tel" inputmode="numeric" placeholder="10-digit mobile number" maxlength="14" required>
             <label for="aPin">PIN (6 digits)</label>
@@ -411,7 +413,7 @@
         <div class="counts" id="userCounts"></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Added</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th title="Can see customer KYC documents on the Police cases page">KYC access</th><th>Status</th><th>Last sign-in</th><th>Added</th><th></th></tr></thead>
             <tbody id="userRows"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
           </table>
         </div>
@@ -443,26 +445,27 @@
     }
 
     let users = [];
-    const ROLE_OPTS = [['', 'No access (choose…)'], ['qc', 'QC team'], ['recovery', 'Recovery team'], ['agent', 'Recovery agent'], ['admin', 'Admin']];
+    const ROLE_OPTS = [['', 'No access (choose…)'], ['qc', 'QC team'], ['recovery', 'Recovery team'], ['police', 'Police team'], ['agent', 'Recovery agent'], ['admin', 'Admin']];
     const ROLE_NAME = Object.fromEntries(ROLE_OPTS);
     async function loadUsers() {
       $('listErr').textContent = '';
       try { users = (await call('list')).users; } catch (e) { $('listErr').textContent = e.message; return; }
       const pending = users.filter(u => u.status === 'pending').length, noRole = users.filter(u => !u.role).length;
       const n = (r) => users.filter(u => u.role === r).length;
-      $('userCounts').innerHTML = [[users.length, 'People'], [n('admin'), 'Admins'], [n('qc'), 'QC team'], [n('recovery'), 'Recovery team'], [n('agent'), 'Recovery agents'], [noRole, 'No role yet'], [pending, 'Waiting to set password']]
+      $('userCounts').innerHTML = [[users.length, 'People'], [n('admin'), 'Admins'], [n('qc'), 'QC team'], [n('recovery'), 'Recovery team'], [n('police'), 'Police team'], [n('agent'), 'Recovery agents'], [users.filter(u => u.kyc).length, 'KYC access'], [noRole, 'No role yet'], [pending, 'Waiting to set password']]
         .map(([n, t]) => `<div class="count"><div class="n">${n}</div><div class="t">${t}</div></div>`).join('');
       $('userRows').innerHTML = users.map(u => `<tr>
           <td><strong>${esc(u.name || '—')}</strong>${u.is_me ? ' <span class="tag">you</span>' : ''}</td>
           <td>${u.is_agent ? '📱 ' + esc(u.phone || u.email.split('@')[0]) : esc(u.email)}</td>
           <td>${u.is_me ? '<span class="tag tag-admin">Admin</span>' : `<select class="rolesel ${u.role ? '' : 'none'}" data-id="${u.id}" aria-label="Role for ${esc(u.email)}">
               ${ROLE_OPTS.map(([v, t]) => `<option value="${v}" ${u.role === v ? 'selected' : ''}>${t}</option>`).join('')}</select>`}</td>
+          <td><label class="kyc-tg" title="Can see customer name, mobile and KYC documents on the Police cases page"><input type="checkbox" data-kyc="${u.id}" ${u.kyc ? 'checked' : ''}> ${u.kyc ? 'Yes' : 'No'}</label></td>
           <td>${u.status === 'pending' ? '<span class="tag tag-wait">Link sent · not set up</span>' : '<span class="tag tag-ok">Active</span>'}</td>
           <td>${when(u.last_sign_in_at)}</td><td>${when(u.created_at)}</td>
           <td class="acts">
             ${u.is_agent ? `<button class="btn btn-light sm" data-act="pin" data-id="${u.id}">New PIN</button>` : `<button class="btn btn-light sm" data-act="link" data-id="${u.id}">New link</button>`}
             ${u.is_me ? '' : `<button class="btn btn-light sm danger" data-act="remove" data-id="${u.id}">Remove</button>`}
-          </td></tr>`).join('') || '<tr><td colspan="7" style="color:var(--muted)">No users yet.</td></tr>';
+          </td></tr>`).join('') || '<tr><td colspan="8" style="color:var(--muted)">No users yet.</td></tr>';
     }
 
     function showLink({ link, email, name }) {
@@ -670,6 +673,18 @@
         loadJcMeta();
       } catch (err) { $('jcMsg').innerHTML = `<span class="err">${esc(err.message || err)}</span>`; }
       finally { lbl.style.pointerEvents = ''; lbl.style.opacity = ''; }
+    });
+
+    // ---- KYC access (customer documents on the Police cases page) ----
+    $('userRows').addEventListener('change', async (e) => {
+      const cb = e.target.closest('input[data-kyc]'); if (!cb) return;
+      const u = users.find(x => x.id === cb.dataset.kyc); if (!u) return;
+      const who = u.name || u.email;
+      if (cb.checked && !confirm(`Give ${who} KYC access? They will be able to see customers' names, mobile numbers and KYC documents (Aadhaar/PAN, licence, RC, insurance) on the Police cases page.`)) { cb.checked = false; return; }
+      cb.disabled = true; $('listErr').textContent = '';
+      try { await call('set_kyc', { id: u.id, value: cb.checked }); await loadUsers();
+        $('listErr').innerHTML = `<span style="color:#15803d">✓ ${esc(who)}: KYC access ${cb.checked ? 'given' : 'removed'}</span>`; }
+      catch (err) { cb.checked = !cb.checked; cb.disabled = false; $('listErr').textContent = err.message; }
     });
 
     // ---- Sign-in ----

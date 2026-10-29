@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1e3a8a">
+  <title>Bounce Police Cases</title>
+  <link rel="icon" href="icon-192.png">
+  <style>
+    :root {
+      --brand: #1e3a8a; --brand2: #1d4ed8; --page: #f4f5f7; --card: #fff; --text: #111827; --muted: #6b7280; --border: #e5e7eb; --soft: #f5f6f8;
+      --ok: #16a34a; --bad: #dc2626; --warn: #d97706; --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; height: 100%; background: var(--page); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif; font-size: 15px; }
+    button, input, select, textarea { font-family: inherit; font-size: inherit; }
+    .hidden { display: none !important; }
+    #app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+    header { background: var(--brand); color: #fff; padding: 10px 12px; padding-top: calc(10px + env(safe-area-inset-top, 0px));
+      display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.15); z-index: 5; }
+    header img { width: 34px; height: 34px; border-radius: 50%; background: #fff; object-fit: cover; flex: none; }
+    header .ttl { flex: 1; min-width: 0; }
+    header .ttl b { display: block; font-size: 17px; }
+    header .ttl small { display: block; font-size: 11.5px; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hbtn { width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(255,255,255,.15); color: #fff; display: grid; place-items: center; flex: none; cursor: pointer; }
+    main { flex: 1; position: relative; overflow: hidden; }
+    .page { position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 12px 90px; }
+    .wrap { max-width: 860px; margin: 0 auto; }
+    nav.tabs { display: flex; background: #fff; border-top: 1px solid var(--border); padding-bottom: var(--safe-b); flex: none; z-index: 5; }
+    nav.tabs button { flex: 1; border: 0; background: none; padding: 8px 2px 9px; color: var(--muted); font-size: 11.5px; font-weight: 600;
+      display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
+    nav.tabs button.on { color: var(--brand2); }
+    nav.tabs svg { width: 22px; height: 22px; }
+    .menu { position: absolute; right: 10px; top: calc(56px + env(safe-area-inset-top, 0px)); background: #fff; color: var(--text); border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.2); min-width: 220px; z-index: 30; overflow: hidden; }
+    .menu .me { padding: 12px 14px; font-size: 12.5px; color: var(--muted); border-bottom: 1px solid var(--border); }
+    .menu .me b { display: block; color: var(--text); font-size: 14px; }
+    .menu button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 12px 14px; font-size: 14px; cursor: pointer; }
+    .menu button:hover { background: var(--soft); }
+
+    /* summary */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+    .stat { background: #fff; border-radius: 12px; padding: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.05); border: 2px solid transparent; cursor: pointer; text-align: left; }
+    .stat.on { border-color: var(--brand2); }
+    .stat b { display: block; font-size: 20px; }
+    .stat span { font-size: 11px; color: var(--muted); font-weight: 600; }
+    @media (max-width: 420px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+    .search { display: flex; gap: 8px; margin-bottom: 8px; }
+    .search input { flex: 1; min-width: 0; border: 1.5px solid var(--border); border-radius: 12px; padding: 11px 12px; background: #fff; text-transform: uppercase; }
+    .search input::placeholder { text-transform: none; }
+    .fbtn { border: 1.5px solid var(--border); background: #fff; border-radius: 12px; padding: 0 12px; font-weight: 700; color: var(--text); cursor: pointer; white-space: nowrap; }
+    .fbtn.act { border-color: var(--brand2); color: var(--brand2); }
+    .filters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: #fff; border-radius: 12px; padding: 10px; margin-bottom: 8px; }
+    @media (max-width: 560px) { .filters { grid-template-columns: repeat(2, 1fr); } }
+    .filters label { font-size: 11px; font-weight: 700; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+    .filters select, .filters input { border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: #fff; font-size: 13.5px; color: var(--text); }
+    .filters .clear { grid-column: 1 / -1; justify-self: end; border: 0; background: none; color: var(--brand2); font-weight: 700; cursor: pointer; }
+    .seg { display: flex; background: #e5e7eb; border-radius: 10px; padding: 3px; margin-bottom: 10px; }
+    .seg button { flex: 1; border: 0; background: none; padding: 7px; border-radius: 8px; font-weight: 700; font-size: 13px; color: var(--muted); cursor: pointer; }
+    .seg button.on { background: #fff; color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+    .count { font-size: 12.5px; color: var(--muted); margin: 2px 2px 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .count button { border: 0; background: none; color: var(--brand2); font-weight: 700; cursor: pointer; font-size: 12.5px; }
+
+    /* case cards */
+    .card { background: #fff; border-radius: 14px; padding: 12px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.06); cursor: pointer; border-left: 4px solid var(--border); }
+    .card .top { display: flex; align-items: center; gap: 8px; }
+    .card .reg { font-weight: 800; font-size: 16px; letter-spacing: .3px; }
+    .card .age { margin-left: auto; font-weight: 800; font-size: 13px; padding: 3px 8px; border-radius: 999px; background: var(--soft); white-space: nowrap; }
+    .card .line { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .card .line b { color: var(--text); font-weight: 600; }
+    .pills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+    .pill { font-size: 11.5px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--soft); color: #374151; }
+    .st-station { background: #dbeafe; color: #1e40af; } .st-held { background: #fde68a; color: #92400e; } .st-fir { background: #fee2e2; color: #991b1b; }
+    .st-pending { background: #ffedd5; color: #9a3412; } .st-released { background: #dcfce7; color: #166534; } .st-other { background: #e5e7eb; color: #374151; }
+    .pill.acc { background: #fee2e2; color: #b91c1c; } .pill.dmg { background: #fef3c7; color: #92400e; }
+    .pill.kyc0 { background: #fee2e2; color: #991b1b; } .pill.kycp { background: #fef3c7; color: #92400e; } .pill.kyc5 { background: #dcfce7; color: #166534; }
+    .a0 { border-left-color: #2563eb; } .a1 { border-left-color: #eab308; } .a2 { border-left-color: #f97316; } .a3 { border-left-color: #dc2626; } .a4 { border-left-color: #111827; }
+    .empty { text-align: center; color: var(--muted); padding: 30px 10px; }
+    .fab { position: absolute; right: 16px; bottom: 16px; border: 0; border-radius: 999px; background: var(--brand2); color: #fff; font-weight: 800; padding: 14px 18px;
+      box-shadow: 0 6px 18px rgba(29,78,216,.35); cursor: pointer; z-index: 4; }
+
+    /* detail sheet */
+    .sheet { position: fixed; inset: 0; background: var(--page); z-index: 20; display: flex; flex-direction: column; }
+    .sheet header { background: #fff; color: var(--text); box-shadow: 0 1px 0 var(--border); }
+    .sheet header .hbtn { background: var(--soft); color: var(--text); }
+    .sheet .body { flex: 1; overflow-y: auto; padding: 12px 12px 40px; }
+    .box { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+    .box h3 { margin: 0 0 10px; font-size: 14.5px; display: flex; align-items: center; gap: 8px; }
+    .box h3 small { margin-left: auto; font-weight: 600; color: var(--muted); font-size: 12px; }
+    .form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: var(--muted); }
+    .form label.full { grid-column: 1 / -1; }
+    .form input, .form select, .form textarea { border: 1.5px solid var(--border); border-radius: 10px; padding: 10px; background: #fff; color: var(--text); font-size: 14.5px; font-weight: 400; width: 100%; }
+    .form input:focus, .form select:focus, .form textarea:focus { outline: none; border-color: var(--brand2); }
+    .checks { grid-column: 1 / -1; display: flex; gap: 10px; flex-wrap: wrap; }
+    .checks label { flex-direction: row; align-items: center; gap: 8px; border: 1.5px solid var(--border); border-radius: 10px; padding: 9px 12px; color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; }
+    .checks input { width: 18px; height: 18px; }
+    .btns { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .btn { border: 0; border-radius: 10px; padding: 11px 16px; font-weight: 800; cursor: pointer; font-size: 14px; }
+    .btn.pri { background: var(--brand2); color: #fff; flex: 1; }
+    .btn.ok { background: var(--ok); color: #fff; }
+    .btn.light { background: #fff; border: 1.5px solid var(--border); color: var(--text); }
+    .btn.danger { background: #fff; border: 1.5px solid #fecaca; color: var(--bad); }
+    .btn:disabled { opacity: .55; cursor: default; }
+    .msg { font-size: 13px; margin-top: 8px; min-height: 18px; }
+    .msg.err { color: var(--bad); } .msg.ok { color: var(--ok); }
+    .agebig { display: flex; gap: 10px; margin-bottom: 10px; }
+    .agebig div { flex: 1; background: #fff; border-radius: 12px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+    .agebig b { display: block; font-size: 20px; } .agebig span { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+    .doc { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border); }
+    .doc:first-of-type { border-top: 0; }
+    .doc .nm { flex: 1; min-width: 0; font-weight: 600; font-size: 14px; }
+    .doc .nm small { display: block; color: var(--muted); font-weight: 500; font-size: 12px; }
+    .tg { font-size: 11.5px; font-weight: 800; padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+    .tg.av { background: #dcfce7; color: #166534; } .tg.pe { background: #fee2e2; color: #991b1b; }
+    .sbtn { border: 1.5px solid var(--border); background: #fff; border-radius: 9px; padding: 7px 10px; font-weight: 700; font-size: 12.5px; cursor: pointer; white-space: nowrap; color: var(--text); }
+    .lock { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 12px; color: var(--muted); font-size: 13px; }
+    .photo { width: 100%; max-height: 260px; object-fit: contain; border-radius: 10px; background: var(--soft); display: block; margin-bottom: 8px; }
+    .hist { font-size: 13px; }
+    .hist div { padding: 8px 0; border-top: 1px solid var(--border); }
+    .hist div:first-child { border-top: 0; }
+    .hist small { display: block; color: var(--muted); font-size: 11.5px; margin-bottom: 2px; }
+    .viewer { position: fixed; inset: 0; background: rgba(0,0,0,.9); z-index: 40; display: flex; flex-direction: column; }
+    .viewer img, .viewer iframe { flex: 1; width: 100%; object-fit: contain; border: 0; background: #111; }
+    .viewer .bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; color: #fff; padding-top: calc(10px + env(safe-area-inset-top, 0px)); }
+    .viewer .bar button, .viewer .bar a { color: #fff; background: rgba(255,255,255,.15); border: 0; border-radius: 9px; padding: 8px 12px; font-weight: 700; text-decoration: none; font-size: 13px; cursor: pointer; }
+
+    /* check bike */
+    .kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 13.5px; }
+    .kv span { color: var(--muted); } .kv b { font-weight: 600; }
+    .bigstat { font-size: 18px; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    /* report */
+    .rhead { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+    .rhead input, .rhead select { border: 1.5px solid var(--border); border-radius: 10px; padding: 9px 10px; background: #fff; font-size: 14px; }
+    .rhead .grow { flex: 1; }
+    .tot { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .tot div { background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+    .tot b { display: block; font-size: 24px; } .tot span { font-size: 12px; color: var(--muted); font-weight: 700; }
+    .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .tbl th { text-align: left; color: var(--muted); font-size: 11.5px; font-weight: 700; padding: 6px 6px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .tbl td { padding: 7px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .tbl tr.grp td { background: var(--soft); font-weight: 800; }
+    .tbl .n { text-align: right; font-variant-numeric: tabular-nums; }
+    .tscroll { overflow-x: auto; }
+    .noacc { max-width: 420px; margin: 60px auto; text-align: center; padding: 20px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header id="mainHead">
+      <img src="logo.png" alt="">
+      <div class="ttl"><b>Police cases</b><small id="hSub">Loading…</small></div>
+      <button type="button" class="hbtn" id="reloadBtn" aria-label="Refresh" title="Refresh">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button>
+      <button type="button" class="hbtn" id="moreBtn" aria-label="Menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+    </header>
+    <div class="menu hidden" id="menu"></div>
+    <main>
+      <!-- Cases -->
+      <section class="page" id="pg-cases"><div class="wrap">
+        <div class="stats" id="stats"></div>
+        <div class="search">
+          <input id="q" type="search" placeholder="Search vehicle number" autocomplete="off">
+          <button type="button" class="fbtn" id="fToggle">Filters</button>
+        </div>
+        <div class="filters hidden" id="filters">
+          <label>City<select id="fCity"></select></label>
+          <label>Police station<select id="fStation"></select></label>
+          <label>Case type<select id="fType"></select></label>
+          <label>Vehicle status<select id="fStatus"></select></label>
+          <label>Aging<select id="fAge"></select></label>
+          <label>Found in month<input type="month" id="fMonth"></label>
+          <button type="button" class="clear" id="fClear">Clear filters</button>
+        </div>
+        <div class="seg" id="view"><button type="button" data-v="open" class="on">Open</button><button type="button" data-v="released">Released</button><button type="button" data-v="all">All</button></div>
+        <div class="count"><span id="cnt"></span><button type="button" id="dlCases">⬇ Excel</button></div>
+        <div id="list"></div>
+      </div>
+      <button type="button" class="fab" id="addBtn">+ Add case</button>
+      </section>
+
+      <!-- Check a bike -->
+      <section class="page hidden" id="pg-check"><div class="wrap">
+        <div class="search">
+          <input id="cq" type="search" placeholder="Vehicle number, e.g. KA05AS1234" autocomplete="off">
+          <button type="button" class="fbtn act" id="cGo">Check</button>
+        </div>
+        <div id="cOut"><p class="empty">Type a vehicle number to see its live status: police case, recovery list and last recovery.</p></div>
+      </div></section>
+
+      <!-- Monthly report -->
+      <section class="page hidden" id="pg-report"><div class="wrap">
+        <div class="rhead">
+          <input type="month" id="rMonth">
+          <select id="rCity" class="grow"></select>
+          <select id="rStation" class="grow"></select>
+          <button type="button" class="btn light" id="rDl">⬇ Excel</button>
+        </div>
+        <div id="rOut"></div>
+      </div></section>
+    </main>
+    <nav class="tabs" id="tabs">
+      <button type="button" class="on" data-tab="cases"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Cases</button>
+      <button type="button" data-tab="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Check bike</button>
+      <button type="button" data-tab="report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Monthly report</button>
+    </nav>
+  </div>
+
+  <!-- Case details / edit -->
+  <div class="sheet hidden" id="sheet">
+    <header>
+      <button type="button" class="hbtn" id="sBack" aria-label="Back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <div class="ttl"><b id="sTitle">Case</b><small id="sSub"></small></div>
+    </header>
+    <div class="body"><div class="wrap" id="sBody"></div></div>
+  </div>
+  <div class="viewer hidden" id="viewer"><div class="bar"><span id="vName"></span><span><a id="vOpen" target="_blank" rel="noopener">Open</a> <button type="button" id="vClose">Close</button></span></div><div id="vBody" style="flex:1;display:flex"></div></div>
+  <input type="file" id="filePick" class="hidden">
+
+  <div class="noacc hidden" id="noAccess"><h2>No access</h2><p>The Police cases page is for the police, recovery and admin teams. Ask an admin to give you access on the Admin page.</p>
+    <p><a href="app.html">Open the Bounce app</a></p></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const BUCKET = 'police-docs';
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const cleanReg = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+    // ---------- Lists used across the page ----------
+    const STATUSES = ['At police station', 'Held – case pending', 'Release pending', 'Released', 'FIR filed', 'Under process', 'Found (not at station)', 'With landlord', 'No data'];
+    const STATUS_CLS = { 'At police station': 'st-station', 'Held – case pending': 'st-held', 'Release pending': 'st-pending', 'Released': 'st-released', 'FIR filed': 'st-fir' };
+    const CASE_TYPES = ['Theft / FIR', 'Accident', 'Seized by police', 'Abandoned / found by police', 'Traffic violation', 'Other'];
+    const CITIES = ['Bangalore', 'Delhi', 'NCR', 'Hyderabad', 'Mumbai'];
+    const AGE_BUCKETS = [['0-7', '0–7 days', 0, 7], ['8-15', '8–15 days', 8, 15], ['16-30', '16–30 days', 16, 30], ['31-60', '31–60 days', 31, 60], ['60+', 'Over 60 days', 61, 1e9], ['none', 'No date yet', -1, -1]];
+    const DOCS = [['photo', 'Customer photo'], ['id_proof', 'Aadhaar card or PAN card'], ['dl', 'Driving licence'], ['rc', 'Vehicle RC'], ['insurance', 'Vehicle insurance']];
+
+    let me = null, myName = '', role = null, canKyc = false;
+    let cases = [], tab = 'cases', view = 'open', openId = null, quick = '';
+
+    // ---------- Dates and aging ----------
+    const today = () => { const d = new Date(Date.now() + 330 * 60e3); return d.toISOString().slice(0, 10); };   // India date
+    const dayNum = (s) => s ? Math.floor(Date.parse(s + 'T00:00:00Z') / 864e5) : null;
+    const fmtD = (s) => s ? new Date(s + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '—';
+    const fmtT = (s) => s ? new Date(s).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    // Days at the police station: from the day it reached the station (or was found) until release (or today)
+    function aging(c) {
+      const from = dayNum(c.submitted_date || c.found_date); if (from == null) return null;
+      const to = dayNum(c.status === 'Released' && c.released_date ? c.released_date : today());
+      return Math.max(0, to - from);
+    }
+    const ageBucket = (d) => d == null ? 'none' : (AGE_BUCKETS.find(b => b[2] >= 0 && d >= b[2] && d <= b[3]) || AGE_BUCKETS[4])[0];
+    const ageCls = (d) => d == null ? '' : d <= 7 ? 'a0' : d <= 15 ? 'a1' : d <= 30 ? 'a2' : d <= 60 ? 'a3' : 'a4';
+    const isOpen = (c) => c.status !== 'Released';
+
+    // ---------- Loading ----------
+    async function load() {
+      $('hSub').textContent = 'Loading…';
+      const { data, error } = await db.from('police_vehicles').select('*').order('updated_at', { ascending: false }).limit(5000);
+      if (error) { $('hSub').textContent = 'Could not load: ' + error.message; return; }
+      cases = data || [];
+      fillFilters(); renderCases(); if (tab === 'report') renderReport();
+      const open = cases.filter(isOpen).length;
+      $('hSub').textContent = `${open} open · ${cases.length} total · updated ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+      if (openId) { const c = cases.find(x => x.id === openId); if (c && !$('sheet').classList.contains('hidden')) renderSheet(c, true); }
+    }
+    const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const opts = (first, list, sel) => `<option value="">${first}</option>` + list.map(v => { const [val, txt] = Array.isArray(v) ? v : [v, v]; return `<option value="${esc(val)}" ${val === sel ? 'selected' : ''}>${esc(txt)}</option>`; }).join('');
+    function fillFilters() {
+      const keep = (id) => $(id).value;
+      const city = keep('fCity');
+      $('fCity').innerHTML = opts('All cities', uniq(cases.map(c => c.city)), city);
+      $('fStation').innerHTML = opts('All stations', uniq(cases.filter(c => !city || c.city === city).map(c => c.station)), keep('fStation'));
+      $('fType').innerHTML = opts('All case types', uniq([...CASE_TYPES, ...cases.map(c => c.case_type)]), keep('fType'));
+      $('fStatus').innerHTML = opts('All statuses', [...STATUSES, ...uniq(cases.map(c => c.status)).filter(s => !STATUSES.includes(s))], keep('fStatus'));
+      $('fAge').innerHTML = opts('Any aging', AGE_BUCKETS.map(b => [b[0], b[1]]), keep('fAge'));
+      const rc = $('rCity').value;
+      $('rCity').innerHTML = opts('All cities', uniq(cases.map(c => c.city)), rc);
+      $('rStation').innerHTML = opts('All police stations', uniq(cases.filter(c => !rc || c.city === rc).map(c => c.station)), $('rStation').value);
+    }
+
+    // ---------- Cases list ----------
+    function filtered() {
+      const q = cleanReg($('q').value), city = $('fCity').value, st = $('fStation').value, ty = $('fType').value,
+        stt = $('fStatus').value, ag = $('fAge').value, mo = $('fMonth').value;
+      return cases.filter(c => {
+        if (view === 'open' && !isOpen(c)) return false;
+        if (view === 'released' && isOpen(c)) return false;
+        if (q && !c.reg_number.includes(q)) return false;
+        if (city && c.city !== city) return false;
+        if (st && c.station !== st) return false;
+        if (ty && c.case_type !== ty) return false;
+        if (stt && c.status !== stt) return false;
+        if (ag && ageBucket(aging(c)) !== ag) return false;
+        if (mo && String(c.found_date || c.submitted_date || '').slice(0, 7) !== mo) return false;
+        if (quick === 'station' && c.status !== 'At police station') return false;
+        if (quick === 'pending' && c.status !== 'Release pending') return false;
+        if (quick === 'held' && c.status !== 'Held – case pending' && c.status !== 'FIR filed') return false;
+        if (quick === 'relmonth' && !(c.status === 'Released' && String(c.released_date || '').slice(0, 7) === today().slice(0, 7))) return false;
+        return true;
+      }).sort((a, b) => (aging(b) ?? -1) - (aging(a) ?? -1) || a.reg_number.localeCompare(b.reg_number));
+    }
+    function renderStats() {
+      const m = today().slice(0, 7);
+      const n = { station: cases.filter(c => c.status === 'At police station').length, pending: cases.filter(c => c.status === 'Release pending').length,
+        held: cases.filter(c => c.status === 'Held – case pending' || c.status === 'FIR filed').length,
+        relmonth: cases.filter(c => c.status === 'Released' && String(c.released_date || '').slice(0, 7) === m).length };
+      const S = [['station', 'At police station'], ['held', 'Held / FIR'], ['pending', 'Release pending'], ['relmonth', 'Released this month']];
+      $('stats').innerHTML = S.map(([k, t]) => `<button type="button" class="stat ${quick === k ? 'on' : ''}" data-q="${k}"><b>${n[k]}</b><span>${t}</span></button>`).join('');
+    }
+    function card(c) {
+      const d = aging(c), kyc = c.kyc_available || 0;
+      return `<div class="card ${ageCls(d)}" data-id="${c.id}">
+        <div class="top"><span class="reg">${esc(c.reg_number)}</span><span class="pill ${STATUS_CLS[c.status] || 'st-other'}">${esc(c.status)}</span>
+          <span class="age">${d == null ? 'No date' : d + (d === 1 ? ' day' : ' days')}</span></div>
+        <div class="line"><b>${esc(c.city || '—')}</b>${c.station ? ' · ' + esc(c.station) : ''}${c.case_type ? ' · ' + esc(c.case_type) : ''}</div>
+        <div class="line">Found ${fmtD(c.found_date)} · At station ${fmtD(c.submitted_date)}${c.released_date ? ' · Released ' + fmtD(c.released_date) : ''}${c.agent ? ' · Agent <b>' + esc(c.agent) + '</b>' : ''}</div>
+        <div class="pills">${c.accident ? '<span class="pill acc">Accident</span>' : ''}${c.damaged ? '<span class="pill dmg">Damaged</span>' : ''}
+          <span class="pill ${kyc >= 5 ? 'kyc5' : kyc ? 'kycp' : 'kyc0'}">KYC ${kyc}/5</span>${c.allot_photo ? '<span class="pill">Allotment photo ✓</span>' : ''}</div>
+      </div>`;
+    }
+    function renderCases() {
+      renderStats();
+      const list = filtered();
+      const nF = ['fCity', 'fStation', 'fType', 'fStatus', 'fAge', 'fMonth'].filter(id => $(id).value).length;
+      $('fToggle').textContent = nF ? `Filters (${nF})` : 'Filters'; $('fToggle').classList.toggle('act', !!nF);
+      $('cnt').textContent = `${list.length} vehicle${list.length === 1 ? '' : 's'}`;
+      $('list').innerHTML = list.slice(0, 400).map(card).join('') || '<p class="empty">No vehicles match.</p>';
+    }
+    $('stats').addEventListener('click', (e) => { const b = e.target.closest('[data-q]'); if (!b) return; quick = quick === b.dataset.q ? '' : b.dataset.q;
+      if (quick) { view = quick === 'relmonth' ? 'released' : 'open'; [...$('view').children].forEach(x => x.classList.toggle('on', x.dataset.v === view)); } renderCases(); });
+    $('q').addEventListener('input', renderCases);
+    $('fToggle').addEventListener('click', () => $('filters').classList.toggle('hidden'));
+    ['fCity', 'fStation', 'fType', 'fStatus', 'fAge', 'fMonth'].forEach(id => $(id).addEventListener('change', () => { if (id === 'fCity') { $('fStation').value = ''; fillFilters(); } renderCases(); }));
+    $('fClear').addEventListener('click', () => { ['fCity', 'fStation', 'fType', 'fStatus', 'fAge', 'fMonth'].forEach(id => $(id).value = ''); quick = ''; fillFilters(); renderCases(); });
+    $('view').addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (!b) return; view = b.dataset.v; quick = '';
+      [...$('view').children].forEach(x => x.classList.toggle('on', x === b)); renderCases(); });
+    $('list').addEventListener('click', (e) => { const c = e.target.closest('[data-id]'); if (c) openCase(Number(c.dataset.id)); });
+    $('addBtn').addEventListener('click', () => openCase(null));
+
+    // ---------- Case details / edit ----------
+    const field = (label, html, full) => `<label class="${full ? 'full' : ''}">${label}${html}</label>`;
+    const sel = (id, list, val, first) => `<select id="${id}">${first ? `<option value="">${first}</option>` : ''}${[...list, ...(val && !list.includes(val) ? [val] : [])].map(v => `<option ${v === val ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
+    let kycRow = null;
+    async function openCase(id, prefillReg) {
+      openId = id;
+      const c = id ? cases.find(x => x.id === id) : { reg_number: prefillReg || '', status: 'At police station', city: '', station: '' };
+      if (!c) return;
+      $('sheet').classList.remove('hidden'); history.pushState({ tab, sheet: id || 'new' }, '');
+      renderSheet(c, false);
+    }
+    function closeSheet() { $('sheet').classList.add('hidden'); openId = null; kycRow = null; }
+    $('sBack').addEventListener('click', () => history.back());
+
+    async function renderSheet(c, keepScroll) {
+      const isNew = !c.id, d = aging(c);
+      $('sTitle').textContent = isNew ? 'Add police case' : c.reg_number;
+      $('sSub').textContent = isNew ? 'Fill what you know; you can update it later' : `${c.status}${c.station ? ' · ' + c.station : ''}`;
+      const stations = uniq(cases.map(x => x.station)), agents = uniq(cases.map(x => x.agent));
+      let h = '';
+      if (!isNew) h += `<div class="agebig"><div><b>${d == null ? '—' : d}</b><span>days at police station</span></div><div><b>${c.kyc_available || 0}/5</b><span>KYC documents</span></div></div>`;
+      h += `<div class="box"><h3>Case details${isNew ? '' : `<small>updated ${fmtT(c.updated_at)}${c.updated_by ? ' by ' + esc(c.updated_by) : ''}</small>`}</h3><div class="form">
+        ${field('Vehicle number', `<input id="eReg" value="${esc(c.reg_number)}" ${isNew ? '' : 'readonly'} placeholder="KA05AS1234" style="text-transform:uppercase">`)}
+        ${field('Vehicle status', sel('eStatus', STATUSES, c.status))}
+        ${field('City', `<input id="eCity" list="dlCity" value="${esc(c.city || '')}" placeholder="City"><datalist id="dlCity">${uniq([...CITIES, ...cases.map(x => x.city)]).map(v => `<option value="${esc(v)}">`).join('')}</datalist>`)}
+        ${field('Police station', `<input id="eStation" list="dlStation" value="${esc(c.station || '')}" placeholder="Station name"><datalist id="dlStation">${stations.map(v => `<option value="${esc(v)}">`).join('')}</datalist>`)}
+        ${field('Case type', sel('eType', CASE_TYPES, c.case_type || '', 'Choose…'))}
+        ${field('Recovery agent', `<input id="eAgent" list="dlAgent" value="${esc(c.agent || '')}" placeholder="Agent name"><datalist id="dlAgent">${agents.map(v => `<option value="${esc(v)}">`).join('')}</datalist>`)}
+        ${field('Date found / seized', `<input type="date" id="eFound" value="${esc(c.found_date || '')}" max="${today()}">`)}
+        ${field('Date submitted to police station', `<input type="date" id="eSub" value="${esc(c.submitted_date || '')}" max="${today()}">`)}
+        ${field('Date released', `<input type="date" id="eRel" value="${esc(c.released_date || '')}" max="${today()}">`)}
+        <div class="checks"><label><input type="checkbox" id="eAcc" ${c.accident ? 'checked' : ''}>Accident</label><label><input type="checkbox" id="eDmg" ${c.damaged ? 'checked' : ''}>Damaged</label></div>
+        ${field('Notes', `<textarea id="eNotes" rows="2" maxlength="500" placeholder="FIR number, officer name, what's needed for release…">${esc(c.notes || '')}</textarea>`, true)}
+      </div>
+      <div class="btns"><button type="button" class="btn pri" id="eSave">${isNew ? 'Add case' : 'Save changes'}</button>
+        ${!isNew && isOpen(c) ? '<button type="button" class="btn ok" id="eRelease">Mark released today</button>' : ''}
+        ${!isNew && role === 'admin' ? '<button type="button" class="btn danger" id="eDel">Delete</button>' : ''}</div>
+      <p class="msg" id="eMsg"></p></div>`;
+      if (!isNew) {
+        // Allotment photo (proof the bike was handed to the customer)
+        h += `<div class="box"><h3>Vehicle allotment photo</h3>${c.allot_photo
+          ? `<img class="photo" id="allotImg" alt="Allotment photo"><div class="btns" style="margin-top:0"><button type="button" class="sbtn" data-view="${esc(c.allot_photo)}" data-name="Allotment photo">View full size</button><button type="button" class="sbtn" data-up="allot">Replace photo</button></div>`
+          : `<p class="lock">No allotment photo yet.</p><div class="btns"><button type="button" class="btn light" data-up="allot">📷 Add allotment photo</button></div>`}<p class="msg" id="aMsg"></p></div>`;
+        // KYC
+        h += `<div class="box" id="kycBox"><h3>Customer KYC for case filing<small>${c.kyc_available || 0} of 5 available</small></h3>${canKyc ? '<p class="note">Loading…</p>' : `<div class="lock">🔒 Only people with KYC access can see the customer's details and documents. Ask an admin if you need it.</div>`}</div>`;
+        h += `<div class="box"><h3>History</h3><div class="hist" id="hist"><p class="note">Loading…</p></div></div>`;
+      }
+      const top = $('sheet').querySelector('.body').scrollTop;
+      $('sBody').innerHTML = h;
+      if (keepScroll) $('sheet').querySelector('.body').scrollTop = top; else $('sheet').querySelector('.body').scrollTop = 0;
+      if (!isNew) {
+        if (c.allot_photo) signed(c.allot_photo).then(u => { if ($('allotImg') && u) $('allotImg').src = u; });
+        loadHistory(c.id); if (canKyc) loadKyc(c);
+      }
+      $('eSave').onclick = () => saveCase(c);
+      if ($('eRelease')) $('eRelease').onclick = () => { $('eStatus').value = 'Released'; if (!$('eRel').value) $('eRel').value = today(); saveCase(c); };
+      if ($('eDel')) $('eDel').onclick = async () => {
+        if (!confirm(`Delete the police case for ${c.reg_number}? This removes its history and KYC record too.`)) return;
+        const { error } = await db.from('police_vehicles').delete().eq('id', c.id);
+        if (error) { $('eMsg').className = 'msg err'; $('eMsg').textContent = error.message; return; }
+        history.back(); load();
+      };
+    }
+    async function saveCase(c) {
+      const isNew = !c.id, msg = $('eMsg');
+      const rec = {
+        reg_number: cleanReg($('eReg').value), status: $('eStatus').value, city: $('eCity').value.trim() || null, station: $('eStation').value.trim() || null,
+        case_type: $('eType').value || null, agent: $('eAgent').value.trim() || null, found_date: $('eFound').value || null, submitted_date: $('eSub').value || null,
+        released_date: $('eRel').value || null, accident: $('eAcc').checked, damaged: $('eDmg').checked, notes: $('eNotes').value.trim() || null, updated_by: myName,
+      };
+      msg.className = 'msg err';
+      if (!/^[A-Z0-9]{6,12}$/.test(rec.reg_number)) { msg.textContent = 'Enter a valid vehicle number.'; return; }
+      if (rec.status === 'Released' && !rec.released_date) { msg.textContent = 'Enter the release date.'; return; }
+      if (rec.released_date && rec.status !== 'Released') { msg.textContent = 'A release date is set: change the status to Released, or clear the date.'; return; }
+      if (rec.found_date && rec.submitted_date && rec.submitted_date < rec.found_date) { msg.textContent = 'The station date can\'t be before the date found.'; return; }
+      if (rec.released_date && rec.released_date < (rec.submitted_date || rec.found_date || '')) { msg.textContent = 'The release date can\'t be before the station date.'; return; }
+      $('eSave').disabled = true; msg.className = 'msg'; msg.textContent = 'Saving…';
+      let res;
+      if (isNew) res = await db.from('police_vehicles').insert({ ...rec, created_by: myName }).select().single();
+      else { const { reg_number, ...upd } = rec; res = await db.from('police_vehicles').update(upd).eq('id', c.id).select().single(); }
+      $('eSave').disabled = false;
+      if (res.error) {
+        msg.className = 'msg err';
+        msg.textContent = /police_vehicles_one_open/.test(res.error.message) ? `${rec.reg_number} already has an open police case. Search for it and update that one.` : 'Could not save: ' + res.error.message;
+        return;
+      }
+      const i = cases.findIndex(x => x.id === res.data.id); if (i >= 0) cases[i] = res.data; else cases.unshift(res.data);
+      openId = res.data.id; renderSheet(res.data, true); fillFilters(); renderCases();
+      $('eMsg').className = 'msg ok'; $('eMsg').textContent = isNew ? '✓ Case added' : '✓ Saved';
+    }
+    async function loadHistory(id) {
+      const { data } = await db.from('police_log').select('at, by_name, change').eq('case_id', id).order('at', { ascending: false }).limit(100);
+      if (!$('hist') || openId !== id) return;
+      $('hist').innerHTML = (data || []).map(r => `<div><small>${fmtT(r.at)}${r.by_name ? ' · ' + esc(r.by_name) : ''}</small>${esc(r.change)}</div>`).join('') || '<p class="note">No changes yet.</p>';
+    }
+
+    // ---------- KYC (only for people with KYC access; the database refuses everyone else) ----------
+    async function loadKyc(c) {
+      const { data, error } = await db.from('police_kyc').select('*').eq('case_id', c.id).maybeSingle();
+      if (openId !== c.id || !$('kycBox')) return;
+      if (error) { $('kycBox').querySelector('.note, .lock').outerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+      kycRow = data || { case_id: c.id, customer_name: '', customer_phone: '', docs: {} };
+      renderKyc(c);
+    }
+    function renderKyc(c) {
+      const k = kycRow, docs = k.docs || {};
+      const ph = String(k.customer_phone || '').replace(/\D/g, '');
+      $('kycBox').innerHTML = `<h3>Customer KYC for case filing<small>${DOCS.filter(([d]) => docs[d]?.state === 'available').length} of 5 available</small></h3>
+        <div class="form"><label>Customer name<input id="kName" value="${esc(k.customer_name || '')}" maxlength="80"></label>
+          <label>Registered mobile<span style="display:flex;gap:6px"><input id="kPhone" value="${esc(k.customer_phone || '')}" inputmode="tel" maxlength="15" style="flex:1">${ph.length >= 10 ? `<a class="sbtn" href="tel:${ph.slice(-10)}" style="display:grid;place-items:center;text-decoration:none">Call</a>` : ''}</span></label></div>
+        <div class="btns" style="margin-top:8px"><button type="button" class="btn light" id="kSave">Save name &amp; mobile</button></div>
+        <div style="margin-top:6px">${DOCS.map(([d, label]) => { const x = docs[d] || {}, av = x.state === 'available';
+          return `<div class="doc"><div class="nm">${label}<small>${av ? (x.file ? 'File added' : 'Marked available') + (x.at ? ' · ' + fmtT(x.at) : '') + (x.by ? ' · ' + esc(x.by) : '') : 'Pending'}</small></div>
+            <span class="tg ${av ? 'av' : 'pe'}">${av ? 'Available' : 'Pending'}</span>
+            ${x.file ? `<button type="button" class="sbtn" data-view="${esc(x.file)}" data-name="${esc(label)}">View</button>` : ''}
+            <button type="button" class="sbtn" data-up="kyc:${d}">${x.file ? 'Replace' : 'Upload'}</button>
+            ${av && !x.file ? `<button type="button" class="sbtn" data-mark="${d}:pending">Undo</button>` : !av ? `<button type="button" class="sbtn" data-mark="${d}:available" title="Available, but kept elsewhere">Mark ✓</button>` : ''}</div>`; }).join('')}</div>
+        <p class="msg" id="kMsg"></p>`;
+      $('kSave').onclick = () => saveKyc(c, { customer_name: $('kName').value.trim() || null, customer_phone: $('kPhone').value.trim() || null }, '✓ Saved');
+    }
+    async function saveKyc(c, patch, okText) {
+      const row = { case_id: c.id, customer_name: kycRow.customer_name ?? null, customer_phone: kycRow.customer_phone ?? null, docs: kycRow.docs || {}, ...patch, updated_at: new Date().toISOString(), updated_by: myName };
+      $('kMsg').className = 'msg'; $('kMsg').textContent = 'Saving…';
+      const { data, error } = await db.from('police_kyc').upsert(row).select().single();
+      if (error) { $('kMsg').className = 'msg err'; $('kMsg').textContent = 'Could not save: ' + error.message; return false; }
+      kycRow = data;
+      const n = DOCS.filter(([d]) => data.docs?.[d]?.state === 'available').length;
+      const cc = cases.find(x => x.id === c.id); if (cc) cc.kyc_available = n;
+      renderKyc(c); renderCases(); $('kMsg').className = 'msg ok'; $('kMsg').textContent = okText;
+      const ab = document.querySelector('.agebig div:nth-child(2) b'); if (ab) ab.textContent = n + '/5';
+      return true;
+    }
+
+    // ---------- Files: upload (photos are made smaller first) and view ----------
+    let upTarget = null;
+    $('sBody').addEventListener('click', async (e) => {
+      const up = e.target.closest('[data-up]'), vw = e.target.closest('[data-view]'), mk = e.target.closest('[data-mark]');
+      if (up) { upTarget = up.dataset.up; $('filePick').accept = upTarget === 'allot' ? 'image/*' : 'image/*,application/pdf'; $('filePick').click(); }
+      if (vw) viewFile(vw.dataset.view, vw.dataset.name);
+      if (mk) { const c = cases.find(x => x.id === openId); const [d, st] = mk.dataset.mark.split(':');
+        const docs = { ...(kycRow.docs || {}) }; docs[d] = st === 'available' ? { state: 'available', by: myName, at: new Date().toISOString() } : { state: 'pending' };
+        saveKyc(c, { docs }, st === 'available' ? '✓ Marked available' : '✓ Marked pending'); }
+    });
+    function shrink(file, max) {
+      return new Promise((resolve, reject) => {
+        const img = new Image(), url = URL.createObjectURL(file);
+        img.onload = () => {
+          const k = Math.min(1, max / Math.max(img.width, img.height));
+          const cv = document.createElement('canvas'); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+          cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); URL.revokeObjectURL(url);
+          cv.toBlob(b => b ? resolve(b) : reject(new Error('bad image')), 'image/jpeg', 0.75);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('That file is not a photo we can read.')); };
+        img.src = url;
+      });
+    }
+    $('filePick').addEventListener('change', async (e) => {
+      const file = e.target.files[0]; e.target.value = ''; const c = cases.find(x => x.id === openId); if (!file || !c || !upTarget) return;
+      const isAllot = upTarget === 'allot', doc = isAllot ? null : upTarget.split(':')[1], out = isAllot ? $('aMsg') : $('kMsg');
+      out.className = 'msg'; out.textContent = 'Uploading…';
+      try {
+        const pdf = file.type === 'application/pdf';
+        if (pdf && file.size > 10 * 1024 * 1024) throw new Error('PDF is larger than 10 MB.');
+        const body = pdf ? file : await shrink(file, 1600);
+        const path = `${isAllot ? 'allot' : 'kyc'}/${c.id}/${isAllot ? 'allotment' : doc}_${Date.now()}.${pdf ? 'pdf' : 'jpg'}`;
+        const { error } = await db.storage.from(BUCKET).upload(path, body, { contentType: pdf ? 'application/pdf' : 'image/jpeg' });
+        if (error) throw error;
+        if (isAllot) {
+          const { data, error: e2 } = await db.from('police_vehicles').update({ allot_photo: path, updated_by: myName }).eq('id', c.id).select().single();
+          if (e2) throw e2;
+          const i = cases.findIndex(x => x.id === c.id); cases[i] = data; renderSheet(data, true); renderCases();
+          $('aMsg').className = 'msg ok'; $('aMsg').textContent = '✓ Allotment photo added';
+        } else {
+          const docs = { ...(kycRow.docs || {}) }; docs[doc] = { state: 'available', file: path, by: myName, at: new Date().toISOString() };
+          await saveKyc(c, { docs }, '✓ Document added');
+        }
+      } catch (err) { out.className = 'msg err'; out.textContent = 'Upload failed: ' + (err.message || err); }
+    });
+    async function signed(path) { const { data } = await db.storage.from(BUCKET).createSignedUrl(path, 600); return data?.signedUrl || ''; }
+    async function viewFile(path, name) {
+      const u = await signed(path); if (!u) { alert('Could not open the file.'); return; }
+      $('vName').textContent = name || ''; $('vOpen').href = u;
+      $('vBody').innerHTML = /\.pdf$/i.test(path) ? `<iframe src="${esc(u)}" title="${esc(name)}"></iframe>` : `<img src="${esc(u)}" alt="${esc(name)}">`;
+      $('viewer').classList.remove('hidden'); history.pushState({ tab, sheet: openId, viewer: 1 }, '');
+    }
+    $('vClose').addEventListener('click', () => history.back());
+
+    // ---------- Check a bike: live status ----------
+    async function checkBike() {
+      const r = cleanReg($('cq').value); if (r.length < 6) { $('cOut').innerHTML = '<p class="empty">Enter the full vehicle number.</p>'; return; }
+      $('cOut').innerHTML = '<p class="empty">Checking…</p>';
+      const { data, error } = await db.rpc('bike_status', { reg: r });
+      if (error || !data) { $('cOut').innerHTML = `<p class="empty">${esc(error?.message || 'Could not check this bike.')}</p>`; return; }
+      const p = data.police, m = data.mfr, rc = data.recovery;
+      let h = '<div class="box">';
+      if (p) {
+        const d = aging(p);
+        h += `<div class="bigstat">${esc(data.reg)} <span class="pill ${STATUS_CLS[p.status] || 'st-other'}">${esc(p.status)}</span>${p.accident ? '<span class="pill acc">Accident</span>' : ''}${p.damaged ? '<span class="pill dmg">Damaged</span>' : ''}</div>
+          <div class="kv"><span>Police station</span><b>${esc(p.station || '—')}${p.city ? ', ' + esc(p.city) : ''}</b><span>Case type</span><b>${esc(p.case_type || '—')}</b>
+          <span>Days at station</span><b>${d == null ? '—' : d}</b><span>Found</span><b>${fmtD(p.found_date)}</b><span>At station since</span><b>${fmtD(p.submitted_date)}</b>
+          ${p.released_date ? `<span>Released</span><b>${fmtD(p.released_date)}</b>` : `<span>Release</span><b>${p.status === 'Release pending' ? 'Pending' : 'Not released'}</b>`}
+          <span>Agent</span><b>${esc(p.agent || '—')}</b>${p.notes ? `<span>Notes</span><b>${esc(p.notes)}</b>` : ''}</div>
+          <div class="btns"><button type="button" class="btn pri" data-open="${p.id}">Open case</button></div>`;
+      } else {
+        h += `<div class="bigstat">${esc(data.reg)} <span class="pill st-other">No police case</span></div>
+          <p class="note">This bike has no police case.</p><div class="btns"><button type="button" class="btn light" data-new="${esc(data.reg)}">+ Add police case</button></div>`;
+      }
+      h += '</div><div class="box"><h3>Recovery list (today\'s MFR)</h3>';
+      h += m ? `<div class="kv"><span>Status</span><b>Marked for recovery</b><span>Ageing</span><b>${m.age_days ?? '—'} days${m.age_bucket ? ' (' + esc(m.age_bucket) + ')' : ''}</b>
+            <span>City</span><b>${esc(m.city || '—')}</b><span>Model</span><b>${esc(m.model || '—')}</b><span>Last GPS</span><b>${esc(m.gps_at || '—')}</b></div>
+            ${m.lat && m.lng ? `<div class="btns"><a class="btn light" style="text-decoration:none" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${m.lat},${m.lng}">Open last location in Maps</a></div>` : ''}`
+        : '<p class="note">Not in today\'s recovery list.</p>';
+      h += '</div><div class="box"><h3>Last recovery record</h3>';
+      h += rc ? `<div class="kv"><span>Date</span><b>${fmtD(rc.date)}</b><span>Outcome</span><b>${esc(rc.outcome || '—')}</b><span>Agent</span><b>${esc(rc.agent || '—')}</b><span>Type</span><b>${esc(rc.type || '—')}</b></div>`
+        : '<p class="note">No recovery record for this bike.</p>';
+      $('cOut').innerHTML = h + '</div>';
+    }
+    $('cGo').addEventListener('click', checkBike);
+    $('cq').addEventListener('keydown', (e) => { if (e.key === 'Enter') checkBike(); });
+    $('cOut').addEventListener('click', (e) => { const o = e.target.closest('[data-open]'), n = e.target.closest('[data-new]');
+      if (o) openCase(Number(o.dataset.open)); if (n) openCase(null, n.dataset.new); });
+
+    // ---------- Monthly report ----------
+    function reportData() {
+      const mo = $('rMonth').value, city = $('rCity').value, st = $('rStation').value;
+      const inScope = (c) => (!city || c.city === city) && (!st || c.station === st);
+      const found = cases.filter(c => inScope(c) && String(c.found_date || c.submitted_date || '').slice(0, 7) === mo);
+      const released = cases.filter(c => inScope(c) && c.status === 'Released' && String(c.released_date || '').slice(0, 7) === mo);
+      const open = cases.filter(c => inScope(c) && isOpen(c));
+      return { mo, found, released, open };
+    }
+    function grouped(list, cols, row) {
+      const key = (c) => (c.city || '—') + '|' + (c.station || '—');
+      const groups = new Map(); list.forEach(c => { const k = key(c); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(c); });
+      const keys = [...groups.keys()].sort();
+      return `<div class="tscroll"><table class="tbl"><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${keys.map(k => {
+        const [ci, s] = k.split('|'), rows = groups.get(k);
+        return `<tr class="grp"><td colspan="${cols.length - 1}">${esc(ci)} · ${esc(s)}</td><td class="n">${rows.length}</td></tr>` + rows.map(row).join('');
+      }).join('') || `<tr><td colspan="${cols.length}" class="note">None</td></tr>`}</tbody></table></div>`;
+    }
+    function renderReport() {
+      if (!$('rMonth').value) $('rMonth').value = today().slice(0, 7);
+      const { mo, found, released, open } = reportData();
+      const mName = new Date(mo + '-01T00:00:00Z').toLocaleDateString('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+      const held = released.map(c => aging(c)).filter(x => x != null), avg = held.length ? Math.round(held.reduce((a, b) => a + b, 0) / held.length) : null;
+      let h = `<div class="tot"><div><b>${found.length}</b><span>Found in ${esc(mName)}</span></div><div><b>${released.length}</b><span>Released in ${esc(mName)}</span></div>
+        <div><b>${open.length}</b><span>Still pending now${avg != null ? ` · avg ${avg} days to release` : ''}</span></div></div>`;
+      h += `<div class="box"><h3>Vehicles found at police stations<small>${found.length}</small></h3>` +
+        grouped(found, ['Vehicle', 'Case type', 'Date found', 'Current status', ''], c => `<tr><td><b>${esc(c.reg_number)}</b></td><td>${esc(c.case_type || '—')}</td><td>${fmtD(c.found_date || c.submitted_date)}</td><td>${esc(c.status)}</td><td></td></tr>`) + '</div>';
+      h += `<div class="box"><h3>Vehicles released from police stations<small>${released.length}</small></h3>` +
+        grouped(released, ['Vehicle', 'Date released', 'Days held', ''], c => `<tr><td><b>${esc(c.reg_number)}</b></td><td>${fmtD(c.released_date)}</td><td class="n">${aging(c) ?? '—'}</td><td></td></tr>`) + '</div>';
+      // City summary
+      const cities = uniq([...found, ...released, ...open].map(c => c.city || '—'));
+      h += `<div class="box"><h3>City summary</h3><div class="tscroll"><table class="tbl"><thead><tr><th>City</th><th class="n">Found</th><th class="n">Released</th><th class="n">Pending now</th></tr></thead><tbody>${cities.map(ci =>
+        `<tr><td>${esc(ci)}</td><td class="n">${found.filter(c => (c.city || '—') === ci).length}</td><td class="n">${released.filter(c => (c.city || '—') === ci).length}</td><td class="n">${open.filter(c => (c.city || '—') === ci).length}</td></tr>`).join('')}</tbody></table></div></div>`;
+      $('rOut').innerHTML = h;
+    }
+    ['rMonth', 'rStation'].forEach(id => $(id).addEventListener('change', renderReport));
+    $('rCity').addEventListener('change', () => { $('rStation').value = ''; fillFilters(); renderReport(); });
+
+    // ---------- Excel downloads ----------
+    async function xlsx() { if (!window.XLSX) await new Promise((ok, bad) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload = ok; s.onerror = bad; document.head.appendChild(s); }); return window.XLSX; }
+    const caseRow = (c) => ({ 'Vehicle': c.reg_number, 'City': c.city || '', 'Police station': c.station || '', 'Case type': c.case_type || '', 'Status': c.status,
+      'Accident': c.accident ? 'Yes' : '', 'Damaged': c.damaged ? 'Yes' : '', 'Days at station': aging(c) ?? '', 'Date found': c.found_date || '', 'Date at station': c.submitted_date || '',
+      'Date released': c.released_date || '', 'Recovery agent': c.agent || '', 'KYC available (of 5)': c.kyc_available || 0, 'Allotment photo': c.allot_photo ? 'Yes' : '', 'Notes': c.notes || '' });
+    $('dlCases').addEventListener('click', async () => { const X = await xlsx(); const wb = X.utils.book_new();
+      X.utils.book_append_sheet(wb, X.utils.json_to_sheet(filtered().map(caseRow)), 'Police cases'); X.writeFile(wb, `police_cases_${today()}.xlsx`); });
+    $('rDl').addEventListener('click', async () => { const X = await xlsx(), { mo, found, released, open } = reportData(), wb = X.utils.book_new();
+      X.utils.book_append_sheet(wb, X.utils.json_to_sheet(found.map(caseRow)), 'Found'); X.utils.book_append_sheet(wb, X.utils.json_to_sheet(released.map(caseRow)), 'Released');
+      X.utils.book_append_sheet(wb, X.utils.json_to_sheet(open.map(caseRow)), 'Pending now'); X.writeFile(wb, `police_report_${mo}.xlsx`); });
+
+    // ---------- Tabs, menu, back button ----------
+    function showTab(t) {
+      tab = t; ['cases', 'check', 'report'].forEach(x => $('pg-' + x).classList.toggle('hidden', x !== t));
+      [...$('tabs').children].forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+      if (t === 'report') renderReport(); if (t === 'check') setTimeout(() => $('cq').focus(), 50);
+    }
+    $('tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (!b || b.dataset.tab === tab) return; showTab(b.dataset.tab); history.pushState({ tab }, ''); });
+    $('reloadBtn').addEventListener('click', load);
+    $('moreBtn').addEventListener('click', (e) => { e.stopPropagation(); const m = $('menu');
+      m.innerHTML = `<div class="me"><b>${esc(myName || 'Signed in')}</b>${esc(role || '')}${canKyc ? ' · KYC access' : ''}</div><button type="button" id="mRe">Refresh</button><button type="button" id="mOut">Sign out</button>`;
+      m.classList.toggle('hidden'); $('mRe').onclick = () => { m.classList.add('hidden'); load(); }; $('mOut').onclick = async () => { m.classList.add('hidden'); await db.auth.signOut(); location.href = 'app.html'; }; });
+    document.addEventListener('click', (e) => { if (!e.target.closest('#menu')) $('menu').classList.add('hidden'); });
+    window.addEventListener('popstate', (e) => {
+      const st = e.state || {};
+      if (!$('viewer').classList.contains('hidden') && !st.viewer) { $('viewer').classList.add('hidden'); $('vBody').innerHTML = ''; if (st.sheet) return; }
+      if (!$('sheet').classList.contains('hidden') && !st.sheet) closeSheet();
+      if (st.root) { BACK.atRoot({ tab }); return; }
+      if (st.tab && st.tab !== tab) showTab(st.tab);
+      BACK.shown();
+    });
+
+    // ---------- Start ----------
+    async function start(session) {
+      if (!session) { location.href = 'app.html'; return; }
+      me = session.user; myName = String(me.user_metadata?.name || me.email || '').trim();
+      const [{ data: r }, { data: k }] = await Promise.all([db.rpc('my_role'), db.rpc('can_see_kyc')]);
+      role = r; canKyc = !!k;
+      if (!['admin', 'police', 'recovery'].includes(role)) { $('app').classList.add('hidden'); $('noAccess').classList.remove('hidden'); return; }
+      BACK.start({ tab: 'cases' });
+      load();
+    }
+    let started = false;
+    db.auth.onAuthStateChange((_ev, s) => { if (started) return; started = true; setTimeout(() => start(s), 0); });
+    setInterval(() => { if (document.visibilityState === 'visible' && $('sheet').classList.contains('hidden')) load(); }, 5 * 60e3);
+  </script>
+  <script>
+    // Phone Back button (same as the other Bounce pages)
+    const BACK = (() => {
+      const embedded = parent !== window;
+      let armed = false, timer = null;
+      function toast(t) {
+        let el = document.getElementById('backToast');
+        if (!el) { el = document.createElement('div'); el.id = 'backToast';
+          el.style.cssText = 'position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:999px;font:600 13.5px system-ui,sans-serif;z-index:99999;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:opacity .2s';
+          document.body.appendChild(el); }
+        el.textContent = t; el.style.opacity = '1'; clearTimeout(el._t); el._t = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+      }
+      return {
+        embedded,
+        start(state) { if (embedded) { history.replaceState(state, ''); return; } history.replaceState({ ...state, root: 1 }, ''); history.pushState(state, ''); },
+        atRoot(state) {
+          if (armed) { clearTimeout(timer); armed = false; history.back(); return; }
+          armed = true; timer = setTimeout(() => { armed = false; }, 2500);
+          toast('Press back again to close'); history.pushState(state, '');
+        },
+        shown() { if (embedded) parent.postMessage({ type: 'bnc-shown' }, location.origin); },
+      };
+    })();
+    // Inside the Bounce app (several sections): a Home button replaces the logo
+    (function () {
+      if (!/[?&]home=1/.test(location.search) || parent === window) return;
+      const h = document.getElementById('mainHead'); if (!h) return;
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'hbtn'; b.setAttribute('aria-label', 'Home'); b.title = 'Home';
+      b.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>';
+      b.onclick = () => parent.postMessage({ type: 'bnc-home' }, location.origin);
+      const img = h.querySelector('img'); if (img) img.replaceWith(b); else h.prepend(b);
+    })();
+  </script>
+</body>
+</html>
