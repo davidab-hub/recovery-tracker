@@ -221,6 +221,11 @@
     .form label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
     .form input[type=text], .form input[type=email], .form select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
     .rolesel { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: var(--input); color: var(--text); font-family: inherit; }
+    .roleboxes { display: flex; flex-wrap: wrap; gap: 4px; }
+    .roleboxes label { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border); border-radius: 999px; padding: 3px 9px 3px 6px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .roleboxes label.on { background: #111827; color: #fff; border-color: #111827; }
+    .roleboxes input { margin: 0; width: 13px; height: 13px; }
+    .roleboxes.none label { border-color: #f0b35a; }
     .kyc-tg { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
     .rolesel.none { border-color: #f0b35a; background: #fff8ec; }
     .role-help { font-size: 12px; color: var(--muted); margin: 4px 0 10px; line-height: 1.5; }
@@ -296,7 +301,6 @@
       <a href="qc-new.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v3h6V3M12 10v6M9 13h6"/></svg>New QC</a>
       <a href="tracker.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Recovery Tracker</a>
           <a href="agent.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>Recovery bikes (map)</a>
-      <a href="police.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/><path d="M9 12l2 2 4-4"/></svg>Police cases</a>
     </nav>
     <div class="foot">
       <div class="contact-side">Need help? Contact admin<br><a href="tel:+919180260780">+91 91802 60780</a><br><a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a></div>
@@ -348,6 +352,7 @@
               <option value="qc">QC team</option>
               <option value="recovery">Recovery team</option>
               <option value="police">Police team</option>
+              <option value="manager">Manager (sees all QC, Recovery &amp; Police dashboards)</option>
               <option value="admin">Admin</option>
             </select>
             <p class="role-help"><b>QC team:</b> QC Dashboard + New QC · <b>Recovery team:</b> Recovery Dashboard + Tracker + Agent App · <b>Admin:</b> everything, incl. managing users</p>
@@ -378,7 +383,7 @@
             Everyone uses the same <a href="app.html" target="_blank">Bounce app</a> and sees only their team's screens: <b>Recovery agent</b> → today's bikes, no dashboards · <b>QC team</b> → New QC, My QCs, Bike history, QC Dashboard · <b>Recovery team</b> → Recovery Dashboard, Tracker and today's bikes. You can change anyone's access later with the Role dropdown below.</p>
           <form id="agentForm" class="form">
             <label for="aRole">App</label>
-            <select id="aRole"><option value="agent">Recovery agent (today's bikes only)</option><option value="qc">QC team (QC + QC Dashboard)</option><option value="recovery">Recovery team (dashboards + bikes)</option><option value="police">Police team (Police cases)</option></select>
+            <select id="aRole"><option value="agent">Recovery agent (today's bikes only)</option><option value="qc">QC team (QC + QC Dashboard)</option><option value="recovery">Recovery team (dashboards + bikes)</option><option value="police">Police team (Police team page only)</option></select>
             <label for="aName">Name</label><input id="aName" type="text" placeholder="e.g. Ravi Kumar" maxlength="80" required>
             <label for="aPhone">Phone number</label><input id="aPhone" type="tel" inputmode="numeric" placeholder="10-digit mobile number" maxlength="14" required>
             <label for="aPin">PIN (6 digits)</label>
@@ -415,7 +420,7 @@
         <div class="counts" id="userCounts"></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th title="Can see customer KYC documents on the Police cases page">KYC access</th><th>Status</th><th>Last sign-in</th><th>Added</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>Email</th><th>Roles <small style="font-weight:500;color:var(--muted)">(tick all that apply)</small></th><th title="Can see customer KYC documents on the Police team page">KYC access</th><th>Status</th><th>Last sign-in</th><th>Added</th><th></th></tr></thead>
             <tbody id="userRows"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
           </table>
         </div>
@@ -447,21 +452,25 @@
     }
 
     let users = [];
-    const ROLE_OPTS = [['', 'No access (choose…)'], ['qc', 'QC team'], ['recovery', 'Recovery team'], ['police', 'Police team'], ['agent', 'Recovery agent'], ['admin', 'Admin']];
+    const ROLE_OPTS = [['', 'No access (choose…)'], ['manager', 'Manager'], ['qc', 'QC team'], ['recovery', 'Recovery team'], ['police', 'Police team'], ['agent', 'Recovery agent'], ['mfr', 'MFR upload'], ['admin', 'Admin']];
     const ROLE_NAME = Object.fromEntries(ROLE_OPTS);
+    // Tick boxes: a person can have several roles (e.g. QC team + Police team). Admin = everything.
+    const ROLE_TICKS = [['manager', 'Manager'], ['qc', 'QC'], ['recovery', 'Recovery'], ['police', 'Police'], ['agent', 'Agent'], ['mfr', 'MFR upload'], ['admin', 'Admin']];
+    const roleBoxes = (u) => { const has = u.roles || (u.role ? [u.role] : []), adm = has.includes('admin');
+      return `<div class="roleboxes ${has.length ? '' : 'none'}" data-id="${u.id}">${ROLE_TICKS.map(([v, t]) =>
+        `<label class="${has.includes(v) ? 'on' : ''}"><input type="checkbox" value="${v}" ${has.includes(v) ? 'checked' : ''} ${adm && v !== 'admin' ? 'disabled' : ''}>${t}</label>`).join('')}</div>`; };
     async function loadUsers() {
       $('listErr').textContent = '';
       try { users = (await call('list')).users; } catch (e) { $('listErr').textContent = e.message; return; }
       const pending = users.filter(u => u.status === 'pending').length, noRole = users.filter(u => !u.role).length;
-      const n = (r) => users.filter(u => u.role === r).length;
-      $('userCounts').innerHTML = [[users.length, 'People'], [n('admin'), 'Admins'], [n('qc'), 'QC team'], [n('recovery'), 'Recovery team'], [n('police'), 'Police team'], [n('agent'), 'Recovery agents'], [users.filter(u => u.kyc).length, 'KYC access'], [noRole, 'No role yet'], [pending, 'Waiting to set password']]
+      const n = (r) => users.filter(u => (u.roles || [u.role]).includes(r)).length;
+      $('userCounts').innerHTML = [[users.length, 'People'], [n('admin'), 'Admins'], [n('qc'), 'QC team'], [n('recovery'), 'Recovery team'], [n('police'), 'Police team'], [n('manager'), 'Managers'], [n('mfr'), 'MFR upload'], [n('agent'), 'Recovery agents'], [users.filter(u => u.kyc).length, 'KYC access'], [noRole, 'No role yet'], [pending, 'Waiting to set password']]
         .map(([n, t]) => `<div class="count"><div class="n">${n}</div><div class="t">${t}</div></div>`).join('');
       $('userRows').innerHTML = users.map(u => `<tr>
           <td><strong>${esc(u.name || '—')}</strong>${u.is_me ? ' <span class="tag">you</span>' : ''}</td>
           <td>${u.is_agent ? '📱 ' + esc(u.phone || u.email.split('@')[0]) : esc(u.email)}</td>
-          <td>${u.is_me ? '<span class="tag tag-admin">Admin</span>' : `<select class="rolesel ${u.role ? '' : 'none'}" data-id="${u.id}" aria-label="Role for ${esc(u.email)}">
-              ${ROLE_OPTS.map(([v, t]) => `<option value="${v}" ${u.role === v ? 'selected' : ''}>${t}</option>`).join('')}</select>`}</td>
-          <td><label class="kyc-tg" title="Can see customer name, mobile and KYC documents on the Police cases page"><input type="checkbox" data-kyc="${u.id}" ${u.kyc ? 'checked' : ''}> ${u.kyc ? 'Yes' : 'No'}</label></td>
+          <td>${u.is_me ? '<span class="tag tag-admin">Admin</span>' : roleBoxes(u)}</td>
+          <td><label class="kyc-tg" title="Can see customer name, mobile and KYC documents on the Police team page"><input type="checkbox" data-kyc="${u.id}" ${u.kyc ? 'checked' : ''}> ${u.kyc ? 'Yes' : 'No'}</label></td>
           <td>${u.status === 'pending' ? '<span class="tag tag-wait">Link sent · not set up</span>' : '<span class="tag tag-ok">Active</span>'}</td>
           <td>${when(u.last_sign_in_at)}</td><td>${when(u.created_at)}</td>
           <td class="acts">
@@ -544,13 +553,16 @@
     });
 
     $('userRows').addEventListener('change', async (e) => {
-      const sel = e.target.closest('select.rolesel'); if (!sel) return;
-      const u = users.find(x => x.id === sel.dataset.id); if (!u) return;
-      const role = sel.value;
-      if (role === 'admin' && !confirm(`Make ${u.email} an admin? They will be able to add and remove users.`)) { sel.value = u.role; return; }
-      sel.disabled = true; $('listErr').textContent = '';
+      const box = e.target.closest('.roleboxes'); if (!box) return;
+      const u = users.find(x => x.id === box.dataset.id); if (!u) return;
+      let picked = [...box.querySelectorAll('input:checked')].map(x => x.value);
+      const before = u.roles || (u.role ? [u.role] : []);
+      if (picked.includes('admin') && !before.includes('admin') && !confirm(`Make ${u.email} an admin? They will see everything and can add and remove users.`)) { e.target.checked = false; return; }
+      if (picked.includes('admin')) picked = ['admin'];   // admin already sees everything
+      box.querySelectorAll('input').forEach(x => x.disabled = true); $('listErr').textContent = '';
       let msg = '';
-      try { await call('set_role', { id: u.id, role }); msg = `<span style="color:#15803d">✓ ${esc(u.email)} is now: ${esc(ROLE_NAME[role] || 'No access')}</span>`; }
+      try { await call('set_roles', { id: u.id, roles: picked });
+        msg = `<span style="color:#15803d">✓ ${esc(u.name || u.email)}: ${esc(picked.map(r => ROLE_NAME[r]).join(' + ') || 'No access')}</span>`; }
       catch (err) { msg = esc(err.message); }
       await loadUsers(); $('listErr').innerHTML = msg;
     });
@@ -559,7 +571,7 @@
     // Works with the "job card status log" export (one row per status change) and with the short daily export
     // (one row per job card). Only what the QC app needs is sent to Supabase.
     const JC_CAT = { P: 'Rider-payable', W: 'Warranty', A: 'Wear & tear', C: 'Non-warranty', F: 'Free' };
-    const KEEP_DAYS = 45;
+    const KEEP_DAYS = 90;
     const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
     function istTime(v) {   // "October 29, 2026, 4:55 PM" / "2026-10-29 16:55" / Excel date number (all India time) → ISO
       if (v == null || v === '') return null;
@@ -677,12 +689,12 @@
       finally { lbl.style.pointerEvents = ''; lbl.style.opacity = ''; }
     });
 
-    // ---- KYC access (customer documents on the Police cases page) ----
+    // ---- KYC access (customer documents on the Police team page) ----
     $('userRows').addEventListener('change', async (e) => {
       const cb = e.target.closest('input[data-kyc]'); if (!cb) return;
       const u = users.find(x => x.id === cb.dataset.kyc); if (!u) return;
       const who = u.name || u.email;
-      if (cb.checked && !confirm(`Give ${who} KYC access? They will be able to see customers' names, mobile numbers and KYC documents (Aadhaar/PAN, licence, RC, insurance) on the Police cases page.`)) { cb.checked = false; return; }
+      if (cb.checked && !confirm(`Give ${who} KYC access? They will be able to see customers' names, mobile numbers and KYC documents (Aadhaar/PAN, licence, RC, insurance) on the Police team page. (They also need the Police team role.)`)) { cb.checked = false; return; }
       cb.disabled = true; $('listErr').textContent = '';
       try { await call('set_kyc', { id: u.id, value: cb.checked }); await loadUsers();
         $('listErr').innerHTML = `<span style="color:#15803d">✓ ${esc(who)}: KYC access ${cb.checked ? 'given' : 'removed'}</span>`; }

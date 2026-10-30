@@ -168,6 +168,17 @@
     .hubline .t { flex: 1; min-width: 0; }
     .hubline .t small { display: block; color: var(--muted); font-size: 12px; }
     .hubline a { flex: none; background: #111827; color: #fff; text-decoration: none; font-weight: 700; font-size: 13px; border-radius: 10px; padding: 9px 12px; }
+    .up h2 { font-size: 19px !important; }
+    .up .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+    .up .stats div { background: #f4f5f7; border-radius: 12px; padding: 10px 12px; font-size: 12.5px; color: var(--muted); }
+    .up .stats b { display: block; font-size: 20px; color: var(--text); }
+    .up .warn { background: #fff7ed; color: #9a3412; border-radius: 12px; padding: 10px 12px; font-size: 13px; margin: 0 0 12px; }
+    .up .bad { background: #fef2f2; color: #b91c1c; }
+    .up .ok { background: #ecfdf5; color: #047857; }
+    .up .go-btn { width: 100%; border: 0; border-radius: 12px; padding: 14px; font-size: 15.5px; font-weight: 800; background: var(--brand); color: #fff; }
+    .up .go-btn:disabled { opacity: .6; }
+    .stale { margin: 8px 12px 0; padding: 10px 12px; border-radius: 12px; background: #fff7ed; color: #9a3412; font-size: 13px; display: flex; gap: 10px; align-items: center; }
+    .stale button { margin-left: auto; border: 0; border-radius: 10px; background: #111827; color: #fff; font-weight: 700; padding: 8px 12px; white-space: nowrap; }
     .area-lbl span { display: inline-block; transform: translate(-50%, -50%); background: rgba(255,255,255,.88); border: 1.5px solid; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 800; white-space: nowrap; }
 
     /* ---------- Google-style map ---------- */
@@ -265,6 +276,7 @@
   <div id="sheetBg" class="hidden"></div>
   <div id="sheet" class="hidden"></div>
   <div id="menu" class="hidden"></div>
+  <input type="file" id="mfrFile" accept=".xlsx,.xls,.csv" hidden>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -320,7 +332,7 @@
 
     let bikes = [], meta = null, city = store.get('ra-city') || 'All', tab = 'Map', me = null;
     // Who each bike is given to (filled every morning by area), the areas, and which bikes to show
-    let assign = new Map(), zones = [], agents = [], myRole = null, scope = null, here = null, nearSort = false;
+    let assign = new Map(), zones = [], agents = [], myRole = null, myRoles = [], scope = null, here = null, nearSort = false;
     const ownerOf = (b) => assign.get(Number(b.bike_id)) || null;
     const isMine = (b) => !!me && ownerOf(b)?.agent_id === me.id;
     const mineCount = () => bikes.filter(isMine).length;
@@ -742,6 +754,84 @@
       const b = bikes.find(x => String(x.bike_id) === r.dataset.id); if (b) openSheet(b);
     });
 
+    // ---------- Upload today's MFR file (admins + recovery team) ----------
+    const MFR_UPLOAD = true;    // the file also still comes in from Drive every morning
+    const canUpload = () => MFR_UPLOAD && (myRoles.includes('admin') || myRoles.includes('mfr'));   // "MFR upload" tick on the Admin page
+    // Same column matching as the daily script: by name, order doesn't matter, a few other names allowed
+    const MFR_COLS = ['police_case', 'bike_id', 'reg_number', 'chassis_number', 'GPS Date', 'Latlong', 'model_name', 'city_name',
+      'marked_for_recovery_since', 'age_days', 'age_bucket', 'booking_end_time', 'last_user_name', 'last_user_phone'];
+    const MFR_ALIASES = { reg_number: ['reg no', 'registration number', 'vehicle number', 'vehicle no'], city_name: ['city'],
+      last_user_name: ['rider name', 'user name'], last_user_phone: ['rider phone', 'phone number', 'user phone', 'phone'],
+      'GPS Date': ['gps_date', 'last gps date'], Latlong: ['lat long', 'location', 'lat_long'], model_name: ['model'],
+      marked_for_recovery_since: ['mfr since', 'marked for recovery'], age_days: ['age', 'days in mfr'] };
+    const colKey = (h) => String(h).toLowerCase().replace(/[\s_\-().]/g, '');
+    const two = (n) => String(n).padStart(2, '0');
+    // Excel keeps dates as day numbers; turn them into "dd-mm-yyyy hh:mm" exactly as shown in the file
+    const DATE_COLS = new Set(['GPS Date', 'marked_for_recovery_since', 'booking_end_time']);
+    const fmtCell = (v, c) => {
+      if (!DATE_COLS.has(c) || typeof v !== 'number' || v < 20000) return v;
+      const d = new Date(Math.floor((v - 25569) * 1440 + 1e-6) * 60000);   // minutes, seconds dropped (as Excel shows it)
+      return `${two(d.getUTCDate())}-${two(d.getUTCMonth() + 1)}-${d.getUTCFullYear()} ${two(d.getUTCHours())}:${two(d.getUTCMinutes())}`;
+    };
+    let xlsxReady = null;
+    const loadXlsx = () => xlsxReady || (xlsxReady = new Promise((ok, fail) => {
+      const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      sc.onload = ok; sc.onerror = () => { xlsxReady = null; fail(new Error('Could not load the Excel reader — check the internet and try again.')); }; document.head.appendChild(sc);
+    }));
+    function showUpload(html) {
+      $('sheet').innerHTML = `<div class="grab"></div><div class="up">${html}</div><button class="close-sheet" type="button" id="closeSheet">Close</button>`;
+      $('sheet').classList.remove('hidden'); $('sheetBg').classList.remove('hidden'); $('sheet').scrollTop = 0;
+      $('closeSheet').onclick = closeSheet;
+      if (!history.state?.sheet) history.pushState({ sheet: 1, tab }, '');
+    }
+    let pending = null;
+    $('mfrFile').addEventListener('change', async () => {
+      const f = $('mfrFile').files[0]; $('mfrFile').value = ''; if (!f) return;
+      showUpload(`<h2>Reading ${esc(f.name)}…</h2>`);
+      try {
+        await loadXlsx();
+        const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+        const values = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: '' });
+        const head = (values[0] || []).map(colKey), colOf = {}, missing = [];
+        MFR_COLS.forEach(c => { const names = [c, ...(MFR_ALIASES[c] || [])].map(colKey); const j = head.findIndex(h => names.includes(h)); if (j >= 0) colOf[c] = j; else missing.push(c); });
+        if (colOf.reg_number === undefined || colOf.bike_id === undefined) throw new Error("This doesn't look like the MFR file — it has no reg_number / bike_id columns.");
+        const rows = values.slice(1).filter(r => String(r[colOf.reg_number] ?? '').trim()).map(r => {
+          const o = {}; MFR_COLS.forEach(c => { o[c] = colOf[c] === undefined ? '' : fmtCell(r[colOf[c]], c); }); return o; });
+        const byCity = {}; rows.forEach(r => { const c = String(r.city_name || 'No city'); byCity[c] = (byCity[c] || 0) + 1; });
+        pending = { file: f.name, rows };
+        const nowBikes = meta?.bikes ?? bikes.length, isOld = !/(\d{2})-(\d{2})-(\d{4})/.test(f.name) ? false
+          : (() => { const [, d, mo, y] = f.name.match(/(\d{2})-(\d{2})-(\d{4})/); const t = new Date(); return +d !== t.getDate() || +mo !== t.getMonth() + 1 || +y !== t.getFullYear(); })();
+        showUpload(`<h2>${esc(f.name)}</h2>
+          <div class="stats"><div><b>${rows.length}</b>bikes in this file</div><div><b>${nowBikes}</b>bikes in the app now</div></div>
+          <div class="warn ok">${Object.entries(byCity).sort((a, b) => b[1] - a[1]).map(([c, n]) => `${esc(cityLabel(c))} <b>${n}</b>`).join(' · ')}</div>
+          ${isOld ? '<div class="warn">⚠ The date in this file\'s name is not today. Make sure it\'s the right file.</div>' : ''}
+          ${missing.length ? `<div class="warn">Missing columns (left empty): ${esc(missing.join(', '))}</div>` : ''}
+          ${rows.length < 20 ? '<div class="warn bad">Fewer than 20 bikes — this can\'t be uploaded. Check the file.</div>' : ''}
+          <p style="font-size:13px;color:var(--muted);margin:0 0 12px">This replaces the bikes in the app for everyone. Bikes not in this file are removed (recovered).</p>
+          <button type="button" class="go-btn" id="upGo" ${rows.length < 20 ? 'disabled' : ''}>Replace with these ${rows.length} bikes</button>`);
+      } catch (e) { showUpload(`<h2>Could not read the file</h2><div class="warn bad">${esc(e.message || e)}</div>`); }
+    });
+    document.addEventListener('click', async (e) => {
+      if (!e.target.closest('#upGo') || !pending) return;
+      const btn = $('upGo'); btn.disabled = true; btn.textContent = 'Uploading…';
+      const { data, error } = await db.functions.invoke('mfr-ingest', { body: { action: 'upload', file: pending.file, rows: pending.rows } });
+      if (error) {
+        let msg = error.message; try { const j = await error.context.json(); if (j.error) msg = j.error; } catch (x) {}
+        btn.disabled = false; btn.textContent = 'Try again'; btn.insertAdjacentHTML('beforebegin', `<div class="warn bad">${esc(msg)}</div>`); return;
+      }
+      pending = null;
+      showUpload(`<h2>Uploaded ✓</h2><div class="warn ok"><b>${data.saved}</b> bikes are now in the app for everyone${data.removed ? ` · <b>${data.removed}</b> recovered bikes removed` : ''}.</div>`);
+      load();
+    });
+    // Recovery team / admins: a reminder when today's file hasn't come in yet
+    function staleNote() {
+      const old = (canMove() || canUpload()) && meta?.synced_at && new Date(meta.synced_at).toDateString() !== new Date().toDateString();
+      let el = $('staleNote');
+      if (!old) { el?.remove(); return; }
+      if (!el) { el = document.createElement('div'); el.id = 'staleNote'; el.className = 'stale'; $('scopes').after(el); }
+      el.innerHTML = `<span>Today's MFR file isn't in yet — showing ${esc(meta.file_name || 'an older file')}.</span>${canUpload() ? `<button type="button" onclick="document.getElementById('mfrFile').click()">Upload</button>` : ''}`;
+    }
+
     // ---------- Phone Back button: go to the previous screen; on the first screen ask before closing ----------
     const BACK = (() => {
       const embedded = parent !== window;
@@ -799,9 +889,10 @@
     $('menuBtn').addEventListener('click', (e) => {
       e.stopPropagation();
       const m = $('menu'), name = me?.user_metadata?.name || '', ph = me?.user_metadata?.phone || me?.email || '';
-      m.innerHTML = `<div class="me"><b>${esc(name || 'Signed in')}</b>${esc(ph)}</div><button type="button" id="mRefresh">Refresh data</button>${installEvt ? '<button type="button" id="mInstall">⬇ Install app on this phone</button>' : ''}<button type="button" class="out" id="mOut">Sign out</button>`;
+      m.innerHTML = `<div class="me"><b>${esc(name || 'Signed in')}</b>${esc(ph)}</div>${canUpload() ? '<button type="button" id="mUpload">⬆ Upload today\'s MFR file</button>' : ''}<button type="button" id="mRefresh">Refresh data</button>${installEvt ? '<button type="button" id="mInstall">⬇ Install app on this phone</button>' : ''}<button type="button" class="out" id="mOut">Sign out</button>`;
       m.classList.toggle('hidden');
       $('mRefresh').onclick = () => { m.classList.add('hidden'); load(); };
+      if ($('mUpload')) $('mUpload').onclick = () => { m.classList.add('hidden'); $('mfrFile').click(); };
       if ($('mInstall')) $('mInstall').onclick = async () => { m.classList.add('hidden'); installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; };
       $('mOut').onclick = async () => { m.classList.add('hidden'); await db.auth.signOut(); };
     });
@@ -824,9 +915,14 @@
         // Assignments + areas (quietly skipped if they aren't set up)
         const [as, zs] = await Promise.all([db.from('mfr_assignments').select('bike_id, agent_id, agent_name, zone_id, manual').limit(5000), db.from('recovery_zones').select('*').order('sort')]);
         assign = new Map((as.data || []).map(a => [Number(a.bike_id), a])); zones = zs.data || [];
-        if (myRole === null) { const r = await db.rpc('my_role'); myRole = r.data || ''; }
+        if (myRole === null) {   // several roles per person: use the strongest one for this page
+          let r = await db.rpc('my_roles');
+          if (r.error) { const o = await db.rpc('my_role'); r = { data: o.data ? [o.data] : [] }; }
+          const rs = r.data || []; myRoles = rs; myRole = ['admin', 'recovery', 'manager', 'agent'].find(x => rs.includes(x)) || rs[0] || '';
+        }
         if (!agents.length) { const r = await db.rpc('recovery_agents'); agents = r.data || []; }
         if (scope === null) scope = mineCount() ? 'mine' : 'all';   // agents start on their own bikes
+        staleNote();
         if (city !== 'All' && !bikes.some(b => b.city_name === city) && !CITIES.some(c => c.key === city)) city = 'All';
         render();
         if (tab === 'Find' && $('findIn').value) runFind();
@@ -864,7 +960,7 @@
 
     async function show(session) {
       $('splash').classList.add('hidden');
-      me = session?.user || null; myRole = null; agents = []; scope = null; assign = new Map();
+      me = session?.user || null; myRole = null; myRoles = []; agents = []; scope = null; assign = new Map();
       if (!session) { $('app').classList.add('hidden'); $('login').classList.remove('hidden'); bikes = []; return; }
       $('login').classList.add('hidden'); $('app').classList.remove('hidden');
       render(); load();

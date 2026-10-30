@@ -277,7 +277,6 @@
       <a href="qc-new.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v3h6V3M12 10v6M9 13h6"/></svg>New QC</a>
       <a href="tracker.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Recovery Tracker</a>
           <a href="agent.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>Recovery bikes (map)</a>
-      <a href="police.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/><path d="M9 12l2 2 4-4"/></svg>Police cases</a>
     </nav>
     <div class="foot">
       <div class="contact-side">Need help? Contact admin<br><a href="tel:+919180260780">+91 91802 60780</a><br><a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a></div>
@@ -787,24 +786,26 @@
       if (error) $('loginErr').textContent = error.message;
     });
     // ---- Roles: who can see which page (the database enforces the same rules) ----
-    const PAGE_ROLES = { 'dashboard.html': ['admin', 'recovery'], 'tracker.html': ['admin', 'recovery'], 'qc.html': ['admin', 'qc'], 'qc-new.html': ['admin', 'qc'], 'admin.html': ['admin'], 'agent.html': ['admin', 'agent', 'recovery'] };
-    const ROLE_HOME = { qc: 'qc.html', recovery: 'dashboard.html', agent: 'agent.html' };
-    let myRoleCache = { uid: null, role: null };
+    const PAGE_ROLES = { 'dashboard.html': ['admin', 'manager', 'recovery'], 'tracker.html': ['admin', 'manager', 'recovery'], 'qc.html': ['admin', 'manager', 'qc'], 'qc-new.html': ['admin', 'qc'], 'admin.html': ['admin'], 'agent.html': ['admin', 'manager', 'agent', 'recovery', 'mfr'] };
+    const ROLE_HOME = { manager: 'dashboard.html', qc: 'qc.html', recovery: 'dashboard.html', agent: 'agent.html', mfr: 'agent.html' };
+    let myRoleCache = { uid: null, roles: [] };
     // Shows only the menu links this person may use. Returns true if they may use THIS page.
     async function applyRoles(session) {
       const here = (location.pathname.split('/').pop() || 'dashboard.html');
       const links = document.querySelectorAll('.side .nav a, .tabs-top a, .newqc-btn');
       const adminLink = document.getElementById('adminLink');
       if (!session) { links.forEach(a => a.classList.remove('hidden')); adminLink && adminLink.classList.add('hidden'); showNoAccess(false); return false; }
-      let role = myRoleCache.role;
-      if (myRoleCache.uid !== session.user.id) {
-        const { data, error } = await db.rpc('my_role');
-        role = error ? null : (data || null); myRoleCache = { uid: session.user.id, role };
+      let roles = myRoleCache.roles;
+      if (myRoleCache.uid !== session.user.id) {   // a person can have several roles (QC + Recovery + Police …)
+        let r = await db.rpc('my_roles');
+        if (r.error) { const o = await db.rpc('my_role'); r = { data: o.data ? [o.data] : [] }; }
+        roles = r.data || []; myRoleCache = { uid: session.user.id, roles };
       }
-      links.forEach(a => { const ok = (PAGE_ROLES[a.getAttribute('href')] || []).includes(role); a.classList.toggle('hidden', !ok); });
-      adminLink && adminLink.classList.toggle('hidden', role !== 'admin');
-      const allowed = (PAGE_ROLES[here] || []).includes(role);
-      if (!allowed && ROLE_HOME[role] && ROLE_HOME[role] !== here) { location.replace(ROLE_HOME[role]); return false; }
+      const can = (page) => (PAGE_ROLES[page] || []).some(x => roles.includes(x));
+      links.forEach(a => { a.classList.toggle('hidden', !can(a.getAttribute('href'))); });
+      adminLink && adminLink.classList.toggle('hidden', !roles.includes('admin'));
+      const allowed = can(here), home = roles.map(x => ROLE_HOME[x]).find(Boolean);
+      if (!allowed && home && home !== here) { location.replace(home); return false; }
       showNoAccess(!allowed, session.user.email);
       return allowed;
     }
