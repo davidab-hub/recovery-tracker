@@ -248,6 +248,7 @@
     .card.na .value { color: #cbd5e1; } .card.na .sub { color: #94a3b8; font-style: italic; }
     .na-box { height: 230px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #94a3b8; font-style: italic; border: 1.5px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; }
     .na-col { color: #cbd5e1 !important; }
+    .live { font-size: 9px; font-weight: 700; letter-spacing: .04em; color: #16a34a; background: #dcfce7; border-radius: 4px; padding: 1px 5px; vertical-align: 2px; margin-left: 4px; }
     .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #eef2f7; color: #475569; }
     .tag-bad { background: #fde8e8; color: #b91c1c; } .tag-fir { background: #f3e8e8; color: #7f1d1d; } .tag-wait { background: #fff4e0; color: #a15c00; }
     .login { max-width: 420px; margin: 20px 0; }
@@ -295,7 +296,7 @@
       <a href="qc.html">QC Dashboard</a>
     </nav>
     <h1 class="page-title">Recovery Dashboard</h1>
-    <p class="page-sub">From the "Recovered by/Moved by Data" and "Police station cases" sheets (synced every 10 minutes) · grey boxes need the Metabase recovery data</p>
+    <p class="page-sub">From the "Recovered by/Moved by Data" and "Police station cases" sheets (synced every 10 minutes) · bikes marked LIVE come from Metabase (every 30 min)</p>
 
     <section class="panel login" id="loginBox">
       <h3>Sign in to see recovery data</h3>
@@ -330,7 +331,7 @@
         <input type="date" id="fromDate" aria-label="From date"><span>to</span><input type="date" id="toDate" aria-label="To date">
       </span>
       <label for="modelFilter">Model</label>
-      <select id="modelFilter" disabled title="Needs Metabase data"><option value="">All Models</option></select>
+      <select id="modelFilter" title="Applies to the live fleet numbers (Metabase)"><option value="">All Models</option></select>
       <span class="spacer"></span>
       <button class="btn btn-clear" id="clearBtn" type="button">Clear</button>
       <button class="btn btn-sync" id="syncBtn" type="button">↻ Refresh</button>
@@ -338,10 +339,10 @@
     </section>
 
     <section class="cards">
-      <div class="card na"><div class="label">Total Bikes</div><div class="value">—</div><div class="sub">needs Metabase data</div></div>
-      <div class="card na"><div class="label">Bikes MFR</div><div class="value">—</div><div class="sub">needs Metabase data</div></div>
-      <div class="card na"><div class="label">MFR %</div><div class="value">—</div><div class="sub">needs Metabase data</div></div>
-      <div class="card na"><div class="label">Inflow</div><div class="value">—</div><div class="sub">needs Metabase data</div></div>
+      <div class="card"><div class="label">Total Bikes <span class="live">LIVE</span></div><div class="value c-dark" id="kTotal">–</div><div class="sub" id="kTotalSub"></div></div>
+      <div class="card"><div class="label">Bikes MFR <span class="live">LIVE</span></div><div class="value c-red" id="kMfr">–</div><div class="sub" id="kMfrSub"></div></div>
+      <div class="card"><div class="label">MFR % <span class="live">LIVE</span></div><div class="value c-orange" id="kMfrPct">–</div><div class="sub" id="kMfrPctSub"></div></div>
+      <div class="card"><div class="label">Inflow</div><div class="value c-red" id="kInflow">–</div><div class="sub" id="kInflowSub"></div></div>
       <div class="card"><div class="label">Outflow</div><div class="value c-green" id="kOutflow">–</div><div class="sub" id="kOutflowSub"></div></div>
       <div class="card"><div class="label">Recovered Bikes</div><div class="value c-orange" id="kRecovered">–</div><div class="sub" id="kRecoveredSub"></div></div>
       <div class="card"><div class="label">Available Recovery Agents</div><div class="value c-dark" id="kAgents">–</div><div class="sub" id="kAgentsSub"></div></div>
@@ -359,7 +360,7 @@
     <section class="grid2">
       <div class="panel">
         <h3>Inflow vs outflow, per day</h3>
-        <p class="note">Outflow = recovered or renewed · inflow needs Metabase data</p>
+        <p class="note">Inflow = newly marked for recovery (Metabase, from 30 Oct) · outflow = recovered or renewed (recovery sheet)</p>
         <div class="counts" id="trendCounts"></div>
         <div class="chart"><canvas id="trendChart"></canvas></div>
       </div>
@@ -392,19 +393,21 @@
           </table>
         </div>
       </div>
-      <div class="panel na-panel">
-        <h3>MFR bikes by age</h3>
-        <p class="note">Days since marked for recovery</p>
-        <div class="na-box">Needs Metabase data<br><small>(list of bikes currently marked for recovery)</small></div>
-      </div>
-      <div class="panel na-panel">
-        <h3>MFR bikes by city and age</h3>
-        <p class="note">Darker blue = older</p>
-        <div class="na-box">Needs Metabase data</div>
+      <div class="panel">
+        <h3>MFR bikes by age <span class="live">LIVE</span></h3>
+        <p class="note">Days since marked for recovery · police-case bikes not included</p>
+        <div class="counts" id="ageCounts"></div>
+        <div class="chart"><canvas id="ageChart"></canvas></div>
       </div>
       <div class="panel">
-        <h3>Fleet status</h3>
-        <p class="note">Bikes on the police list right now · rest of the fleet needs Metabase data</p>
+        <h3>MFR bikes by city and age <span class="live">LIVE</span></h3>
+        <p class="note">Darker blue = older</p>
+        <div class="counts" id="cityAgeCounts"></div>
+        <div class="chart"><canvas id="cityAgeChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Fleet status <span class="live">LIVE</span></h3>
+        <p class="note">Every bike by its current status in Metabase · follows City, Hub and Model</p>
         <div class="counts" id="fleetCounts"></div>
         <div class="chart"><canvas id="fleetChart"></canvas></div>
       </div>
@@ -417,11 +420,11 @@
     </section>
     <section class="panel" style="margin-top:16px">
       <h3>Hub table</h3>
-      <p class="note">Hubs = drop locations in the recovery sheet · MFR columns need Metabase data</p>
+      <p class="note">Total bikes, MFR, MFR % and avg days are live from Metabase (bike's home hub) · the rest is from the recovery sheet for the period</p>
       <div class="table-wrap">
         <table id="hubTable">
-          <thead><tr><th>Hub</th><th>City</th><th class="num na-col">Total bikes</th><th class="num na-col">MFR</th><th class="num na-col">MFR %</th>
-            <th class="num na-col">Avg days</th><th class="num">Over 10 days</th><th class="num">Own truck</th><th class="num">Porter</th><th class="num">Recovered (period)</th></tr></thead>
+          <thead><tr><th>Hub</th><th>City</th><th class="num">Total bikes</th><th class="num">MFR</th><th class="num">MFR %</th>
+            <th class="num">Avg days</th><th class="num">Over 10 days</th><th class="num">Own truck</th><th class="num">Porter</th><th class="num">Recovered (period)</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -445,7 +448,10 @@
     const num = (n) => Number(n).toLocaleString('en-IN');
     const rs = (n) => '₹' + (n >= 1e5 ? (n / 1e5).toFixed(2) + ' L' : num(Math.round(n)));
     const fmtDay = (d) => new Date(d + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-    let DATA = [], POLICE = [], LAST = '', FIRST = '';
+    let DATA = [], POLICE = [], LAST = '', FIRST = '', FLEET = [], FDAY = [], FLEET_AT = null;
+    const hubKey = (s) => String(s || '').toLowerCase().replace(/[^a-z]/g, '').replace('yeshwanthpur', 'yeswanthpur');
+    const AGE_ORDER = ['0-1 days', '1-2 days', '2-3 days', '3-4 days', '4-5 days', '5-10 days', 'Above 10 days'];
+    const ageSort = (a, b) => { const i = AGE_ORDER.indexOf(a), j = AGE_ORDER.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j) || a.localeCompare(b); };
     const addDays = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
     const OUT = ['Moved to Hub', 'Rent Paid', 'Found in Hub', 'Police Station'];
     const MODES = ['Van', 'Porter', 'Customer drop'];
@@ -464,16 +470,21 @@
     let TODAY = '';
     const uniq = (a) => [...new Set(a)].filter(Boolean).sort();
     function fillCities() { const cur = $('cityFilter').value; $('cityFilter').length = 1;
-      uniq([...DATA.map(r => r.c), ...POLICE.map(r => r.c)]).forEach(c => $('cityFilter').add(new Option(c, c))); $('cityFilter').value = cur; }
+      uniq([...DATA.map(r => r.c), ...POLICE.map(r => r.c), ...FLEET.map(r => r.city)]).forEach(c => $('cityFilter').add(new Option(c, c))); $('cityFilter').value = cur; }
     function fillHubs() { const c = $('cityFilter').value, cur = $('hubFilter').value; $('hubFilter').length = 1;
-      uniq(DATA.filter(r => !c || r.c === c).map(r => r.l)).forEach(h => $('hubFilter').add(new Option(h, h))); $('hubFilter').value = cur; }
+      const seen = new Set(), hs = [];
+      [...DATA.filter(r => !c || r.c === c).map(r => r.l), ...FLEET.filter(r => (!c || r.city === c) && r.hub !== 'Unknown').map(r => r.hub)].filter(Boolean)
+        .forEach(h => { const k = hubKey(h); if (!seen.has(k)) { seen.add(k); hs.push(h); } });
+      hs.sort().forEach(h => $('hubFilter').add(new Option(h, h))); $('hubFilter').value = cur; }
+    function fillModels() { const cur = $('modelFilter').value; $('modelFilter').length = 1;
+      uniq(FLEET.map(r => r.model)).forEach(m => $('modelFilter').add(new Option(m, m))); $('modelFilter').value = cur; }
     const isRec = (r) => r.o === 'Moved to Hub' || r.o === 'Found in Hub';
     const isRen = (r) => r.o === 'Rent Paid';
     function chips(id, items) { $(id).innerHTML = items.map(it => `<div class="count"><div class="n">${num(it.n)}</div><div class="t">${it.color ? `<i style="background:${it.color}"></i>` : ''}${esc(it.t)}</div></div>`).join(''); }
 
     function render() {
       const c = $('cityFilter').value, h = $('hubFilter').value, pv = $('periodFilter').value;
-      const base = DATA.filter(r => (!c || r.c === c) && (!h || r.l === h));
+      const base = DATA.filter(r => (!c || r.c === c) && (!h || hubKey(r.l) === hubKey(h)));
       // One period for the whole page: cards, charts and tables
       let from, to;
       if (pv === 'custom') { from = $('fromDate').value || FIRST; to = $('toDate').value || TODAY; if (from > to) [from, to] = [to, from]; }
@@ -482,7 +493,9 @@
       const pName = from === to ? fmtDay(to) : `${fmtDay(from < FIRST ? FIRST : from)} – ${fmtDay(to)}`;
       $('periodNote').textContent = pName;
       const rows = base.filter(r => r.d >= from && r.d <= to), td = rows;
-      $('synced').textContent = `Latest day in sheet: ${fmtDay(TODAY)} · updated ${new Date(loadedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+      const tm = (d) => new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      $('synced').textContent = `Latest day in sheet: ${fmtDay(TODAY)} · fleet live ${FLEET_AT ? tm(FLEET_AT) : '–'} · updated ${tm(loadedAt)}`;
+      fleet(from, to, pName);
       const sum = (arr) => arr.reduce((s, r) => s + r.amt, 0);
       const per = (arr) => arr.length ? rs(sum(arr) / arr.length) + '/bike' : '';
       const tRec = td.filter(isRec).length, tRen = td.filter(isRen).length;
@@ -498,8 +511,10 @@
       const days = []; for (let d = from < FIRST ? FIRST : from; d <= to; d = addDays(d, 1)) days.push(d);
       const labels = days.map(fmtDay);
       const outD = days.map(d => rows.filter(r => r.d === d && (isRec(r) || isRen(r))).length);
-      chips('trendCounts', [{ t: 'Outflow', n: outD.reduce((a, b) => a + b, 0), color: B1 }, { t: 'Recovered', n: rows.filter(isRec).length }, { t: 'Renewed', n: rows.filter(isRen).length }]);
-      draw('trendChart', { type: 'line', data: { labels, datasets: [{ label: 'Outflow', data: outD, borderColor: B1, backgroundColor: B1, borderWidth: 2, tension: .3, pointRadius: 2 }] }, options: { scales: axes(false) } });
+      const fd = FDAY.filter(fleetMatch), inD = days.map(d => { const x = fd.filter(r => r.day === d); return x.length ? x.reduce((s, r) => s + r.inflow, 0) : null; });
+      chips('trendCounts', [{ t: 'Inflow', n: inD.reduce((a, b) => a + (b || 0), 0), color: RED }, { t: 'Outflow', n: outD.reduce((a, b) => a + b, 0), color: B1 }, { t: 'Recovered', n: rows.filter(isRec).length }, { t: 'Renewed', n: rows.filter(isRen).length }]);
+      draw('trendChart', { type: 'line', data: { labels, datasets: [{ label: 'Inflow', data: inD, borderColor: RED, backgroundColor: RED, borderWidth: 2, tension: .3, pointRadius: 3, spanGaps: false },
+        { label: 'Outflow', data: outD, borderColor: B1, backgroundColor: B1, borderWidth: 2, tension: .3, pointRadius: 2 }] }, options: { scales: axes(false) } });
       const hub = rows.filter(r => r.o === 'Moved to Hub');
       chips('hubCounts', MODES.map(m => ({ t: m === 'Van' ? 'Own truck' : m, n: hub.filter(r => r.m === m).length, color: MC[m] })));
       const costOf = (m) => hub.filter(r => r.m === m), rsum = (a) => a.reduce((s, r) => s + r.amt, 0);
@@ -526,10 +541,45 @@
       chips('outcomeCounts', OUT.map((o, i) => ({ t: LBL[o], n: oc[i], color: OC[o] })));
       draw('outcomeChart', { type: 'doughnut', data: { labels: OUT.map(o => LBL[o]), datasets: [{ data: oc, backgroundColor: OUT.map(o => OC[o]), borderWidth: 0 }] }, options: { cutout: '62%', plugins: { legend: { position: 'right' } } } });
 
-      const hubs = new Map(); rows.filter(r => r.l).forEach(r => { const x = hubs.get(r.l) || { cities: new Map(), old: 0, van: 0, por: 0, rec: 0 };
-        x.cities.set(r.c, (x.cities.get(r.c) || 0) + 1); if (r.ag !== null && r.ag > 10) x.old++; if (r.m === 'Van') x.van++; if (r.m === 'Porter') x.por++; if (isRec(r)) x.rec++; hubs.set(r.l, x); });
-      $('hubTable').tBodies[0].innerHTML = [...hubs].sort((p, q) => q[1].rec - p[1].rec).map(([k, x]) => `<tr><td><strong>${esc(k)}</strong></td><td>${esc([...x.cities].sort((p, q) => q[1] - p[1])[0][0])}</td>
-        <td class="num na-col">—</td><td class="num na-col">—</td><td class="num na-col">—</td><td class="num na-col">—</td><td class="num">${x.old}</td><td class="num">${num(x.van)}</td><td class="num">${num(x.por)}</td><td class="num">${num(x.rec)}</td></tr>`).join('') || '<tr><td colspan="10">Nothing in this period.</td></tr>';
+      const hubs = new Map(), hub0 = (name) => ({ name, cities: new Map(), old: 0, van: 0, por: 0, rec: 0, tot: 0, mfr: 0, age: 0 });
+      rows.filter(r => r.l).forEach(r => { const k = hubKey(r.l), x = hubs.get(k) || hub0(r.l);
+        x.cities.set(r.c, (x.cities.get(r.c) || 0) + 1); if (r.ag !== null && r.ag > 10) x.old++; if (r.m === 'Van') x.van++; if (r.m === 'Porter') x.por++; if (isRec(r)) x.rec++; hubs.set(k, x); });
+      FLEET.filter(fleetMatch).filter(r => r.hub !== 'Unknown').forEach(r => { const k = hubKey(r.hub), x = hubs.get(k) || hub0(r.hub);
+        x.cities.set(r.city, (x.cities.get(r.city) || 0) + r.bikes); x.tot += r.bikes; x.mfr += r.mfr; x.age += r.age_sum; hubs.set(k, x); });
+      $('hubTable').tBodies[0].innerHTML = [...hubs.values()].filter(x => x.tot || x.rec || x.van || x.por || x.old).sort((p, q) => q.mfr - p.mfr || q.tot - p.tot || q.rec - p.rec).map(x => `<tr><td><strong>${esc(x.name)}</strong></td><td>${esc([...x.cities].sort((p, q) => q[1] - p[1])[0][0])}</td>
+        <td class="num">${x.tot ? num(x.tot) : '–'}</td><td class="num">${x.tot ? num(x.mfr) : '–'}</td><td class="num">${x.tot ? (100 * x.mfr / x.tot).toFixed(1) + '%' : '–'}</td><td class="num">${x.mfr ? (x.age / x.mfr).toFixed(1) : '–'}</td>
+        <td class="num">${x.old}</td><td class="num">${num(x.van)}</td><td class="num">${num(x.por)}</td><td class="num">${num(x.rec)}</td></tr>`).join('') || '<tr><td colspan="10">Nothing in this period.</td></tr>';
+    }
+    // ---- Live fleet (Metabase "Recovery all data", refreshed every 30 min) ----
+    function fleetMatch(r) { const c = $('cityFilter').value, h = $('hubFilter').value, m = $('modelFilter').value;
+      return (!c || r.city === c) && (!h || hubKey(r.hub) === hubKey(h)) && (!m || r.model === m); }
+    function fleet(from, to, pName) {
+      const F = FLEET.filter(fleetMatch), S = (k, arr = F) => arr.reduce((s, r) => s + r[k], 0);
+      if (!FLEET.length) { ['kTotal', 'kMfr', 'kMfrPct', 'kInflow'].forEach(id => $(id).textContent = '–'); $('kTotalSub').textContent = 'live data not loaded yet'; return; }
+      const tot = S('bikes'), mfr = S('mfr'), pol = S('mfr_police'), at = FLEET_AT ? new Date(FLEET_AT).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+      $('kTotal').textContent = num(tot); $('kTotalSub').textContent = `all statuses · live ${at}`;
+      $('kMfr').textContent = num(mfr); $('kMfrSub').textContent = `marked for recovery now · +${num(pol)} police-case bikes`;
+      $('kMfrPct').textContent = tot ? (100 * mfr / tot).toFixed(1) + '%' : '–'; $('kMfrPctSub').textContent = `${num(mfr)} of ${num(tot)} bikes`;
+      const fd = FDAY.filter(fleetMatch).filter(r => r.day >= from && r.day <= to), inN = S('inflow', fd), dN = new Set(fd.map(r => r.day)).size;
+      const todayIst = new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
+      if (dN) { $('kInflow').textContent = num(inN); $('kInflowSub').textContent = dN === 1 && fd[0].day === todayIst ? `newly marked today · ${at}` : `newly marked · ${dN} day${dN > 1 ? 's' : ''} of data · ${pName}`; }
+      else { $('kInflow').textContent = num(S('inflow')); $('kInflowSub').textContent = `newly marked today · ${at}`; }
+      // Ageing
+      const M = F.filter(r => r.age_bucket), B = uniq(M.map(r => r.age_bucket)).sort(ageSort);
+      const shade = (i, n) => { const t = n > 1 ? i / (n - 1) : 1; const a = [191, 219, 254], b = [30, 58, 138]; return `rgb(${a.map((v, j) => Math.round(v + (b[j] - v) * t)).join(',')})`; };
+      const avg = mfr ? +(S('age_sum') / mfr).toFixed(1) : 0;
+      chips('ageCounts', [{ t: 'MFR bikes', n: mfr }, { t: 'Avg days', n: avg }, { t: 'Over 10 days', n: S('mfr', M.filter(r => r.age_bucket === 'Above 10 days')) }]);
+      draw('ageChart', { type: 'bar', data: { labels: B, datasets: [{ label: 'Bikes', data: B.map(b => S('mfr', M.filter(r => r.age_bucket === b))), backgroundColor: B.map((_, i) => shade(i, B.length)), borderRadius: 4 }] },
+        options: { scales: axes(false), plugins: { legend: { display: false } } } });
+      const C = uniq(M.map(r => r.city)).sort((a, b) => S('mfr', M.filter(r => r.city === b)) - S('mfr', M.filter(r => r.city === a)));
+      chips('cityAgeCounts', C.map(c => ({ t: c, n: S('mfr', M.filter(r => r.city === c)) })));
+      draw('cityAgeChart', { type: 'bar', data: { labels: C, datasets: B.map((b, i) => ({ label: b, backgroundColor: shade(i, B.length), data: C.map(c => S('mfr', M.filter(r => r.city === c && r.age_bucket === b))) })) },
+        options: { scales: axes(true) } });
+      // Fleet status
+      const GR = [['active', 'Active', '#16a34a'], ['marked for recovery', 'Marked for recovery', RED], ['oos', 'Out of service', ORG], ['in_transit', 'In transit', B2], ['recovered', 'Recovered', B1], ['other', 'Other', GRY]];
+      const g = (s) => GR.some(x => x[0] === s) ? s : 'other', v = GR.map(([k]) => S('bikes', F.filter(r => g(r.status) === k)));
+      chips('fleetCounts', GR.map(([, t, col], i) => ({ t, n: v[i], color: col })));
+      draw('fleetChart', { type: 'doughnut', data: { labels: GR.map(x => x[1]), datasets: [{ data: v, backgroundColor: GR.map(x => x[2]), borderWidth: 0 }] }, options: { cutout: '62%', plugins: { legend: { position: 'right' } } } });
     }
     let AG = [], sortK = 'n', sortDir = -1;
     function agentTable() {
@@ -543,11 +593,6 @@
       const cnt = (s) => P.filter(r => r.s === s).length;
       $('kPolice').textContent = num(cnt('Police Station')); $('kPoliceSub').textContent = 'held at a police station · not in MFR';
       $('kFir').textContent = num(cnt('FIR Filed')); $('kFirSub').textContent = `FIR filed · ${cnt('Under Process')} more under process`;
-      const S = [['Police Station', RED], ['FIR Filed', '#7f1d1d'], ['Under Process', ORG], ['Other', GRY]];
-      const grp = (r) => ['Police Station', 'FIR Filed', 'Under Process'].includes(r.s) ? r.s : 'Other';
-      const v = S.map(([s]) => P.filter(r => grp(r) === s).length);
-      chips('fleetCounts', S.map(([s, col], i) => ({ t: s === 'Under Process' ? 'FIR under process' : s, n: v[i], color: col })));
-      draw('fleetChart', { type: 'doughnut', data: { labels: S.map(x => x[0]), datasets: [{ data: v, backgroundColor: S.map(x => x[1]), borderWidth: 0 }] }, options: { cutout: '62%', plugins: { legend: { position: 'right' } } } });
       polTable(P);
     }
     function polTable(P) {
@@ -563,6 +608,7 @@
     $('pSearch').oninput = () => polTable(POLICE.filter(r => !$('cityFilter').value || r.c === $('cityFilter').value));
     $('cityFilter').onchange = () => { fillHubs(); render(); police(); };
     $('hubFilter').onchange = render;
+    $('modelFilter').onchange = render;
     $('periodFilter').onchange = () => {
       const custom = $('periodFilter').value === 'custom';
       $('rangeBox').classList.toggle('hidden', !custom);
@@ -570,7 +616,7 @@
       render();
     };
     ['fromDate', 'toDate'].forEach(id => $(id).addEventListener('change', render));
-    $('clearBtn').onclick = () => { $('cityFilter').value = ''; fillHubs(); $('hubFilter').value = ''; $('periodFilter').value = '30'; $('rangeBox').classList.add('hidden'); $('fromDate').value = ''; $('toDate').value = ''; render(); police(); };
+    $('clearBtn').onclick = () => { $('cityFilter').value = ''; $('modelFilter').value = ''; fillHubs(); $('hubFilter').value = ''; $('periodFilter').value = '30'; $('rangeBox').classList.add('hidden'); $('fromDate').value = ''; $('toDate').value = ''; render(); police(); };
     $('menuBtn').onclick = () => $('side').classList.toggle('open');
 
     // ---- Load from Supabase (Recovery team + admins only; the database checks the role) ----
@@ -594,6 +640,11 @@
           const { data, error } = await db.from('recovery_cases').select('reg_number, case_date, agent').in('reg_number', regs.slice(i, i + 150)).order('case_date');
           if (error) throw error; data.forEach(r => { if (!firstSeen.has(r.reg_number)) firstSeen.set(r.reg_number, r); });
         }
+        try {   // live fleet: never blocks the rest of the page
+          const fs = await db.rpc('fleet_summary'); if (fs.error) throw fs.error;
+          FLEET = fs.data || []; FLEET_AT = FLEET.reduce((m, r) => r.synced_at > m ? r.synced_at : m, '') || null;
+          FDAY = await pageAll(() => db.from('fleet_daily').select('day, city, hub, model, inflow, outflow').gte('day', since).order('day'));
+        } catch (e) { console.warn('fleet', e); FLEET = []; FDAY = []; }
         DATA = cases.map(r => ({ d: r.case_date, c: r.city || '', a: r.agent || 'Not recorded', o: r.outcome || '', m: r.moved_by === 'Own truck' ? 'Van' : (r.moved_by || ''),
           t: r.truck_no || '', amt: Number(r.amount) || 0, ag: r.days_overdue, l: r.drop_loc || '' }));
         POLICE = pol.map(p => { const f = firstSeen.get(p.reg_number); return { r: p.reg_number, s: p.status, p: p.station || '', n: p.note || '', c: p.city || '', fd: f ? f.case_date : '', fa: f ? f.agent || '' : '' }; });
@@ -601,7 +652,7 @@
         TODAY = LAST || new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10); if (!DATA.length) FIRST = TODAY;
         loadedAt = Date.now();
         ['fromDate', 'toDate'].forEach(id => { $(id).min = FIRST; $(id).max = TODAY; });
-        fillCities(); fillHubs(); render(); police();
+        fillCities(); fillHubs(); fillModels(); render(); police();
         $('dash').classList.remove('hidden');
         if (!DATA.length) $('loadErr').textContent = 'No recovery data yet — the sheet sync has not run.';
       } catch (e) { $('loadErr').textContent = 'Could not load data: ' + e.message; }
