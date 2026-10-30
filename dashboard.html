@@ -361,7 +361,7 @@
     <section class="grid2">
       <div class="panel">
         <h3>Inflow vs outflow, per day</h3>
-        <p class="note">From Metabase · inflow = newly marked for recovery, outflow = left MFR (recovered or renewed) · daily history starts 30 Oct</p>
+        <p class="note">From Metabase · inflow = newly marked for recovery, outflow = left MFR (recovered or renewed) · one bar pair per day, history builds up from 30 Oct</p>
         <div class="counts" id="trendCounts"></div>
         <div class="chart"><canvas id="trendChart"></canvas></div>
       </div>
@@ -571,8 +571,13 @@
       const perDay = (k) => days.map(d => { const x = fd.filter(r => r.day === d); return x.length ? x.reduce((s, r) => s + r[k], 0) : null; });
       const inD = perDay('inflow'), outD = perDay('outflow');
       chips('trendCounts', [{ t: 'Inflow', n: inN, color: RED }, { t: 'Outflow', n: outN, color: B1 }, { t: 'Net change in MFR', n: inN - outN }]);
-      draw('trendChart', { type: 'line', data: { labels, datasets: [{ label: 'Inflow', data: inD, borderColor: RED, backgroundColor: RED, borderWidth: 2, tension: .3, pointRadius: 3, spanGaps: false },
-        { label: 'Outflow', data: outD, borderColor: B1, backgroundColor: B1, borderWidth: 2, tension: .3, pointRadius: 3, spanGaps: false }] }, options: { scales: axes(false) } });
+      // Bars (not lines): with only a few days of history, single points on a line chart are almost invisible.
+      // Only days that have Metabase data are shown, so the chart isn't a row of empty days.
+      const keep = days.map((d, i) => inD[i] !== null || outD[i] !== null);
+      const L = labels.filter((_, i) => keep[i]), I = inD.filter((_, i) => keep[i]), O = outD.filter((_, i) => keep[i]);
+      draw('trendChart', { type: 'bar', data: { labels: L.length ? L : ['No Metabase data in this period'], datasets: [
+        { label: 'Inflow', data: I, backgroundColor: RED, borderRadius: 4, maxBarThickness: 46 },
+        { label: 'Outflow', data: O, backgroundColor: B1, borderRadius: 4, maxBarThickness: 46 }] }, options: { scales: axes(false) } });
       // Ageing
       const M = F.filter(r => r.age_bucket), B = uniq(M.map(r => r.age_bucket)).sort(ageSort);
       const shade = (i, n) => { const t = n > 1 ? i / (n - 1) : 1; const a = [191, 219, 254], b = [30, 58, 138]; return `rgb(${a.map((v, j) => Math.round(v + (b[j] - v) * t)).join(',')})`; };
