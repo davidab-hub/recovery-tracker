@@ -170,18 +170,18 @@
       { key: 'bikes',   label: 'Recovery bikes',     page: 'agent.html',     own: true, roles: ['agent', 'recovery', 'admin'], group: 'Recovery', color: '#e3262b', bg: '#fdecec', desc: "Today's bikes: map, list by city, ageing, search" },
       { key: 'dash',    label: 'Recovery Dashboard', page: 'dashboard.html', roles: ['recovery', 'admin'], group: 'Recovery', color: '#2563eb', bg: '#e8f0fe', desc: 'Recovered / moved bikes, trends, police cases' },
       { key: 'tracker', label: 'Tracker',            page: 'tracker.html',   roles: ['recovery', 'admin'], group: 'Recovery', color: '#7c3aed', bg: '#f1ebfe', desc: 'Calls, outcomes and moving bikes to hub' },
-      { key: 'police',  label: 'Police cases',       page: 'police.html',    own: true, roles: ['police', 'recovery', 'admin'], group: 'Recovery', color: '#1e3a8a', bg: '#e0e7ff', desc: 'Bikes at police stations: status, aging, KYC, monthly report' },
+      { key: 'police',  label: 'Police team',        page: 'police.html',    own: true, roles: ['police', 'admin'], group: 'Police', color: '#1e3a8a', bg: '#e0e7ff', desc: 'Bikes at police stations: status, aging, KYC, monthly report' },
       { key: 'qc',      label: 'New QC',             page: 'qc-app.html',    own: true, roles: ['qc', 'admin'], group: 'QC', color: '#16a34a', bg: '#e8f6ee', desc: 'Do a QC, my QCs, bike history' },
       { key: 'qcdash',  label: 'QC Dashboard',       page: 'qc.html',        roles: ['admin'], group: 'QC', color: '#d97706', bg: '#fdf3e2', desc: 'QCs, mistakes and photos by hub and technician' },
       { key: 'admin',   label: 'Team & access',      page: 'admin.html',     roles: ['admin'], group: 'Admin', color: '#111827', bg: '#eceef1', desc: 'Add people, phone logins, PINs and who sees what', wide: true },
     ];
-    let me = null, role = null, mine = [], current = null;
+    let me = null, role = null, roles = [], mine = [], current = null;
     const multi = () => mine.length > 1;
 
     function showHome() {
       current = null;
       $('home').classList.remove('hidden'); $('topbar').classList.add('hidden');
-      document.querySelectorAll('#frames iframe').forEach(x => x.classList.add('hidden'));
+      document.querySelectorAll('#frames iframe').forEach(x => x.remove());   // free memory on the home screen
       loadCounts();
     }
     function openSection(key) {
@@ -194,7 +194,9 @@
         f.src = s.page + '?embed=1' + (multi() ? '&home=1' : '');
         $('frames').appendChild(f);
       }
-      document.querySelectorAll('#frames iframe').forEach(x => x.classList.toggle('hidden', x !== f));
+      // Only the open section stays loaded: phones with little memory close the app (e.g. when the camera opens)
+      // if the map, dashboards and QC are all kept in memory at once
+      document.querySelectorAll('#frames iframe').forEach(x => { if (x !== f) x.remove(); });
       $('home').classList.add('hidden');
       $('topbar').classList.toggle('hidden', !multi() || !!s.own); $('topTitle').textContent = s.label;
     }
@@ -288,13 +290,17 @@
       $('frames').innerHTML = ''; $('menu').classList.add('hidden');
       if (!session) { $('app').classList.add('hidden'); $('login').classList.remove('hidden'); return; }
       $('login').classList.add('hidden'); $('app').classList.remove('hidden');
-      const { data, error } = await db.rpc('my_role'); role = error ? null : data;
-      mine = SECTIONS.filter(s => s.roles.includes(role));
+      // A person can have several roles (QC + Recovery + Police …): they get every section of every role
+      let rr = await db.rpc('my_roles');
+      if (rr.error) { const o = await db.rpc('my_role'); rr = { data: o.data ? [o.data] : [] }; }
+      roles = rr.data || []; role = roles.includes('admin') ? 'admin' : (roles[0] || null);
+      mine = SECTIONS.filter(s => s.roles.some(r => roles.includes(r)));
       $('noAccess').classList.toggle('hidden', mine.length > 0); $('frames').classList.toggle('hidden', !mine.length);
       // One section (agents, QC team): the app is just that section, full screen. More than one: home screen with tiles.
       const first = String(me.user_metadata?.name || '').trim().split(' ')[0];
       $('hello').textContent = first ? `Hi ${first.charAt(0).toUpperCase() + first.slice(1).toLowerCase()}` : 'Bounce';
-      $('helloSub').textContent = { admin: 'Admin · you see everything', recovery: 'Recovery team', qc: 'QC team', police: 'Police team', agent: 'Recovery agent' }[role] || '';
+      const RN = { recovery: 'Recovery team', qc: 'QC team', police: 'Police team', agent: 'Recovery agent' };
+      $('helloSub').textContent = roles.includes('admin') ? 'Admin · you see everything' : roles.map(r => RN[r] || r).join(' · ');
       $('home').classList.add('hidden'); $('topbar').classList.add('hidden');
       if (multi()) { renderTiles(); showHome(); } else if (mine.length) openSection(mine[0].key);
       BACK.start({ home: 1 });
@@ -313,7 +319,7 @@
     $('moreBtn').addEventListener('click', (e) => {
       e.stopPropagation();
       const m = $('menu'), name = me?.user_metadata?.name || '', id = me?.user_metadata?.phone || me?.email || '';
-      m.innerHTML = `<div class="me"><b>${esc(name || 'Signed in')}</b>${esc(id)} · ${esc(role || '')}</div>
+      m.innerHTML = `<div class="me"><b>${esc(name || 'Signed in')}</b>${esc(id)} · ${esc(roles.join(', '))}</div>
         <button type="button" id="mReload">Refresh numbers</button>
         ${installEvt ? '<button type="button" id="mInstall">⬇ Install app on this phone</button>' : ''}
         <button type="button" class="out" id="mOut">Sign out</button>`;

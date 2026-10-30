@@ -376,7 +376,6 @@
       <a href="qc-new.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v3h6V3M12 10v6M9 13h6"/></svg>New QC</a>
       <a href="tracker.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Recovery Tracker</a>
           <a href="agent.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>Recovery bikes (map)</a>
-      <a href="police.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/><path d="M9 12l2 2 4-4"/></svg>Police cases</a>
     </nav>
     <div class="foot">
       <div class="contact-side">Need help? Contact admin<br><a href="tel:+919180260780">+91 91802 60780</a><br><a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a></div>
@@ -551,15 +550,29 @@
         + (mis && mis.length ? ` · ${esc(mis.map(m => m.mistake.split(' / ')[0]).slice(0, 3).join(', '))}` : '');
     }
 
-    // Photos: shrink each on the phone before sending (max 1024 px, JPEG ~80-100 KB)
-    function shrink(file) {
+    // Photos: shrink each on the phone before sending (max ~1024 px, JPEG ~80-100 KB).
+    // The camera photo is decoded straight at the small size when the phone supports it (much less memory).
+    async function shrink(file) {
+      if (window.createImageBitmap) {
+        let bmp = null;
+        try {
+          bmp = await createImageBitmap(file, { resizeWidth: 1024, resizeQuality: 'medium', imageOrientation: 'from-image' });
+          const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+          c.getContext('2d').drawImage(bmp, 0, 0);
+          const out = c.toDataURL('image/jpeg', 0.6); c.width = c.height = 0;
+          if (out.length > 1000) return out;
+        } catch (e) { /* older phones: the slower way below */ } finally { if (bmp && bmp.close) bmp.close(); }
+      }
+      return shrinkOld(file);
+    }
+    function shrinkOld(file) {
       return new Promise((resolve, reject) => {
         const img = new Image(), url = URL.createObjectURL(file);
         img.onload = () => {
           const k = Math.min(1, 1024 / Math.max(img.width, img.height));
           const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
           c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-          URL.revokeObjectURL(url); resolve(c.toDataURL('image/jpeg', 0.6));
+          URL.revokeObjectURL(url); const out = c.toDataURL('image/jpeg', 0.6); c.width = c.height = 0; img.src = ''; resolve(out);
         };
         img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('bad image')); };
         img.src = url;
@@ -579,7 +592,7 @@
       if (!files.length) { if (photos.length >= MAX_PHOTOS) $('formErr').textContent = `Up to ${MAX_PHOTOS} photos.`; return; }
       let old = false;
       for (const f of files) { if (!isLive(f)) { old = true; continue; } try { photos.push(await shrink(f)); } catch (e) { $('formErr').textContent = 'Could not read one of the photos.'; } }
-      $('formErr').textContent = old ? OLD_PHOTO : ''; renderThumbs();
+      $('formErr').textContent = old ? OLD_PHOTO : ''; renderThumbs(); saveDraft();
     }
     $('photoCam').addEventListener('change', () => addPhotos($('photoCam')));
     $('thumbs').addEventListener('click', (e) => { const b = e.target.closest('[data-del]'); if (!b) return; photos.splice(Number(b.dataset.del), 1); renderThumbs(); });
@@ -612,7 +625,7 @@
       const key = inp.dataset.ip, f = inp.files[0]; inp.value = '';
       if (!isLive(f)) { $('formErr').textContent = OLD_PHOTO; $('formErr').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
       try { st.itemPhotos[key] = await shrink(f); $('formErr').textContent = ''; } catch (err) { $('formErr').textContent = 'Could not read that photo — please try again.'; }
-      renderChecks(); summary();
+      renderChecks(); summary(); saveDraft();
     });
     const missingItemPhotos = () => CHECKS.filter(([k, , o]) => st.checks[k] && st.checks[k] !== o[0][0] && !st.itemPhotos[k]).map(([, l]) => l);
     // (no 'Mark all OK' — every item must be inspected and answered one by one)
@@ -752,7 +765,7 @@
       if (!isLive(file)) { $('formErr').textContent = OLD_PHOTO; return; }
       let ph; try { ph = await shrink(file); } catch (err) { $('formErr').textContent = 'Could not read that photo — please try again.'; return; }
       if (key === 'v') jc.vphoto = ph; else if (key[0] === 'x') jc.extra[Number(key.slice(1))].photo = ph; else jc.photo[key.slice(1)] = ph;
-      $('formErr').textContent = ''; renderJC();
+      $('formErr').textContent = ''; renderJC(); saveDraft();
     });
     function checkJC() {
       if (jc.loading) return 'Still loading the job card — one moment.';
@@ -885,13 +898,116 @@
         'Saving in the background — you can start the next QC now.';
       $('doneGrid').innerHTML = `<div><span>Your QCs today (this phone)</span><b>${log.n}</b></div><div><span>Rejected</span><b>${log.rej}</b></div>`;
       $('qBadge').dataset.justSaved = '1'; badge(); window.scrollTo({ top: 0 });
-      processQ();
+      clearDraft(); processQ();
     }
     $('againBtn').addEventListener('click', () => {   // keep hub + technician, clear the rest
       $('vehicle').value = ''; $('lastQc').textContent = ''; photos = []; renderThumbs();
       st.checks = {}; st.notes = {}; st.itemPhotos = {}; result = ''; $('remarks').value = ''; $('qcNote').value = ''; jcReset(); $('jcLine').textContent = '';
-      $('doneBox').classList.add('hidden'); $('qcForm').classList.remove('hidden'); go(1);
+      $('doneBox').classList.add('hidden'); $('qcForm').classList.remove('hidden'); clearDraft(); go(1);
     });
+
+    // ---------- In-app camera ----------
+    // On phones with little memory, opening the phone's camera app can make Android close the browser
+    // ("Unable to complete previous operation due to low memory") and the photo is lost.
+    // So photos are taken inside the page instead. If the camera can't be used here, the phone camera opens as before.
+    const CAM = { stream: null, input: null };
+    function camUI() {
+      if ($('camBox')) return;
+      const d = document.createElement('div'); d.id = 'camBox';
+      d.style.cssText = 'position:fixed;inset:0;background:#000;z-index:10000;display:none;flex-direction:column';
+      d.innerHTML = `<video id="camVid" playsinline muted autoplay style="flex:1;width:100%;object-fit:cover;background:#000"></video>
+        <p id="camMsg" style="position:absolute;top:40%;left:0;right:0;text-align:center;color:#fff;font:600 15px system-ui;padding:0 24px"></p>
+        <div style="display:flex;align-items:center;justify-content:space-around;padding:18px 12px calc(18px + env(safe-area-inset-bottom,0px));background:#000">
+          <button type="button" id="camClose" style="background:none;border:0;color:#fff;font:600 15px system-ui;padding:12px">Cancel</button>
+          <button type="button" id="camShot" aria-label="Take photo" style="width:74px;height:74px;border-radius:50%;border:5px solid #fff;background:#e3262b"></button>
+          <button type="button" id="camNative" style="background:none;border:0;color:#fff;font:600 13px system-ui;padding:12px;max-width:110px">Phone camera</button>
+        </div>`;
+      document.body.appendChild(d);
+      $('camClose').onclick = camClose;
+      $('camNative').onclick = () => { const i = CAM.input; camClose(); if (i) { i.dataset.native = '1'; i.click(); } };
+      $('camShot').onclick = camShot;
+    }
+    async function camOpen(input) {
+      camUI(); CAM.input = input; $('camBox').style.display = 'flex'; $('camMsg').textContent = 'Starting camera…'; $('camShot').disabled = true;
+      try {
+        CAM.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false });
+        $('camVid').srcObject = CAM.stream; await $('camVid').play().catch(() => {});
+        $('camMsg').textContent = ''; $('camShot').disabled = false;
+      } catch (e) {
+        $('camMsg').textContent = 'Camera not available here. Tap "Phone camera".';
+      }
+    }
+    function camClose() {
+      if (CAM.stream) CAM.stream.getTracks().forEach(t => t.stop());
+      CAM.stream = null; if ($('camVid')) $('camVid').srcObject = null; if ($('camBox')) $('camBox').style.display = 'none';
+    }
+    function camShot() {
+      const v = $('camVid'), input = CAM.input; if (!v.videoWidth || !input) return;
+      const k = Math.min(1, 1280 / Math.max(v.videoWidth, v.videoHeight));
+      const c = document.createElement('canvas'); c.width = Math.round(v.videoWidth * k); c.height = Math.round(v.videoHeight * k);
+      c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+      c.toBlob((b) => {
+        c.width = c.height = 0; camClose(); if (!b) return;
+        const f = new File([b], 'photo_' + Date.now() + '.jpg', { type: 'image/jpeg', lastModified: Date.now() });
+        try { const dt = new DataTransfer(); dt.items.add(f); input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
+        catch (e) { $('formErr').textContent = 'Could not use that photo — please try again.'; }
+      }, 'image/jpeg', 0.85);
+    }
+    // Every "Take photo" button in the QC form opens the in-app camera
+    document.addEventListener('click', (e) => {
+      const lab = e.target.closest('label.photo'); if (!lab || !$('qcForm').contains(lab)) return;
+      const input = lab.querySelector('input[type=file]'); if (!input) return;
+      if (input.dataset.native) { delete input.dataset.native; return; }   // "Phone camera" chosen: normal file picker
+      if (!navigator.mediaDevices?.getUserMedia || !window.DataTransfer || !window.isSecureContext) return;
+      e.preventDefault(); camOpen(input);
+    }, true);
+    window.addEventListener('popstate', () => { if ($('camBox') && $('camBox').style.display !== 'none') camClose(); });
+
+    // ---------- Unfinished QC is kept on the phone ----------
+    // Opening the camera can make a phone with little memory close the app. Everything typed and every photo is saved
+    // as you go, and comes back when the app opens again (kept for 12 hours).
+    const DRAFT_DB = 'bounce-qc', DRAFT_KEY = 'draft';
+    let draftTimer = null, restoring = false;
+    function idb() {
+      return new Promise((ok, bad) => { if (!window.indexedDB) return bad(new Error('no idb'));
+        const r = indexedDB.open(DRAFT_DB, 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => ok(r.result); r.onerror = () => bad(r.error); });
+    }
+    async function idbDo(mode, fn) {
+      const d = await idb();
+      return new Promise((ok, bad) => { const t = d.transaction('kv', mode), req = fn(t.objectStore('kv')); t.oncomplete = () => { ok(req && req.result); d.close(); }; t.onerror = () => { bad(t.error); d.close(); }; });
+    }
+    function saveDraft() {
+      if (restoring) return; clearTimeout(draftTimer);
+      draftTimer = setTimeout(() => {
+        const v = cleanVeh($('vehicle').value);
+        if (!v && !photos.length && !Object.keys(st.checks).length) return;
+        const d = { at: Date.now(), user: session?.user?.id || '', step, hub: st.hub, tech: st.tech, vehicle: v, checks: st.checks, notes: st.notes, itemPhotos: st.itemPhotos,
+          photos, remarks: $('remarks').value, qcNote: $('qcNote').value, result,
+          jc: { fit: jc.fit, reason: jc.reason, other: jc.other, photo: jc.photo, extra: jc.extra, vphoto: jc.vphoto, note: jc.note } };
+        idbDo('readwrite', (os) => os.put(d, DRAFT_KEY)).catch(() => {});
+      }, 700);
+    }
+    function clearDraft() { clearTimeout(draftTimer); idbDo('readwrite', (os) => os.delete(DRAFT_KEY)).catch(() => {}); }
+    async function restoreDraft() {
+      let d = null; try { d = await idbDo('readonly', (os) => os.get(DRAFT_KEY)); } catch (e) { return false; }
+      if (!d || Date.now() - d.at > 12 * 3600e3 || (d.user && session && d.user !== session.user.id)) { if (d) clearDraft(); return false; }
+      restoring = true;
+      try {
+        st.hub = d.hub || st.hub; st.tech = d.tech || st.tech; st.checks = d.checks || {}; st.notes = d.notes || {}; st.itemPhotos = d.itemPhotos || {};
+        $('vehicle').value = d.vehicle || ''; photos = d.photos || []; $('remarks').value = d.remarks || ''; $('qcNote').value = d.qcNote || ''; result = d.result || '';
+        Object.assign(jc, { fit: {}, reason: {}, other: {}, photo: {}, extra: [], vphoto: null, note: '' }, d.jc || {});
+        hubChips(HUBS_LIVE); loadTechs(); renderThumbs();
+        if (d.vehicle && d.vehicle.length >= 6) { lastQc(d.vehicle); loadJC(d.vehicle); }
+        go(Math.min(4, Math.max(1, d.step || 1)));
+        $('formErr').textContent = '';
+        const t = document.createElement('div'); t.textContent = 'Your unfinished QC was restored';
+        t.style.cssText = 'position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:999px;font:600 13.5px system-ui,sans-serif;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.3)';
+        document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
+        return true;
+      } finally { restoring = false; }
+    }
+    // Save after anything is typed, tapped or chosen in the form
+    ['input', 'change', 'click'].forEach(ev => $('qcForm').addEventListener(ev, () => saveDraft(), true));
 
     // ---------- Sign-in ----------
     let HUBS_LIVE = HUBS;
@@ -909,7 +1025,7 @@
       const { data } = await db.from('qc_checks').select('hub').gte('qc_at', new Date(Date.now() - 60 * 864e5).toISOString()).limit(3000);
       const seen = [...new Set((data || []).map(r => r.hub).filter(Boolean))];
       HUBS_LIVE = [...new Set([...HUBS, ...seen])];
-      hubChips(HUBS_LIVE); loadTechs(); go(1); badge(); processQ();
+      hubChips(HUBS_LIVE); loadTechs(); if (!(await restoreDraft())) go(1); badge(); processQ();
     }
     $('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault(); $('loginErr').textContent = '';
@@ -921,22 +1037,24 @@
     // ---- Roles: who can see which page (the database enforces the same rules) ----
     const PAGE_ROLES = { 'dashboard.html': ['admin', 'recovery'], 'tracker.html': ['admin', 'recovery'], 'qc.html': ['admin', 'qc'], 'qc-new.html': ['admin', 'qc'], 'admin.html': ['admin'], 'agent.html': ['admin', 'agent', 'recovery'] };
     const ROLE_HOME = { qc: 'qc.html', recovery: 'dashboard.html', agent: 'agent.html' };
-    let myRoleCache = { uid: null, role: null };
+    let myRoleCache = { uid: null, roles: [] };
     // Shows only the menu links this person may use. Returns true if they may use THIS page.
     async function applyRoles(session) {
       const here = (location.pathname.split('/').pop() || 'dashboard.html');
       const links = document.querySelectorAll('.side .nav a, .tabs-top a, .newqc-btn');
       const adminLink = document.getElementById('adminLink');
       if (!session) { links.forEach(a => a.classList.remove('hidden')); adminLink && adminLink.classList.add('hidden'); showNoAccess(false); return false; }
-      let role = myRoleCache.role;
-      if (myRoleCache.uid !== session.user.id) {
-        const { data, error } = await db.rpc('my_role');
-        role = error ? null : (data || null); myRoleCache = { uid: session.user.id, role };
+      let roles = myRoleCache.roles;
+      if (myRoleCache.uid !== session.user.id) {   // a person can have several roles (QC + Recovery + Police …)
+        let r = await db.rpc('my_roles');
+        if (r.error) { const o = await db.rpc('my_role'); r = { data: o.data ? [o.data] : [] }; }
+        roles = r.data || []; myRoleCache = { uid: session.user.id, roles };
       }
-      links.forEach(a => { const ok = (PAGE_ROLES[a.getAttribute('href')] || []).includes(role); a.classList.toggle('hidden', !ok); });
-      adminLink && adminLink.classList.toggle('hidden', role !== 'admin');
-      const allowed = (PAGE_ROLES[here] || []).includes(role);
-      if (!allowed && ROLE_HOME[role] && ROLE_HOME[role] !== here) { location.replace(ROLE_HOME[role]); return false; }
+      const can = (page) => (PAGE_ROLES[page] || []).some(x => roles.includes(x));
+      links.forEach(a => { a.classList.toggle('hidden', !can(a.getAttribute('href'))); });
+      adminLink && adminLink.classList.toggle('hidden', !roles.includes('admin'));
+      const allowed = can(here), home = roles.map(x => ROLE_HOME[x]).find(Boolean);
+      if (!allowed && home && home !== here) { location.replace(home); return false; }
       showNoAccess(!allowed, session.user.email);
       return allowed;
     }
