@@ -786,7 +786,7 @@
       if (error) $('loginErr').textContent = error.message;
     });
     // ---- Roles: who can see which page (the database enforces the same rules) ----
-    const PAGE_ROLES = { 'dashboard.html': ['admin', 'manager', 'recovery'], 'tracker.html': ['admin', 'manager', 'recovery'], 'qc.html': ['admin', 'manager', 'qc'], 'qc-new.html': ['admin', 'qc'], 'admin.html': ['admin'], 'agent.html': ['admin', 'manager', 'agent', 'recovery', 'mfr'] };
+    const PAGE_ROLES = { 'dashboard.html': ['admin', 'recovery'], 'tracker.html': ['admin', 'recovery'], 'qc.html': ['admin', 'qc'], 'qc-new.html': ['admin', 'qc'], 'admin.html': ['admin'], 'agent.html': ['admin', 'agent', 'recovery', 'mfr'] };
     const ROLE_HOME = { manager: 'dashboard.html', qc: 'qc.html', recovery: 'dashboard.html', agent: 'agent.html', mfr: 'agent.html' };
     let myRoleCache = { uid: null, roles: [] };
     // Shows only the menu links this person may use. Returns true if they may use THIS page.

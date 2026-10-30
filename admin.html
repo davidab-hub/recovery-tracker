@@ -555,6 +555,9 @@
     $('userRows').addEventListener('change', async (e) => {
       const box = e.target.closest('.roleboxes'); if (!box) return;
       const u = users.find(x => x.id === box.dataset.id); if (!u) return;
+      // Manager = shortcut: ticking it ticks every other role (not Admin). Untick whatever this person doesn't need.
+      if (e.target.value === 'manager' && e.target.checked)
+        box.querySelectorAll('input').forEach(x => { if (x.value !== 'admin') x.checked = true; });
       let picked = [...box.querySelectorAll('input:checked')].map(x => x.value);
       const before = u.roles || (u.role ? [u.role] : []);
       if (picked.includes('admin') && !before.includes('admin') && !confirm(`Make ${u.email} an admin? They will see everything and can add and remove users.`)) { e.target.checked = false; return; }
