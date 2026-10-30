@@ -919,6 +919,10 @@
           let r = await db.rpc('my_roles');
           if (r.error) { const o = await db.rpc('my_role'); r = { data: o.data ? [o.data] : [] }; }
           const rs = r.data || []; myRoles = rs; myRole = ['admin', 'recovery', 'manager', 'agent'].find(x => rs.includes(x)) || rs[0] || '';
+          // Installed as the old "Recovery bikes" app but this person also has Recovery / Manager / Police / QC access:
+          // open the full Bounce app instead, so they get the dashboard and tracker tiles too
+          const installed = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true;
+          if (parent === window && installed && rs.some(x => ['admin', 'recovery', 'manager', 'police', 'qc'].includes(x))) { location.replace('app.html'); return; }
         }
         if (!agents.length) { const r = await db.rpc('recovery_agents'); agents = r.data || []; }
         if (scope === null) scope = mineCount() ? 'mine' : 'all';   // agents start on their own bikes

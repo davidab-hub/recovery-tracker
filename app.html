@@ -213,8 +213,10 @@
       }
       $('tiles').innerHTML = html;
     }
-    $('tiles').addEventListener('click', (e) => { const b = e.target.closest('[data-sec]'); if (!b) return; openSection(b.dataset.sec); history.pushState({ sec: b.dataset.sec }, ''); });
-    const goHome = () => { if (current) { showHome(); history.pushState({ home: 1 }, ''); } };
+    // The open section is kept in the address (app.html#dash), so a refresh stays on the same page
+    const homeUrl = () => location.pathname + location.search;
+    $('tiles').addEventListener('click', (e) => { const b = e.target.closest('[data-sec]'); if (!b) return; openSection(b.dataset.sec); history.pushState({ sec: b.dataset.sec }, '', '#' + b.dataset.sec); });
+    const goHome = () => { if (current) { showHome(); history.pushState({ home: 1 }, '', homeUrl()); } };
     $('backHome').addEventListener('click', goHome);
     $('topReload').addEventListener('click', () => { const f = document.querySelector(`#frames iframe[data-sec="${current}"]`); f?.contentWindow.location.reload(); });
     window.addEventListener('message', (e) => {
@@ -303,8 +305,11 @@
       const RN = { manager: 'Manager', recovery: 'Recovery team', qc: 'QC team', police: 'Police team', agent: 'Recovery agent', mfr: 'MFR upload' };
       $('helloSub').textContent = roles.includes('admin') ? 'Admin · you see everything' : roles.map(r => RN[r] || r).join(' · ');
       $('home').classList.add('hidden'); $('topbar').classList.add('hidden');
+      const want = decodeURIComponent(location.hash.slice(1));   // section that was open before a refresh
+      if (location.hash) history.replaceState(history.state, '', homeUrl());
       if (multi()) { renderTiles(); showHome(); } else if (mine.length) openSection(mine[0].key);
       BACK.start({ home: 1 });
+      if (multi() && want && mine.some(s => s.key === want)) { openSection(want); history.pushState({ sec: want }, '', '#' + want); }
       offerInstall();
     }
     let lastId;
