@@ -406,10 +406,10 @@
 
       <section class="panel" style="margin-top:10px" id="jcPanel">
         <h3>Job cards for QC</h3>
-        <p class="note">Upload the job card export from Metabase (CSV or Excel). The New QC page uses it to show each bike's latest job card and its parts.
-          Upload it every morning (or whenever you want fresher job cards); each upload replaces the previous list.</p>
+        <p class="note">Job cards now refresh automatically from Metabase — every 30 minutes by day, hourly at night. No upload needed.
+          The New QC page uses them to show each bike's latest job card and its parts.</p>
         <p class="note" id="jcMeta">Loading…</p>
-        <label class="btn btn-clear" style="display:inline-flex;cursor:pointer">⬆ Upload job card file<input type="file" id="jcFile" accept=".csv,.xlsx,.xls,text/csv" hidden></label>
+        <input type="file" id="jcFile" hidden>
         <div class="jc-prog hidden" id="jcProg"><div id="jcBar"></div></div>
         <p class="note" id="jcMsg" style="margin-top:6px"></p>
       </section>
@@ -648,7 +648,7 @@
     const loadScript = (src) => new Promise((ok, bad) => { const t = document.createElement('script'); t.src = src; t.onload = ok; t.onerror = () => bad(new Error('Could not load ' + src)); document.head.appendChild(t); });
     async function loadJcMeta() {
       const { data, error } = await db.from('job_cards_meta').select('file_name, cards, uploaded_at, uploaded_by').eq('id', 1).maybeSingle();
-      $('jcMeta').innerHTML = error ? 'Job card tables are not set up yet.' : data ? `Current list: <b>${esc(data.file_name || 'file')}</b> · ${Number(data.cards || 0).toLocaleString('en-IN')} job cards · uploaded ${when(data.uploaded_at)}${data.uploaded_by ? ' by ' + esc(data.uploaded_by) : ''}` : 'No job card file uploaded yet.';
+      $('jcMeta').innerHTML = error ? 'Job card tables are not set up yet.' : data ? `${Number(data.cards || 0).toLocaleString('en-IN')} job cards · last refreshed ${when(data.uploaded_at)}` : 'Waiting for the first refresh.';
     }
     const jcProgress = (pct, text) => { $('jcProg').classList.remove('hidden'); $('jcBar').style.width = Math.max(2, Math.min(100, pct)) + '%'; if (text) $('jcMsg').textContent = text; };
     async function readJobCardFile(file) {
