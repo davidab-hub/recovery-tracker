@@ -99,7 +99,20 @@
     #mapWrap.hidden { display: none; }
     .mapcol { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; min-height: 0;
               box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
+    .mapbox { position: relative; flex: 1; min-height: 0; display: flex; }
     #map { flex: 1; width: 100%; min-height: 0; }
+    /* Same look as the agent app map: teardrop pins, hub icons, satellite + my-location buttons */
+    .pin { background: none; border: 0; }
+    .pin svg { filter: drop-shadow(0 1px 1px rgba(0,0,0,.3)); display: block; }
+    .hub-ic { background: none; border: 0; }
+    .hub-ic svg { filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); display: block; }
+    .mapbtn { position: absolute; right: 10px; z-index: 500; border: 0; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.25); cursor: pointer; }
+    #satBtn { bottom: 24px; width: 64px; height: 64px; padding: 0; overflow: hidden; border: 2px solid #fff; background-size: cover; background-position: center; }
+    #satBtn span { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(transparent, rgba(0,0,0,.65)); color: #fff; font-size: 11px; font-weight: 700; padding: 10px 0 4px; }
+    #locBtn { top: 84px; width: 40px; height: 40px; display: grid; place-items: center; color: #1a73e8; }
+    #locBtn.busy { color: #9ca3af; }
+    .me-dot { width: 16px; height: 16px; border-radius: 50%; background: #1a73e8; border: 3px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.15), 0 1px 4px rgba(0,0,0,.4); }
+    .leaflet-top.leaflet-right .leaflet-control-zoom { margin-top: 10px; }
     .fleet { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow-y: auto; padding: 12px 14px; min-height: 0;
              box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
     .fleet h3 { margin: 0; font-size: 14px; }
@@ -286,17 +299,10 @@
     <!-- Map view -->
     <div id="mapWrap">
       <div class="mapcol">
-      <div id="map"></div>
-      <div class="legend">
-        <span><i style="background:#2E7D32"></i>0-1 days</span>
-        <span><i style="background:#1565C0"></i>1-2 days</span>
-        <span><i style="background:#B8860B"></i>2-3 days</span>
-        <span><i style="background:#6D4C41"></i>3-4 days</span>
-        <span><i style="background:#F57C00"></i>4-5 days</span>
-        <span><i style="background:#D32F2F"></i>5-10 days</span>
-        <span><i style="background:#000000"></i>10+ days</span>
-        <span><i style="background:#ffffff;border:2px solid #2E7D32"></i>Recovered</span>
-      </div>
+      <div class="mapbox"><div id="map"></div>
+        <button type="button" class="mapbtn" id="locBtn" aria-label="My location" title="My location"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4" fill="currentColor"/><circle cx="12" cy="12" r="8"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg></button>
+        <button type="button" class="mapbtn" id="satBtn" aria-label="Switch map type"><span>Satellite</span></button></div>
+      <div class="legend" id="legend"></div>
       </div>
       <!-- Fleet details next to the map (follows the City / Hub filters) -->
       <aside class="fleet" id="fleetPanel" aria-label="Fleet details">
@@ -431,14 +437,12 @@
     let pendingOutcome = null;   // remembers what to open after signing in
 
     // Same age colours as the AppSheet map pins
+    // Same ageing colours as the agent app (and the team's AppSheet map)
+    const AGE_STEPS = [[0, '#16a34a', 'Under 1 day'], [1, '#1d67bc', '1–2 days'], [2, '#f9c134', '2–3 days'], [3, '#ed800d', '3–4 days'],
+                       [4, '#d93025', '4–5 days'], [10, '#6c4e43', '5–10 days'], [Infinity, '#000000', 'Over 10 days']];
     function ageColour(days) {
-      if (days < 1)   return ['#2E7D32', '0-1 days'];
-      if (days < 2)   return ['#1565C0', '1-2 days'];
-      if (days < 3)   return ['#B8860B', '2-3 days'];
-      if (days < 4)   return ['#6D4C41', '3-4 days'];
-      if (days < 5)   return ['#F57C00', '4-5 days'];
-      if (days <= 10) return ['#D32F2F', '5-10 days'];
-      return ['#000000', '10+ days'];
+      if (days == null) return ['#9ca3af', 'Unknown'];
+      const st = AGE_STEPS.find(([max]) => days <= max); return [st[1], st[2]];
     }
 
     // ---------------------------------------------------------------
@@ -659,25 +663,76 @@
     // ---------------------------------------------------------------
     // 4. MAP VIEW (Leaflet + OpenStreetMap)
     // ---------------------------------------------------------------
-    const map = L.map('map').setView([20.5937, 78.9629], 5);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+    const map = L.map('map', { zoomControl: false }).setView([20.5937, 78.9629], 5);
+    L.control.zoom({ position: 'topright' }).addTo(map);
+    // Street map or satellite photos with road + place names (same as the agent app, free sources)
+    const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
+    const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' });
+    const sat = L.layerGroup([
+      L.tileLayer(ESRI + 'World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Imagery &copy; Esri' }),
+      L.tileLayer(ESRI + 'Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
+      L.tileLayer(ESRI + 'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 })]);
+    let isSat = false; try { isSat = localStorage.getItem('rt-sat') === '1'; } catch (e) {}
+    const satThumb = () => isSat ? 'https://a.tile.openstreetmap.org/15/23449/15196.png' : ESRI + 'World_Imagery/MapServer/tile/15/15196/23449';
+    function applyBase() {
+      map.removeLayer(isSat ? street : sat); map.addLayer(isSat ? sat : street);
+      $('satBtn').querySelector('span').textContent = isSat ? 'Map' : 'Satellite';
+      $('satBtn').style.backgroundImage = `url(${satThumb()})`;
+    }
+    applyBase();
+    $('satBtn').addEventListener('click', () => { isSat = !isSat; try { localStorage.setItem('rt-sat', isSat ? '1' : '0'); } catch (e) {} applyBase(); });
+    // My location (blue dot)
+    let meDot, meRing;
+    $('locBtn').addEventListener('click', () => { $('locBtn').classList.add('busy'); map.locate({ setView: true, maxZoom: 16, enableHighAccuracy: true }); });
+    map.on('locationfound', (e) => {
+      $('locBtn').classList.remove('busy');
+      if (!meDot) { meRing = L.circle(e.latlng, { radius: e.accuracy, color: '#1a73e8', weight: 1, fillOpacity: .12 }).addTo(map);
+        meDot = L.marker(e.latlng, { icon: L.divIcon({ className: '', html: '<div class="me-dot"></div>', iconSize: [16, 16] }), interactive: false }).addTo(map); }
+      else { meDot.setLatLng(e.latlng); meRing.setLatLng(e.latlng).setRadius(e.accuracy); }
+    });
+    map.on('locationerror', () => $('locBtn').classList.remove('busy'));
+    // Bounce Daily hubs (same list as the agent app)
+    const HUBS = [
+      { name: 'Hoodi', city: 'Bangalore', lat: 12.969313, lng: 77.706437 }, { name: 'RR Nagar', city: 'Bangalore', lat: 12.917063, lng: 77.499313 },
+      { name: 'Bilekahalli', city: 'Bangalore', lat: 12.898687, lng: 77.604438 }, { name: 'HSR Layout', city: 'Bangalore', lat: 12.903563, lng: 77.631563 },
+      { name: 'E-City', city: 'Bangalore', lat: 12.865687, lng: 77.651813 }, { name: 'Yeshwantpur', city: 'Bangalore', lat: 13.019813, lng: 77.540688 },
+      { name: 'Indiranagar', city: 'Bangalore', lat: 12.979188, lng: 77.631313 }, { name: 'Hebbal', city: 'Bangalore', lat: 13.042938, lng: 77.598938 },
+      { name: 'Banaswadi', city: 'Bangalore', lat: 13.006562, lng: 77.639938 }, { name: 'Bellandur', city: 'Bangalore', lat: 12.924437, lng: 77.666937 },
+      { name: 'Fatehnagar', city: 'Hyderabad', lat: 17.450812, lng: 78.450812 }, { name: 'Miyapur', city: 'Hyderabad', lat: 17.497188, lng: 78.356563 },
+      { name: 'Sakinaka', city: 'Mumbai', lat: 19.102812, lng: 72.883937 }, { name: 'Saket', city: 'NCR', lat: 28.509562, lng: 77.202437 },
+      { name: 'Rohini', city: 'NCR', lat: 28.721937, lng: 77.103813 }, { name: 'Gurugram', city: 'NCR', lat: 28.472687, lng: 77.034313 },
+      { name: 'Okhla', city: 'NCR', lat: 28.537812, lng: 77.279187 }, { name: 'Indirapuram', city: 'NCR', lat: 28.640663, lng: 77.359453 }];
+    const HUB_SVG = '<svg width="26" height="26" viewBox="0 0 26 26"><rect x="1" y="1" width="24" height="24" rx="7" fill="#111827" stroke="#fff" stroke-width="2"/><path d="M7 12.5L13 7.5l6 5V19h-4.2v-4h-3.6v4H7z" fill="#fff"/></svg>';
+    const hubLayer = L.layerGroup().addTo(map);
+    function drawHubs() {
+      const city = $('cityFilter').value;
+      hubLayer.clearLayers();
+      HUBS.filter(h => !city || h.city === city).forEach(h => L.marker([h.lat, h.lng], { zIndexOffset: 1000, title: 'Hub ' + h.name,
+        icon: L.divIcon({ className: 'hub-ic', html: HUB_SVG, iconSize: [26, 26], iconAnchor: [13, 13] }) })
+        .bindPopup(`<b>Bounce Daily Hub ${escapeHtml(h.name)}</b><br><a href="https://www.google.com/maps/dir/?api=1&destination=${h.lat},${h.lng}" target="_blank" rel="noopener">Navigate to hub</a>`)
+        .addTo(hubLayer));
+    }
+    // Teardrop pin in the bike's age colour (same as the agent app)
+    const pinCache = {};
+    const pinIcon = (fill, stroke) => pinCache[fill + stroke] || (pinCache[fill + stroke] = L.divIcon({ className: 'pin', iconSize: [15, 21], iconAnchor: [7.5, 21], popupAnchor: [0, -18],
+      html: `<svg width="15" height="21" viewBox="0 0 16 22.4"><path d="M8 .6C3.9.6.6 3.9.6 8c0 3 1.6 5.6 3.6 8.3C5.8 18.6 7.3 20.4 8 21.8c.7-1.4 2.2-3.2 3.8-5.5 2-2.7 3.6-5.3 3.6-8.3C15.4 3.9 12.1.6 8 .6z" fill="${fill}" stroke="${stroke}" stroke-width="${stroke === '#fff' ? 1 : 2}"/></svg>` }));
+    $('legend').innerHTML = AGE_STEPS.map(([, c, t]) => `<span><i style="background:${c}"></i>${t}</span>`).join('') +
+      '<span><i style="background:#fff;border:2px solid #2E7D32"></i>Recovered</span><span><i style="background:#111827;border-radius:3px"></i>Bounce hub</span>';
     const pinLayer = L.layerGroup().addTo(map);
     window.addEventListener('resize', () => map.invalidateSize());
     let firstFit = true, filterChanged = false;
 
     const markers = {};
     function drawPins(rows) {
+      drawHubs();
       pinLayer.clearLayers(); Object.keys(markers).forEach(k => delete markers[k]);
       const points = [];
       rows.forEach(b => {
         if (b.latitude == null || b.longitude == null) return;
         const done = isDone(b);
         const [colour, label] = ageColour(b.age_days);
-        markers[b.id] = L.circleMarker([b.latitude, b.longitude], done
-            ? { radius: 8, color: '#2E7D32', weight: 3, fillColor: '#ffffff', fillOpacity: 1 }
-            : { radius: 9, color: '#ffffff', weight: 2, fillColor: colour, fillOpacity: 0.95 })
+        markers[b.id] = L.marker([b.latitude, b.longitude], { title: b.reg_number,
+            icon: done ? pinIcon('#ffffff', '#2E7D32') : pinIcon(colour, '#fff') })
           .bindPopup(`<div class="pop">
               <h3>${escapeHtml(b.reg_number)}</h3>
               <p>${escapeHtml(b.city)} · ${escapeHtml(b.hub || '')} · <strong>${done ? doneLabel(b) : label}</strong></p>
@@ -702,7 +757,7 @@
     // ---------------------------------------------------------------
     // FLEET DETAILS panel (right half of the map view)
     // ---------------------------------------------------------------
-    const AGE_ORDER = ['0-1 days', '1-2 days', '2-3 days', '3-4 days', '4-5 days', '5-10 days', '10+ days'];
+    const AGE_ORDER = AGE_STEPS.map(st => st[2]);
     function renderFleet() {
       const city = $('cityFilter').value, hub = $('hubFilter').value;
       const F = allBikes.filter(b => (!city || b.city === city) && (!hub || b.hub === hub));
@@ -722,7 +777,7 @@
       const byAge = {}; mfr.forEach(b => { const k = ageColour(b.age_days)[1]; byAge[k] = (byAge[k] || 0) + 1; });
       const maxAge = Math.max(1, ...Object.values(byAge));
       $('ageBars').innerHTML = AGE_ORDER.map(k => {
-        const colour = ageColour({ '0-1 days': 0, '1-2 days': 1, '2-3 days': 2, '3-4 days': 3, '4-5 days': 4, '5-10 days': 6, '10+ days': 11 }[k])[0];
+        const colour = AGE_STEPS.find(st => st[2] === k)[1];
         const n = byAge[k] || 0;
         return `<button type="button" class="agebar ${ageFilter === k ? 'on' : ''}" data-age="${k}" title="Show only ${k} on the map">
           <span>${k}</span><span class="track"><span class="fill" style="display:block;width:${100 * n / maxAge}%;background:${colour}"></span></span><b>${n}</b></button>`;
