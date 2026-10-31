@@ -259,7 +259,7 @@
       <a href="qc.html">QC Dashboard</a>
     </nav>
     <h1 class="page-title">Recovery Tracker</h1>
-    <p class="page-sub">Bikes marked for recovery — call riders, log outcomes, move bikes to hub</p>
+    <p class="page-sub">Bikes marked for recovery — call riders, log outcomes, move bikes to hub · live from Metabase, refreshed every 30 minutes (location = BaaS)</p>
     <section class="stats">
       <div class="stat"><div class="label">In recovery</div><div class="value" id="statBikes">–</div></div>
       <div class="stat"><div class="label">Avg days in MFR</div><div class="value" id="statAge">–</div></div>
@@ -445,7 +445,7 @@
     // 2. AGENT LOGIN (Supabase Auth, email + password)
     // ---------------------------------------------------------------
     function renderAuth() {
-      $('uploadBtn').classList.toggle('hidden', !currentUser);   // only signed-in agents can upload
+      $('uploadBtn').classList.add('hidden');   // bikes now come from Metabase automatically
       const box = $('authBox');
       if (currentUser) {
         box.innerHTML = `<span class="who">${escapeHtml(currentUser.email)}</span>
@@ -715,7 +715,7 @@
         { t: 'Recovered', n: cnt(b => b.status === 'recovered' && !b.police_case), c: '#F57C00' },
         { t: 'At hub', n: cnt(b => b.status === 'at_hub' && !b.police_case), c: '#1565C0' },
         { t: 'Police / FIR', n: cnt(b => !!b.police_case), c: '#6b7280' }];
-      $('fleetBoxes').innerHTML = `<div class="fbox"><div class="n">${F.length}</div><div class="t">Total fleet</div></div>` +
+      $('fleetBoxes').innerHTML = `<div class="fbox"><div class="n">${F.length}</div><div class="t">Bikes tracked</div></div>` +
         parts.map(p => `<div class="fbox"><div class="n">${p.n}</div><div class="t"><i style="background:${p.c}"></i>${p.t}</div></div>`).join('');
       $('fleetBar').innerHTML = parts.map(p => `<span title="${p.t}: ${p.n}" style="width:${F.length ? 100 * p.n / F.length : 0}%;background:${p.c}"></span>`).join('');
 
