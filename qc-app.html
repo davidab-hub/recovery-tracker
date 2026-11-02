@@ -1069,6 +1069,9 @@
     const PHONE_DOMAIN = 'agent.bounce.invalid';                 // private login ID for phone logins (no email is sent)
     const pinPassword = (pin) => `Bnc!${pin}#rA`;                // same wrapping as the Admin page uses
     let HUBS_LIVE = HUBS, tab = 'New', me = null, myRole = null;
+    // The open tab is kept in the address (qc-app.html#service-history), so a refresh stays on the same tab
+    const TAB_HASH = { New: 'qc-form', Job: 'job-card', History: 'service-history', Dash: 'dashboard', Mine: 'my-qcs', Full: 'full-dashboard' };
+    const START_TAB = Object.keys(TAB_HASH).find(k => TAB_HASH[k] === location.hash.slice(1).toLowerCase()) || 'New';
     const fmtWhen = (iso) => new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     const fmtTime = (iso) => new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
     const cap = (s) => s ? s.charAt(0) + s.slice(1).toLowerCase() : '';
@@ -1082,6 +1085,7 @@
     }
     function showTab(t) {
       tab = t; renderHeader();
+      if (location.hash.slice(1) !== TAB_HASH[t]) try { history.replaceState(history.state, '', location.pathname + location.search + '#' + TAB_HASH[t]); } catch (e) {}
       ['New', 'Job', 'History', 'Dash', 'Mine', 'Full'].forEach(x => $('p' + x).classList.toggle('hidden', x !== t));
       if (t === 'Full' && !$('dashFrame').src) $('dashFrame').src = 'qc.html?embed=1';
       const navT = { Mine: 'Dash', Full: 'Dash' }[t] || t;
@@ -1216,7 +1220,7 @@
     }
 
     // ---------- Dashboard tab: overview ----------
-    const ov = { hub: null, period: 'today', from: '', to: '' };
+    const ov = (() => { try { return Object.assign({ hub: null, period: 'today', from: '', to: '' }, JSON.parse(sessionStorage.getItem('qc-ov') || '{}')); } catch (e) { return { hub: null, period: 'today', from: '', to: '' }; } })();
     const istKey = (t) => new Date(t).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
     const dayMs = (k) => Date.parse(k + 'T00:00:00+05:30');
     const PERIODS = [['today', 'Today'], ['yday', 'Yesterday'], ['7', 'Last 7 days'], ['15', 'Last 15 days'], ['30', 'Last 30 days'], ['month', 'This month'], ['lmonth', 'Last month'], ['custom', 'Pick dates…']];
@@ -1313,6 +1317,7 @@
       if (id === 'ovHub') ov.hub = e.target.value;
       else if (id === 'ovPeriod') { ov.period = e.target.value; if (ov.period === 'custom' && !ov.from) { const r = ovRange(); ov.from = r.f; ov.to = r.t; } }
       else if (id === 'ovFrom') ov.from = e.target.value; else if (id === 'ovTo') ov.to = e.target.value; else return;
+      try { sessionStorage.setItem('qc-ov', JSON.stringify(ov)); } catch (e2) {}
       loadOverview();
     });
     $('histForm').addEventListener('submit', (e) => { e.preventDefault(); runHist(); });
@@ -1393,6 +1398,7 @@
       const seen = [...new Set((h || []).map(r => r.hub).filter(Boolean))];
       HUBS_LIVE = [...new Set([...HUBS, ...seen])];
       hubChips(HUBS_LIVE); loadTechs(); if (!(await restoreDraft())) go(1); badge(); processQ();
+      if (START_TAB !== 'New' && tab !== START_TAB) showTab(START_TAB);   // back to the tab that was open before the refresh
     }
     let lastId;
     db.auth.onAuthStateChange((_ev, s) => { const id = s?.user?.id || null; if (id === lastId) return; lastId = id; setTimeout(() => showFor(s), 0); });
