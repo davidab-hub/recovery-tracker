@@ -14,7 +14,7 @@
   <style>
     :root {
       --brand: #e3262b; --page: #f4f5f7; --card: #fff; --text: #111827; --muted: #6b7280; --border: #e5e7eb; --soft: #f5f6f8; --input: #fff;
-      --red: #e3262b; --s2: #e3262b; --s3: #b91c21; --s5: #e3262b; --ok: #16a34a; --bad: #dc2626; --warn: #d97706;
+      --red: #e3262b; --s2: #e3262b; --s3: #b91c21; --s5: #e3262b; --ok: #1f2a44; --bad: #dc2626; --warn: #d97706;
       --safe-b: env(safe-area-inset-bottom, 0px);
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -124,7 +124,7 @@
     .thumb { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: var(--soft); }
     .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .thumb button { position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; border-radius: 50%; border: none; background: rgba(0,0,0,.6); color: #fff; font-size: 16px; line-height: 22px; cursor: pointer; }
-    .allok { background: #e8f5ec; color: #15803d; border: none; border-radius: 8px; padding: 7px 11px; font: 700 12px inherit; font-family: inherit; cursor: pointer; text-transform: none; letter-spacing: 0; }
+    .allok { background: #e8ebf2; color: #1f2a44; border: none; border-radius: 8px; padding: 7px 11px; font: 700 12px inherit; font-family: inherit; cursor: pointer; text-transform: none; letter-spacing: 0; }
     .crow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
     .crow:last-child { border-bottom: 0; }
     .crow.bad { background: #fff5f5; margin: 0 -12px; padding: 9px 12px; color: inherit; font-weight: inherit; }
@@ -134,10 +134,10 @@
     .iphoto { flex: 1 0 100%; display: flex; gap: 8px; align-items: stretch; margin-top: 8px; }
     .iphoto img { width: 64px; height: 64px; object-fit: cover; border-radius: 9px; flex: none; }
     .iphoto .photo.ip { flex: 1; padding: 10px; font-size: 13.5px; border-color: #dc2626; color: #b91c1c; background: #fff; }
-    .iphoto.has .photo.ip { border-style: solid; border-color: #16a34a; color: #15803d; }
+    .iphoto.has .photo.ip { border-style: solid; border-color: #1f2a44; color: #1f2a44; }
     /* Job card step */
     .jc-line { margin-top: 6px; font-size: 13px; }
-    .jc-line.ok { color: #15803d; } .jc-line.none { color: var(--muted); }
+    .jc-line.ok { color: #1f2a44; } .jc-line.none { color: var(--muted); }
     .jc-card { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: var(--card); margin-bottom: 14px; }
     .jc-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
     .jc-top b { font-size: 22px; letter-spacing: .3px; }
@@ -152,6 +152,16 @@
     .jc-fresh button { flex: none; border: 1.5px solid currentColor; background: #fff; color: inherit; border-radius: 8px; padding: 6px 10px; font-weight: 700; font-size: 12.5px; cursor: pointer; }
     .jc-fresh.busy { background: #eff6ff; color: #1e40af; }
     .jc-fresh-note { margin: 8px 0 0; font-size: 12.5px; color: #9a3412; }
+    .jc-rep { display: block; margin-top: 4px; color: #b45309; font-weight: 700; font-size: 12.5px; }
+    .jc-warn { margin-top: 12px; padding: 8px 10px; border-radius: 10px; background: #fff7ed; color: #9a3412; font-size: 13px; font-weight: 600; }
+    .jc-hist { border-top: 1px solid var(--border); } .jc-hist:first-child { border-top: 0; }
+    .jc-hist summary, .jc-hist .row { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; gap: 10px; align-items: center; }
+    .jc-hist .row { cursor: default; } .jc-hist summary::-webkit-details-marker { display: none; }
+    .jc-hist .d { flex: none; width: 52px; font-weight: 800; font-size: 13px; }
+    .jc-hist .t { flex: 1; min-width: 0; font-size: 13.5px; } .jc-hist .t small { display: block; color: var(--muted); font-size: 12.5px; }
+    .jc-hist .n { flex: none; font-size: 12.5px; color: var(--muted); }
+    .jc-hist ul { margin: 0; padding: 0 14px 12px 76px; font-size: 13px; } .jc-hist li { margin: 3px 0; }
+    .jc-hist .ok { color: #1f2a44; } .jc-hist .bad { color: #b91c1c; } .jc-hist .hold { color: #b45309; }
     .jc-h { margin: 18px 0 2px; font-size: 18px; font-weight: 800; } .jc-sub { margin: 0 0 10px; color: var(--muted); font-size: 13.5px; }
     .jc-list { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--card); }
     .jc-item { padding: 12px 14px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
@@ -162,7 +172,7 @@
     .jc-item .pb { display: inline-block; min-width: 18px; text-align: center; border-radius: 5px; background: #fef3c7; color: #92400e; font-weight: 800; font-size: 11px; padding: 1px 4px; margin-right: 4px; }
     .jc-fit { display: flex; gap: 6px; }
     .jc-fit button { border: 1.5px solid var(--border); background: #fff; border-radius: 10px; padding: 9px 14px; font: 600 14px inherit; font-family: inherit; cursor: pointer; color: var(--text); }
-    .jc-fit button.y.on { background: #16a34a; border-color: #16a34a; color: #fff; }
+    .jc-fit button.y.on { background: #1f2a44; border-color: #1f2a44; color: #fff; }
     .jc-fit button.n.on { background: #dc2626; border-color: #dc2626; color: #fff; }
     .jc-more { flex: 1 0 100%; display: grid; gap: 8px; }
     .jc-more select, .jc-more input[type=text], .jc-extra-add input, .jc-note { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 11px; font-size: 15px; font-family: inherit; background: #fff; }
@@ -170,7 +180,7 @@
     .jc-ph { display: flex; gap: 8px; align-items: stretch; }
     .jc-ph img { width: 64px; height: 64px; object-fit: cover; border-radius: 9px; flex: none; }
     .jc-ph .photo { flex: 1; padding: 10px; font-size: 13.5px; border-color: #dc2626; color: #b91c1c; background: #fff; }
-    .jc-ph.has .photo { border-style: solid; border-color: #16a34a; color: #15803d; }
+    .jc-ph.has .photo { border-style: solid; border-color: #1f2a44; color: #1f2a44; }
     .jc-extra-add { padding: 12px 14px; position: relative; }
     .jc-sugg { position: absolute; left: 14px; right: 14px; top: 58px; z-index: 20; background: #fff; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.15); max-height: 240px; overflow-y: auto; }
     .jc-sugg button { display: block; width: 100%; text-align: left; border: 0; border-top: 1px solid #f1f2f4; background: #fff; padding: 11px 12px; font-size: 14.5px; font-family: inherit; cursor: pointer; }
@@ -186,12 +196,12 @@
     .seg { display: flex; flex-wrap: wrap; justify-content: flex-end; border: 1.5px solid var(--border); border-radius: 9px; overflow: hidden; flex-shrink: 0; max-width: 62%; }
     .seg button { border: none; background: #fff; padding: 9px 11px; font: 700 12.5px inherit; font-family: inherit; color: var(--muted); cursor: pointer; }
     .seg button + button { border-left: 1px solid var(--border); }
-    .seg button.g { background: #16a34a; color: #fff; } .seg button.x { background: #dc2626; color: #fff; }
+    .seg button.g { background: #1f2a44; color: #fff; } .seg button.x { background: #dc2626; color: #fff; }
     textarea#remarks { width: 100%; min-height: 70px; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px; font: 14px inherit; font-family: inherit; }
     .quick { font-size: 12px; color: var(--muted); margin-top: 6px; }
     .res { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .res button { border: 1.5px solid var(--border); border-radius: 10px; padding: 13px 4px; background: #fff; font: 700 14px inherit; font-family: inherit; color: var(--text); cursor: pointer; }
-    .res button[data-r="APPROVED"].sel { background: #16a34a; border-color: #16a34a; color: #fff; }
+    .res button[data-r="APPROVED"].sel { background: #1f2a44; border-color: #1f2a44; color: #fff; }
     .res button[data-r="REJECTED"].sel { background: #dc2626; border-color: #dc2626; color: #fff; }
     textarea#qcNote { width: 100%; min-height: 64px; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px; margin-top: 10px; font-family: inherit; font-size: 14px; }
     textarea#qcNote:focus { outline: 0; border-color: var(--brand); }
@@ -201,12 +211,12 @@
     .actionbar .btn { flex: 1; padding: 14px; font-size: 16px; font-weight: 800; border-radius: 12px; }
     .actionbar #backBtn { flex: 0 0 auto; }
     .done { text-align: center; max-width: 520px; }
-    .done .tick { width: 72px; height: 72px; border-radius: 50%; background: #e8f5ec; color: #15803d; font-size: 40px; display: flex; align-items: center; justify-content: center; margin: 10px auto; }
+    .done .tick { width: 72px; height: 72px; border-radius: 50%; background: #e8ebf2; color: #1f2a44; font-size: 40px; display: flex; align-items: center; justify-content: center; margin: 10px auto; }
     .donegrid { text-align: left; margin: 12px 0; } .donegrid div { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
     .btn.wide { display: block; width: 100%; padding: 13px; font-size: 15px; margin-top: 8px; text-decoration: none; text-align: center; }
     .err { color: #dc2626; font-size: 13px; min-height: 1em; margin: 6px 0 0; }
     .qbadge { display: inline-block; border: none; border-radius: 999px; padding: 5px 12px; font: 700 12.5px inherit; font-family: inherit; margin: 0 0 10px; cursor: pointer; }
-    .qbadge.wait { background: #fff4e0; color: #a15c00; } .qbadge.ok { background: #e8f5ec; color: #15803d; } .qbadge.bad { background: #fde8e8; color: #b91c1c; }
+    .qbadge.wait { background: #fff4e0; color: #a15c00; } .qbadge.ok { background: #e8ebf2; color: #1f2a44; } .qbadge.bad { background: #fde8e8; color: #b91c1c; }
     .qlist { background: #fff; border: 1px solid #f3c4c4; border-radius: 10px; padding: 6px 10px; margin-bottom: 10px; font-size: 13px; }
     .qitem { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--border); }
     .qitem:last-child { border-bottom: 0; } .btn.sm { padding: 4px 10px; font-size: 12px; }
@@ -217,6 +227,68 @@
     .chip { -webkit-appearance: none; }
     .actionbar { background: linear-gradient(to top, var(--page) 75%, transparent); }
     .done { text-align: center; }
+
+    /* ===== 4 tabs: QC Form · Job Card · Service History · Dashboard ===== */
+    .hbike { flex: none; border: 0; border-radius: 999px; padding: 7px 11px; background: rgba(255,255,255,.18); color: #fff; font: 800 12.5px/1 inherit; font-family: inherit; letter-spacing: .3px; max-width: 46%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+    nav.tabs .side-logo { display: none; }
+    .steps span { cursor: pointer; }
+    .bike-strip { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+    .bike-strip .bi { width: 36px; height: 36px; border-radius: 10px; background: #fdecec; display: grid; place-items: center; font-size: 18px; flex: none; }
+    .bike-strip .tx { flex: 1; min-width: 0; } .bike-strip b { display: block; font-size: 16px; letter-spacing: .3px; }
+    .bike-strip small { display: block; color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bike-strip button { flex: none; border: 0; background: var(--soft); border-radius: 8px; padding: 7px 10px; font-weight: 700; font-size: 12.5px; color: var(--text); }
+    .sh-link { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; margin-top: 14px; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font: 700 14px inherit; font-family: inherit; color: var(--text); cursor: pointer; }
+    .sh-link small { display: block; font-weight: 500; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+    .sh-link .go { margin-left: auto; color: var(--brand); font-size: 22px; line-height: 1; }
+    .sh-head { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-top: 10px; }
+    .sh-head .vn { font-size: 22px; font-weight: 800; letter-spacing: .4px; }
+    .sh-head .mm { color: var(--muted); font-size: 13px; margin-top: 2px; }
+    .sh-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+    .sh-stats div { background: var(--soft); border-radius: 10px; padding: 8px 10px; } .sh-stats b { display: block; font-size: 17px; }
+    .sh-stats span { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+    .sh-alert { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: #fff7ed; color: #9a3412; font-size: 13px; font-weight: 700; }
+    .sh-alert ul { margin: 6px 0 0; padding-left: 18px; font-weight: 500; } .sh-alert li { margin: 2px 0; }
+    .cur-tag { background: var(--brand); color: #fff; border-radius: 6px; padding: 2px 7px; font-size: 11px; font-weight: 800; margin-left: 6px; vertical-align: 3px; letter-spacing: 0; }
+    .back-qc { border: 0; background: none; color: var(--brand); font-weight: 700; font-size: 13.5px; padding: 8px 2px 0; cursor: pointer; }
+    .ov-hello h2 { margin: 2px 2px 0; font-size: 20px; } .ov-hello p { margin: 2px 2px 12px; color: var(--muted); font-size: 13px; }
+    .ov-bar { display: flex; gap: 8px; margin-bottom: 10px; }
+    .ov-bar select { flex: 1; min-width: 0; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: #fff; font: 600 14px inherit; font-family: inherit; color: var(--text); }
+    .ov-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .kpi { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 12px; display: flex; gap: 10px; align-items: center; min-width: 0; }
+    .kpi i { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-style: normal; font-size: 18px; font-weight: 800; flex: none; }
+    .kpi b { display: block; font-size: 22px; line-height: 1.1; } .kpi span { font-size: 12px; color: var(--muted); font-weight: 600; } .kpi em { font-style: normal; font-size: 12px; font-weight: 700; }
+    .kpi.click { cursor: pointer; }
+    .ov-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-top: 10px; min-width: 0; }
+    .ov-card h3 { margin: 0 0 8px; font-size: 15px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .ov-card h3 button { border: 0; background: none; color: var(--brand); font-weight: 700; font-size: 13px; cursor: pointer; }
+    .bars { display: flex; align-items: flex-end; gap: 8px; height: 130px; }
+    .bars .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+    .bars .stk { width: 100%; max-width: 30px; display: flex; flex-direction: column-reverse; border-radius: 6px; overflow: hidden; background: var(--soft); }
+    .bars .a { background: #1f2a44; } .bars .r { background: #dc2626; } .bars small { font-size: 11px; color: var(--muted); white-space: nowrap; } .bars em { font-style: normal; font-size: 11px; font-weight: 700; }
+    .legend { display: flex; gap: 12px; font-size: 12px; color: var(--muted); margin-top: 8px; } .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; }
+    .hbar { margin: 9px 0; } .hbar .t { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; } .hbar .t span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hbar .tr { height: 6px; background: var(--soft); border-radius: 4px; margin-top: 4px; } .hbar .fl { height: 100%; border-radius: 4px; background: var(--brand); }
+    .act { display: flex; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid #f1f2f4; font-size: 13px; } .act:first-of-type { border-top: 0; }
+    .act .ic { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 800; flex: none; }
+    .act .tx { flex: 1; min-width: 0; } .act .tx small { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .act time { color: var(--muted); font-size: 12px; flex: none; }
+    .ov-links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .ov-links button { border: 1px solid var(--border); background: #fff; border-radius: 12px; padding: 13px; font: 700 14px inherit; font-family: inherit; color: var(--text); cursor: pointer; }
+    @media (min-width: 900px) {
+      #app { display: grid; grid-template-columns: 220px 1fr; grid-template-rows: auto 1fr; }
+      #app > header { grid-column: 2; grid-row: 1; }
+      #app > main { grid-column: 2; grid-row: 2; }
+      header img { display: none; }
+      nav.tabs { grid-column: 1; grid-row: 1 / 3; flex-direction: column; justify-content: flex-start; background: #1f2433; border: 0; padding: 18px 12px; gap: 6px; }
+      nav.tabs .side-logo { display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 800; font-size: 19px; padding: 4px 10px 20px; }
+      nav.tabs .side-logo img { width: 36px; height: 36px; border-radius: 50%; background: #fff; }
+      nav.tabs button { flex: none; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 12px 14px; border-radius: 12px; color: #cbd2e1; font-size: 14.5px; cursor: pointer; }
+      nav.tabs button.on { background: var(--brand); color: #fff; }
+      .page { padding: 20px 28px 28px; }
+      .page > * { max-width: 1040px; margin-left: auto; margin-right: auto; }
+      .ov-kpis { grid-template-columns: repeat(5, 1fr); }
+      .ov-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 10px; }
+    }
   </style>
 </head>
 <body>
@@ -252,6 +324,7 @@
     <header>
       <img src="icon-qc-192.png" alt="">
       <div class="ttl"><b id="hTitle">New QC</b><small id="hSub"></small></div>
+      <button type="button" class="hbike hidden" id="hBike" data-goto="New" title="Bike in your QC form"></button>
       <button class="hbtn" id="menuBtn" aria-label="Menu" title="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
     </header>
     <main class="newqc">
@@ -290,9 +363,7 @@
           <div id="checks"></div></div>
       </section>
 
-      <!-- Step 3: remarks + result -->
-      <!-- Step 3: job card inspection -->
-      <section class="step hidden" data-step="3"><div id="jcBox"></div></section>
+      <!-- Step 3 (job card) is its own tab: Job Card -->
 
       <section class="step hidden" data-step="4">
         <div class="qcard"><p class="lbl">Body parts not fitted / other remarks</p>
@@ -321,24 +392,36 @@
       <button type="button" class="btn btn-light wide" data-goto="Mine">See my QCs</button>
     </section>
       </section>
-      <section class="page hidden" id="pMine"></section>
-      <section class="page hidden" id="pDash" style="padding:0"><iframe id="dashFrame" title="QC Dashboard" style="border:0;width:100%;height:100%;display:block"></iframe></section>
+      <!-- Job Card tab: opens the job card of the bike typed in the QC Form -->
+      <section class="page hidden" id="pJob">
+        <div class="bike-strip hidden" id="jobBike"></div>
+        <div class="empty hidden" id="jobEmpty"><b>No bike yet</b><br>Enter the vehicle number in the QC Form tab — its job card opens here automatically.<br><br>
+          <button type="button" class="btn btn-clear" data-goto="New">Go to QC Form</button></div>
+        <div id="jcBox"></div>
+        <p class="err" id="jobErr"></p>
+        <div class="actionbar" id="jobBar"><button type="button" class="btn btn-light" id="jobBack" style="flex:0 0 auto">← Checklist</button><button type="button" class="btn btn-clear" id="jobNext">Next: result →</button></div>
+      </section>
+      <!-- Service History tab: the same bike, automatically (or look up another bike) -->
       <section class="page hidden" id="pHistory">
         <form class="find-box" id="histForm">
-          <label for="histIn">Vehicle number</label>
+          <label for="histIn">Look up another bike</label>
           <div class="find-row">
             <input id="histIn" type="search" enterkeyhint="search" autocomplete="off" autocapitalize="characters" placeholder="e.g. DL9SCV2401">
             <button type="submit">Search</button>
           </div>
-          <p class="mini">Shows every QC done on this bike, newest first. Part of the number is enough.</p>
+          <p class="mini">Doesn't change the bike in your QC form.</p>
         </form>
-        <div id="histOut"></div>
+        <div id="shBox"></div>
       </section>
+      <section class="page hidden" id="pDash"><div id="ovBox"></div></section>
+      <section class="page hidden" id="pMine"></section>
+      <section class="page hidden" id="pFull" style="padding:0"><iframe id="dashFrame" title="QC Dashboard" style="border:0;width:100%;height:100%;display:block"></iframe></section>
     </main>
     <nav class="tabs">
-      <button data-tab="New" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v3h6V3M12 10v6M9 13h6"/></svg>New QC</button>
-      <button data-tab="Mine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>My QCs</button>
-      <button data-tab="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Bike history</button>
+      <div class="side-logo"><img src="icon-qc-192.png" alt="">Bounce QC</div>
+      <button data-tab="New" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg>QC Form</button>
+      <button data-tab="Job"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v3h6V3M9 11h6M9 15h6"/></svg>Job Card</button>
+      <button data-tab="History"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>Service History</button>
       <button data-tab="Dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Dashboard</button>
     </nav>
   </div>
@@ -412,11 +495,12 @@
       renderTechs(); });
     $('techOther').addEventListener('input', () => { st.tech = $('techOther').value.trim(); });
 
+    const setErr = (t) => { $('formErr').textContent = t; $('jobErr').textContent = t; };
     const cleanVeh = (v) => v.toUpperCase().replace(/[^A-Z0-9]/g, '');
     let vehTimer = null;
     $('vehicle').addEventListener('input', () => {
       const v = cleanVeh($('vehicle').value); if ($('vehicle').value !== v) $('vehicle').value = v;
-      clearTimeout(vehTimer); $('lastQc').textContent = ''; jcReset(); $('jcLine').textContent = '';
+      clearTimeout(vehTimer); $('lastQc').textContent = ''; jcReset(); $('jcLine').textContent = ''; bikeChanged();
       if (v.length >= 6) vehTimer = setTimeout(() => { lastQc(v); loadJC(v); }, 400);
     });
     async function lastQc(v) {
@@ -467,10 +551,10 @@
     const OLD_PHOTO = 'Old photos from the gallery are not allowed — take a new photo with the camera.';
     async function addPhotos(input) {
       const files = [...input.files].slice(0, MAX_PHOTOS - photos.length); input.value = '';
-      if (!files.length) { if (photos.length >= MAX_PHOTOS) $('formErr').textContent = `Up to ${MAX_PHOTOS} photos.`; return; }
+      if (!files.length) { if (photos.length >= MAX_PHOTOS) setErr(`Up to ${MAX_PHOTOS} photos.`); return; }
       let old = false;
-      for (const f of files) { if (!isLive(f)) { old = true; continue; } try { photos.push(await shrink(f)); } catch (e) { $('formErr').textContent = 'Could not read one of the photos.'; } }
-      $('formErr').textContent = old ? OLD_PHOTO : ''; renderThumbs(); saveDraft();
+      for (const f of files) { if (!isLive(f)) { old = true; continue; } try { photos.push(await shrink(f)); } catch (e) { setErr('Could not read one of the photos.'); } }
+      setErr(old ? OLD_PHOTO : ''); renderThumbs(); saveDraft();
     }
     $('photoCam').addEventListener('change', () => addPhotos($('photoCam')));
     $('thumbs').addEventListener('click', (e) => { const b = e.target.closest('[data-del]'); if (!b) return; photos.splice(Number(b.dataset.del), 1); renderThumbs(); });
@@ -493,7 +577,7 @@
       const b = e.target.closest('button[data-v]'); if (!b) return;
       const key = b.closest('.crow').dataset.key; st.checks[key] = b.dataset.v;
       if (CHECKS.find(c => c[0] === key)[2][0][0] === b.dataset.v) { delete st.notes[key]; delete st.itemPhotos[key]; }   // back to OK: drop comment + photo
-      $('formErr').textContent = ''; renderChecks(); suggest();
+      setErr(''); renderChecks(); suggest();
       const n = document.querySelector(`.cnote[data-note="${CSS.escape(key)}"]`); if (n) n.focus();
     });
     $('checks').addEventListener('input', (e) => { const n = e.target.closest('.cnote'); if (n) st.notes[n.dataset.note] = n.value.trim(); });
@@ -501,8 +585,8 @@
     $('checks').addEventListener('change', async (e) => {
       const inp = e.target.closest('input[data-ip]'); if (!inp || !inp.files.length) return;
       const key = inp.dataset.ip, f = inp.files[0]; inp.value = '';
-      if (!isLive(f)) { $('formErr').textContent = OLD_PHOTO; $('formErr').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
-      try { st.itemPhotos[key] = await shrink(f); $('formErr').textContent = ''; } catch (err) { $('formErr').textContent = 'Could not read that photo — please try again.'; }
+      if (!isLive(f)) { setErr(OLD_PHOTO); $('formErr').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+      try { st.itemPhotos[key] = await shrink(f); setErr(''); } catch (err) { setErr('Could not read that photo — please try again.'); }
       renderChecks(); summary(); saveDraft();
     });
     const missingItemPhotos = () => CHECKS.filter(([k, , o]) => st.checks[k] && st.checks[k] !== o[0][0] && !st.itemPhotos[k]).map(([, l]) => l);
@@ -540,8 +624,8 @@
     const JC_CAT = { P: 'Rider-payable', W: 'Warranty', A: 'Wear & tear', C: 'Non-warranty', F: 'Free' };
     const JC_REASONS = ['Old part still on the bike', 'Part not available in store', 'Entered by mistake', 'Part fitted on another bike', 'Other'];
     let jcSeq = 0, jcNames = null;
-    const jc = { veh: '', card: null, parts: [], labour: [], fit: {}, reason: {}, other: {}, photo: {}, extra: [], vphoto: null, note: '', loading: false, meta: null };
-    function jcReset() { Object.assign(jc, { veh: '', card: null, parts: [], labour: [], fit: {}, reason: {}, other: {}, photo: {}, extra: [], vphoto: null, note: '', loading: false }); }
+    const jc = { veh: '', card: null, hist: [], qcs: [], parts: [], labour: [], fit: {}, reason: {}, other: {}, photo: {}, extra: [], vphoto: null, note: '', loading: false, meta: null };
+    function jcReset() { Object.assign(jc, { veh: '', card: null, hist: [], qcs: [], parts: [], labour: [], fit: {}, reason: {}, other: {}, photo: {}, extra: [], vphoto: null, note: '', loading: false }); }
     // When the job card data was last refreshed from Metabase (every 10 min during the day)
     function jcAge() {
       const t = jc.meta?.uploaded_at ? new Date(jc.meta.uploaded_at) : null; if (!t) return { txt: '', old: false };
@@ -570,16 +654,33 @@
       }
       clearInterval(tick); if (jcRef === me) { jcRef = { fail: true }; renderJC(); }
     }
+    // ---- Service history: earlier job cards + QCs of this bike ----
+    const dShort = (t) => t ? new Date(t).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—';
+    const pkey = (n) => String(n || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const samePart = (a, b) => { const x = pkey(a), y = pkey(b); return x.length > 3 && y.length > 3 && (x === y || x.includes(y) || y.includes(x)); };
+    function jcRepeat(it) {   // same part on an earlier job card in the 30 days before this one
+      const t0 = jc.card?.card_time ? new Date(jc.card.card_time).getTime() : 0; if (!t0) return null;
+      return jc.hist.find(h => { const t = new Date(h.card_time).getTime();
+        return t < t0 && t0 - t <= 30 * 864e5 && (h.items || []).some(x => !isLabour(x) && ((it.code && x.code === it.code) || samePart(x.name, it.name))); }) || null;
+    }
+    function jcGapWarn() {    // back in service within 7 days of the last job card
+      const c = jc.card, p = jc.hist[0]; if (!c?.card_time || !p?.card_time) return '';
+      const days = (new Date(c.card_time) - new Date(p.card_time)) / 864e5; if (days >= 7) return '';
+      const n = Math.round(days);
+      return `<div class="jc-warn">⚠ Back in service ${n < 1 ? 'the same day' : n + ' day' + (n === 1 ? '' : 's')} after the last job card (${dShort(p.card_time)} · ${esc(p.job_card_number)} · ${esc(p.technician || '—')})</div>`;
+    }
     const rupee = (n) => n == null || n === '' || isNaN(n) ? '' : '₹' + Math.round(Number(n)).toLocaleString('en-IN');
     const isLabour = (it) => /labou?r|service|charge/i.test(String(it.type || ''));
     async function loadJC(v) {
       const my = ++jcSeq; if (v !== jc.veh) jcRef = null; jc.loading = true; jc.veh = v;
       $('jcLine').className = 'mini jc-line'; $('jcLine').textContent = 'Looking for the job card…';
       try {
-        const [{ data, error }, m] = await Promise.all([
-          db.from('job_cards').select('*').eq('vehicle_number', v).order('card_time', { ascending: false, nullsFirst: false }).limit(1),
-          db.from('job_cards_meta').select('file_name, cards, uploaded_at').eq('id', 1).maybeSingle()]);
+        const [{ data, error }, m, qh] = await Promise.all([
+          db.from('job_cards').select('*').eq('vehicle_number', v).order('card_time', { ascending: false, nullsFirst: false }).limit(15),
+          db.from('job_cards_meta').select('file_name, cards, uploaded_at').eq('id', 1).maybeSingle(),
+          db.from('qc_checks').select('qc_at, result, qc_name, technician, remarks').eq('vehicle_number', v).order('qc_at', { ascending: false }).limit(10)]);
         if (my !== jcSeq) return;               // the QC typed another number meanwhile
+        jc.hist = (data || []).slice(1); jc.qcs = qh.data || [];   // earlier job cards (last 120 days) + earlier QCs of this bike
         jc.meta = m.data || jc.meta;
         if (error) throw error;
         const before = jc.parts.map(p => p.name + '|' + p.qty).join(';');
@@ -587,13 +688,13 @@
         const items = Array.isArray(jc.card?.items) ? jc.card.items : [];
         jc.parts = items.filter(it => !isLabour(it)); jc.labour = items.filter(isLabour);
         if (jc.parts.map(p => p.name + '|' + p.qty).join(';') !== before) { jc.fit = {}; jc.reason = {}; jc.other = {}; jc.photo = {}; }
-      } catch (e) { if (my !== jcSeq) return; jc.card = null; jc.parts = []; jc.labour = []; }
+      } catch (e) { if (my !== jcSeq) return; jc.card = null; jc.parts = []; jc.labour = []; jc.hist = []; jc.qcs = []; }
       jc.loading = false;
       const up = jc.meta?.uploaded_at ? ' (list updated ' + new Date(jc.meta.uploaded_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ')' : '';
       if (jc.card) { $('jcLine').className = 'mini jc-line ok';
         $('jcLine').innerHTML = `Job card <b>${esc(jc.card.job_card_number)}</b> · ${jc.card.billed ? 'Billed' : esc(jc.card.status || 'Not billed')} · ${jc.parts.length} part${jc.parts.length === 1 ? '' : 's'}`; }
       else { $('jcLine').className = 'mini jc-line none'; $('jcLine').textContent = (jc.meta ? 'No job card found for this bike' + up : 'Job card list not uploaded yet') + '.'; }
-      if (step === 3) renderJC();
+      renderJC(); bikeChanged();
     }
     async function partNames() {   // suggestions for "fitted but not on the job card": every part name seen on job cards
       if (jcNames) return jcNames;   // list of every part name, saved with each job card upload
@@ -616,6 +717,7 @@
           <div class="jc-tags"><span class="${c.billed ? 'billed' : 'notbilled'}">${c.billed ? 'Billed' : 'Not billed'}</span>${c.status && !/^(not\s*)?billed$/i.test(c.status) ? `<span>${esc(c.status)}</span>` : ''}${c.fleet_status ? `<span class="fleet">Fleet: ${esc(c.fleet_status)}</span>` : ''}</div>
           <div class="jc-grid"><div><small>Job card</small><b>${esc(c.job_card_number)}</b></div><div><small>Technician</small><b>${esc(c.technician || '—')}</b></div>
             <div><small>${c.closed_at_text ? 'Closed at' : 'Opened at'}</small><b>${esc(c.closed_at_text || c.created_at_text || '—')}</b></div><div><small>Odometer</small><b>${c.bike_odo != null ? Number(c.bike_odo).toLocaleString('en-IN') + ' km' : '—'}</b></div></div>
+          ${jcGapWarn()}
           ${jcRef && !jcRef.fail ? `<div class="jc-fresh busy"><span id="jcFreshTxt">${esc(jcRefTxt())}</span></div>`
             : `<div class="jc-fresh ${jcAge().old ? 'old' : ''}"><span>🕒 ${esc(jcAge().txt)} · updates every 10 min</span><button type="button" id="jcRefresh">↻ Refresh</button></div>
           ${jcRef?.fail ? '<p class="jc-fresh-note">Could not get newer data from the DMS right now. Please try Refresh again in a few minutes.</p>' : jcAge().old ? '<p class="jc-fresh-note">If the workshop just changed parts or quantities, tap Refresh before checking.</p>' : ''}`}</div>`;
@@ -624,7 +726,8 @@
             const f = jc.fit[i], bad = f === 'N';
             const cat = JC_CAT[it.cat] || (it.rider_payable ? 'Rider-payable' : it.warranty ? 'Warranty' : '');
             const sub = [cat === 'Rider-payable' ? '<span class="pb">P</span>Rider-payable' : cat, 'Qty ' + (it.qty ?? 1), rupee(it.cost)].filter(Boolean).join(' · ');
-            return `<div class="jc-item ${bad ? 'bad' : ''}"><div class="nm"><b>${esc(it.name)}</b><small>${sub}</small></div>
+            const rp = jcRepeat(it);
+            return `<div class="jc-item ${bad ? 'bad' : ''}"><div class="nm"><b>${esc(it.name)}</b><small>${sub}</small>${rp ? `<span class="jc-rep">⚠ Also replaced on ${dShort(rp.card_time)} (job card ${esc(rp.job_card_number)})</span>` : ''}</div>
               <div class="jc-fit"><button type="button" class="y ${f === 'Y' ? 'on' : ''}" data-fit="${i}" data-v="Y">Fitted</button><button type="button" class="n ${bad ? 'on' : ''}" data-fit="${i}" data-v="N">Not fitted</button></div>
               ${bad ? `<div class="jc-more"><select data-reason="${i}" class="${jc.reason[i] ? '' : 'miss'}"><option value="">Reason (required)</option>${JC_REASONS.map(r => `<option ${jc.reason[i] === r ? 'selected' : ''}>${r}</option>`).join('')}</select>
                 ${jc.reason[i] === 'Other' ? `<input type="text" data-other="${i}" maxlength="120" placeholder="Type the reason" value="${esc(jc.other[i] || '')}">` : ''}
@@ -632,6 +735,7 @@
             : '<div class="jc-empty">No parts on this job card.</div>') + '</div>';
         if (jc.labour.length) h += `<p class="jc-sub" style="margin-top:8px">Labour on the job card: ${jc.labour.map(l => esc(l.name)).join(', ')}</p>`;
       }
+      if (jc.card || jc.hist.length || jc.qcs.length) h += shLink();
       // Parts fitted but not on the job card (inventory)
       h += `<p class="jc-h">Fitted but not on the job card</p><p class="jc-sub">Any part changed on the bike that the job card does not show?</p>
         <div class="jc-list"><div class="jc-extra-add"><input type="text" id="jcExtraIn" autocomplete="off" placeholder="+ Add part: type at least 2 letters"><div class="jc-sugg hidden" id="jcSugg"></div></div>` +
@@ -656,7 +760,7 @@
       name = String(name || '').replace(/\s+/g, ' ').trim().slice(0, 80); if (name.length < 2) return;
       const same = jc.extra.find(x => x.name.toLowerCase() === name.toLowerCase());
       if (same) same.qty = Math.min(20, same.qty + 1); else jc.extra.push({ name, qty: 1, photo: null });
-      renderJC(); $('formErr').textContent = '';
+      renderJC(); setErr('');
     }
     $('jcBox').addEventListener('input', async (e) => {
       if (e.target.matches('[data-other]')) { jc.other[e.target.dataset.other] = e.target.value.trim(); return; }
@@ -674,10 +778,10 @@
       if (e.target.matches('[data-reason]')) { jc.reason[e.target.dataset.reason] = e.target.value; renderJC(); return; }
       const inp = e.target.closest('input[data-jcph]'); if (!inp || !inp.files.length) return;
       const key = inp.dataset.jcph, file = inp.files[0]; inp.value = '';
-      if (!isLive(file)) { $('formErr').textContent = OLD_PHOTO; return; }
-      let ph; try { ph = await shrink(file); } catch (err) { $('formErr').textContent = 'Could not read that photo — please try again.'; return; }
+      if (!isLive(file)) { setErr(OLD_PHOTO); return; }
+      let ph; try { ph = await shrink(file); } catch (err) { setErr('Could not read that photo — please try again.'); return; }
       if (key === 'v') jc.vphoto = ph; else if (key[0] === 'x') jc.extra[Number(key.slice(1))].photo = ph; else jc.photo[key.slice(1)] = ph;
-      $('formErr').textContent = ''; renderJC(); saveDraft();
+      setErr(''); renderJC(); saveDraft();
     });
     function checkJC() {
       if (jc.loading) return 'Still loading the job card — one moment.';
@@ -722,22 +826,33 @@
       return '';
     }
     function go(n) {
-      step = n; $('formErr').textContent = '';
+      if (n === 3) { showTab('Job'); return; }   // the job card check is its own tab
+      step = n; setErr('');
       document.querySelectorAll('.step').forEach(s => s.classList.toggle('hidden', Number(s.dataset.step) !== n));
       document.querySelectorAll('.steps span').forEach(s => s.classList.toggle('on', Number(s.dataset.s) <= n));
       $('backBtn').classList.toggle('hidden', n === 1);
-      $('nextBtn').textContent = n === 1 ? 'Next: checklist →' : n === 2 ? 'Next: job card →' : n === 3 ? 'Next: result →' : 'Submit QC';
+      $('nextBtn').textContent = n === 1 ? 'Next: checklist →' : n === 2 ? 'Next: job card →' : 'Submit QC';
       if (n === 2) renderChecks();
-      if (n === 3) { const v = cleanVeh($('vehicle').value); if (v !== jc.veh && !jc.loading) loadJC(v); renderJC(); }
       if (n === 4) { paintResult(); suggest(); }
       $('pNew').scrollTo({ top: 0, behavior: 'smooth' });
     }
     $('backBtn').addEventListener('click', () => go(step - 1));
     $('nextBtn').addEventListener('click', async () => {
-      const err = check(step); if (err) { $('formErr').textContent = err; return; }
+      const err = check(step); if (err) { setErr(err); return; }
+      if (step === 2) { go(4); showTab('Job'); return; }       // checklist done -> Job Card tab (result waits in the QC Form)
       if (step < 4) return go(step + 1);
+      for (const n of [1, 2, 3]) { const e = check(n); if (e) { if (n === 3) showTab('Job'); else go(n); setErr(e); return; } }
       await submit();
     });
+    document.querySelector('.steps').addEventListener('click', (e) => {
+      const sp = e.target.closest('[data-s]'); if (!sp) return; const n = Number(sp.dataset.s);
+      if (n === 3) return showTab('Job');
+      if (n === 4) { const e1 = check(1) || check(2); if (e1) { setErr(e1); return; } }
+      if (n === 2 && check(1)) { setErr(check(1)); return; }
+      go(n);
+    });
+    $('jobBack').addEventListener('click', () => { showTab('New'); go(2); });
+    $('jobNext').addEventListener('click', () => { const e = checkJC(); if (e) { setErr(e); return; } showTab('New'); go(4); });
 
     // ---------- Saving in the background ----------
     // Each QC is kept on this phone until Supabase confirms it's saved, so nothing is lost
@@ -799,7 +914,7 @@
         technician: st.tech, checks: { ...st.checks }, notes: { ...st.notes }, remarks: $('remarks').value.trim(), qc_note: $('qcNote').value.trim(), result, photos: photos.slice(), job_card: jcPayload(),
         item_photos: Object.fromEntries(Object.entries(st.itemPhotos).filter(([k]) => { const c = CHECKS.find(x => x[0] === k); return c && st.checks[k] && st.checks[k] !== c[2][0][0]; })) };
       const q = loadQ(); q.push({ id: qc.client_id, qc });
-      if (!saveQ(q)) { $('formErr').textContent = 'Phone storage is full — please wait for earlier QCs to finish uploading.'; return; }
+      if (!saveQ(q)) { setErr('Phone storage is full — please wait for earlier QCs to finish uploading.'); return; }
       // Count for the "saved" screen (this phone, today)
       const today = new Date().toDateString(); let log = {};
       try { log = JSON.parse(store.get(LKEY) || '{}'); } catch (e) {}
@@ -862,7 +977,7 @@
         c.width = c.height = 0; camClose(); if (!b) return;
         const f = new File([b], 'photo_' + Date.now() + '.jpg', { type: 'image/jpeg', lastModified: Date.now() });
         try { const dt = new DataTransfer(); dt.items.add(f); input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
-        catch (e) { $('formErr').textContent = 'Could not use that photo — please try again.'; }
+        catch (e) { setErr('Could not use that photo — please try again.'); }
       }, 'image/jpeg', 0.85);
     }
     // Every "Take photo" button in the QC form opens the in-app camera
@@ -911,7 +1026,7 @@
         hubChips(HUBS_LIVE); loadTechs(); renderThumbs();
         if (d.vehicle && d.vehicle.length >= 6) { lastQc(d.vehicle); loadJC(d.vehicle); }
         go(Math.min(4, Math.max(1, d.step || 1)));
-        $('formErr').textContent = '';
+        setErr('');
         const t = document.createElement('div'); t.textContent = 'Your unfinished QC was restored';
         t.style.cssText = 'position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:999px;font:600 13.5px system-ui,sans-serif;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.3)';
         document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
@@ -919,7 +1034,7 @@
       } finally { restoring = false; }
     }
     // Save after anything is typed, tapped or chosen in the form
-    ['input', 'change', 'click'].forEach(ev => $('qcForm').addEventListener(ev, () => saveDraft(), true));
+    ['input', 'change', 'click'].forEach(ev => { $('qcForm').addEventListener(ev, () => saveDraft(), true); $('pJob').addEventListener(ev, () => saveDraft(), true); });
 
 
     // =================== QC app: sign-in, tabs, My QCs, Bike history ===================
@@ -932,16 +1047,21 @@
     const myName = () => { const m = me?.user_metadata || {}; return String(m.name || String(me?.email || '').split('@')[0].split('.')[0]).trim().toUpperCase(); };
 
     function renderHeader() {
-      $('hTitle').textContent = { New: 'New QC', Mine: 'My QCs', History: 'Bike history', Dash: 'QC Dashboard' }[tab];
+      $('hTitle').textContent = { New: 'QC Form', Job: 'Job Card', History: 'Service History', Dash: 'Dashboard', Mine: 'My QCs', Full: 'QC Dashboard' }[tab];
+      const v = cleanVeh($('vehicle').value || '');
+      $('hBike').textContent = '🛵 ' + v; $('hBike').classList.toggle('hidden', v.length < 6 || tab === 'New');
       $('hSub').textContent = me ? myName() + (me.user_metadata?.phone ? ' · ' + me.user_metadata.phone : '') : '';
     }
     function showTab(t) {
       tab = t; renderHeader();
-      ['New', 'Mine', 'History', 'Dash'].forEach(x => $('p' + x).classList.toggle('hidden', x !== t));
-      if (t === 'Dash' && !$('dashFrame').src) $('dashFrame').src = 'qc.html?embed=1';
-      document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+      ['New', 'Job', 'History', 'Dash', 'Mine', 'Full'].forEach(x => $('p' + x).classList.toggle('hidden', x !== t));
+      if (t === 'Full' && !$('dashFrame').src) $('dashFrame').src = 'qc.html?embed=1';
+      const navT = { Mine: 'Dash', Full: 'Dash' }[t] || t;
+      document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === navT));
       if (t === 'Mine') loadMine();
-      if (t === 'History') setTimeout(() => $('histIn').focus(), 50);
+      if (t === 'Job') prepJob();
+      if (t === 'History') renderSH();
+      if (t === 'Dash') loadOverview();
     }
     document.querySelector('nav.tabs').addEventListener('click', (e) => { const b = e.target.closest('button[data-tab]'); if (b) showTab(b.dataset.tab); });
     document.addEventListener('click', (e) => { const b = e.target.closest('[data-goto]'); if (b) showTab(b.dataset.goto); });
@@ -998,20 +1118,123 @@
       openSheet(qcCard({ ...q, qc_name: myName() }, m[q.id], true) + `<button type="button" class="btn btn-light wide" data-hist="${esc(q.vehicle_number)}">See all QCs for ${esc(q.vehicle_number)}</button>`);
     });
 
-    // ---------- Bike history ----------
-    async function runHist(v) {
-      const q = cleanVeh(v || $('histIn').value); $('histIn').value = q;
-      if (q.length < 3) { $('histOut').innerHTML = '<div class="empty">Type at least 3 letters or digits of the vehicle number.</div>'; return; }
-      $('histOut').innerHTML = '<div class="empty">Searching…</div>'; $('histIn').blur();
-      let { data } = await db.from('qc_checks').select('id, qc_at, hub, qc_name, technician, vehicle_number, result, remarks, qc_note').eq('vehicle_number', q).order('qc_at', { ascending: false }).limit(100);
-      if (!data || !data.length) ({ data } = await db.from('qc_checks').select('id, qc_at, hub, qc_name, technician, vehicle_number, result, remarks, qc_note').ilike('vehicle_number', `%${q}%`).order('qc_at', { ascending: false }).limit(100));
-      if (!data || !data.length) { $('histOut').innerHTML = `<div class="empty"><b>No QC found</b><br>No QC has been recorded for ${esc(q)}.</div>`; return; }
-      const vehicles = [...new Set(data.map(r => r.vehicle_number))];
-      const m = await mistakesFor(data.map(r => r.id));
-      const rej = data.filter(r => r.result === 'REJECTED').length;
-      $('histOut').innerHTML = `<div class="result-title">${vehicles.length === 1 ? esc(vehicles[0]) : vehicles.length + ' bikes match'} · ${data.length} QC${data.length > 1 ? 's' : ''}${rej ? ' · ' + rej + ' rejected' : ''}</div>`
-        + data.map(r => qcCard(r, m[r.id], vehicles.length > 1)).join('');
+    // ---------- Job Card tab + Service History tab + Dashboard overview ----------
+    function bikeChanged() { renderHeader(); if (tab === 'History') renderSH(); if (tab === 'Job') prepJob(); }
+    function prepJob() {
+      const v = cleanVeh($('vehicle').value || ''), ok = v.length >= 6;
+      $('jobEmpty').classList.toggle('hidden', ok); $('jcBox').classList.toggle('hidden', !ok); $('jobBar').classList.toggle('hidden', !ok);
+      if (!ok) { $('jobBike').classList.add('hidden'); return; }
+      const c = jc.card;
+      $('jobBike').classList.toggle('hidden', !!c);   // the job card itself shows the bike; the strip is only for 'loading' / 'no job card'
+      $('jobBike').innerHTML = `<span class="bi">🛵</span><span class="tx"><b>${esc(v)}</b><small>${c ? [c.model_name, c.hub_name, st.tech ? 'tech: ' + st.tech : ''].filter(Boolean).map(esc).join(' · ') : (jc.loading ? 'Loading the job card…' : 'From your QC form')}</small></span><button type="button" data-goto="New">Change</button>`;
+      if (v !== jc.veh && !jc.loading) loadJC(v); else renderJC();
     }
+    function shLink() {
+      const reps = shRepeats(jc.card ? [jc.card, ...jc.hist] : jc.hist).length;
+      return `<button type="button" class="sh-link" data-goto="History"><span>📋</span><span>Service history<small>${jc.hist.length} earlier job card${jc.hist.length === 1 ? '' : 's'} · ${jc.qcs.length} QC${jc.qcs.length === 1 ? '' : 's'} (last 120 days)${reps ? ` · <b style="color:#b45309">⚠ ${reps} part${reps === 1 ? '' : 's'} replaced more than once</b>` : ''}</small></span><span class="go">›</span></button>`;
+    }
+    function shRepeats(cards) {   // parts that show up on more than one job card of this bike
+      const groups = [];
+      cards.forEach(c => (c.items || []).filter(x => !isLabour(x)).forEach(x => {
+        let g = groups.find(g => (x.code && g.codes.has(x.code)) || samePart(g.name, x.name));
+        if (!g) groups.push(g = { name: x.name, codes: new Set(), cards: new Map() });
+        if (x.code) g.codes.add(x.code); g.cards.set(c.job_card_number, c.card_time);
+      }));
+      return groups.filter(g => g.cards.size > 1).map(g => ({ name: g.name, dates: [...g.cards.values()].sort() }));
+    }
+    const sh = { other: null };     // another bike looked up in the Service History tab
+    function renderSH() {
+      const v = cleanVeh($('vehicle').value || '');
+      const own = v.length >= 6 ? { veh: v, cards: jc.card ? [jc.card, ...jc.hist] : jc.hist, qcs: jc.qcs, loading: jc.loading || jc.veh !== v, own: true } : null;
+      const d = sh.other || own;
+      if (!d) { $('shBox').innerHTML = '<div class="empty"><b>No bike yet</b><br>Enter the vehicle number in the QC Form — this bike\'s service history shows here automatically. Or look up any bike above.</div>'; return; }
+      let h = sh.other && own ? `<button type="button" class="back-qc" id="shBack">← Back to the bike in your QC form (${esc(own.veh)})</button>` : '';
+      if (d.loading) { $('shBox').innerHTML = h + `<div class="sh-head"><div class="vn">${esc(d.veh)}</div><div class="mm">Loading service history…</div></div>`; return; }
+      const cards = d.cards, last = cards[0], now = Date.now();
+      const odo = cards.map(c => c.bike_odo).find(x => x > 0);
+      const lastDays = last ? Math.floor((now - new Date(last.card_time)) / 864e5) : null;
+      h += `<div class="sh-head"><div class="vn">${esc(d.veh)}${d.own ? '<span class="cur-tag">In your QC</span>' : ''}</div>
+        <div class="mm">${[last?.model_name, last?.hub_name, odo ? Number(odo).toLocaleString('en-IN') + ' km' : ''].filter(Boolean).map(esc).join(' · ') || 'No job cards in the last 120 days'}</div>
+        <div class="sh-stats"><div><b>${cards.length}</b><span>Job cards</span></div><div><b>${d.qcs.length}</b><span>QCs</span></div>
+          <div><b>${last ? dShort(last.card_time) : '—'}</b><span>${last ? (lastDays === 0 ? 'Last service: today' : `Last service: ${lastDays} day${lastDays === 1 ? '' : 's'} ago`) : 'Last service'}</span></div></div>`;
+      if (cards[1]) { const g = (new Date(cards[0].card_time) - new Date(cards[1].card_time)) / 864e5;
+        if (g < 7) h += `<div class="sh-alert">⚠ Back in service ${g < 1 ? 'the same day' : Math.round(g) + ' day' + (Math.round(g) === 1 ? '' : 's')} after the previous job card (${dShort(cards[1].card_time)} · ${esc(cards[1].job_card_number)})</div>`; }
+      const reps = shRepeats(cards);
+      if (reps.length) h += `<div class="sh-alert">⚠ Parts replaced more than once<ul>${reps.map(r => `<li><b>${esc(r.name)}</b> — ${r.dates.length} times: ${r.dates.map(dShort).join(', ')}</li>`).join('')}</ul></div>`;
+      h += '</div>';
+      const RES = { APPROVED: ['ok', 'Approved'], REJECTED: ['bad', 'Rejected'], HOLD: ['hold', 'On hold'] };
+      const rows = [...cards.map(c => ({ t: c.card_time, c })), ...d.qcs.map(q => ({ t: q.qc_at, q }))].sort((a, b) => new Date(b.t) - new Date(a.t));
+      h += `<p class="jc-h">Timeline</p><p class="jc-sub">Job cards and QCs, newest first · tap a job card to see its parts</p><div class="jc-list">`;
+      h += rows.map(({ t, c, q }) => {
+        if (c) { const parts = (c.items || []).filter(x => !isLabour(x)), cur = d.own && jc.card && c.job_card_number === jc.card.job_card_number;
+          return `<details class="jc-hist" ${cur ? 'open' : ''}><summary><span class="d">${dShort(t)}</span><span class="t"><b>Job card ${esc(c.job_card_number)}${cur ? '<span class="cur-tag">Current</span>' : ''}</b><small>${esc(c.technician || '—')} · ${esc(c.status || '')}${c.bike_odo ? ' · ' + Number(c.bike_odo).toLocaleString('en-IN') + ' km' : ''}</small></span><span class="n">${parts.length} part${parts.length === 1 ? '' : 's'} ▾</span></summary>
+            <ul>${parts.map(x => `<li>${esc(x.name)}${(x.qty ?? 1) > 1 ? ' ×' + x.qty : ''}</li>`).join('') || '<li>Labour only</li>'}</ul></details>`; }
+        const r = RES[String(q.result || '').toUpperCase()] || ['', esc(q.result || '')];
+        return `<div class="jc-hist"><div class="row"><span class="d">${dShort(t)}</span><span class="t"><b>QC <span class="${r[0]}">${r[1]}</span></b><small>${esc(q.qc_name || '')}${q.technician ? ' · tech: ' + esc(q.technician) : ''}${q.remarks ? ' · ' + esc(String(q.remarks).slice(0, 80)) : ''}</small></span></div></div>`;
+      }).join('') || '<div class="jc-empty">No job cards or QCs for this bike in the last 120 days.</div>';
+      $('shBox').innerHTML = h + '</div>';
+    }
+    $('shBox').addEventListener('click', (e) => { if (e.target.closest('#shBack')) { sh.other = null; $('histIn').value = ''; renderSH(); } });
+    async function runHist(v) {
+      const q = cleanVeh(v || $('histIn').value); $('histIn').value = q; $('histIn').blur();
+      if (q.length < 6) { $('shBox').innerHTML = '<div class="empty">Type the full vehicle number (e.g. DL9SCV2401).</div>'; return; }
+      if (q === cleanVeh($('vehicle').value || '')) { sh.other = null; renderSH(); return; }
+      sh.other = { veh: q, cards: [], qcs: [], loading: true }; renderSH();
+      const [a, b] = await Promise.all([
+        db.from('job_cards').select('*').eq('vehicle_number', q).order('card_time', { ascending: false, nullsFirst: false }).limit(30),
+        db.from('qc_checks').select('qc_at, result, qc_name, technician, remarks').eq('vehicle_number', q).order('qc_at', { ascending: false }).limit(30)]);
+      if (sh.other?.veh !== q) return;
+      sh.other = { veh: q, cards: a.data || [], qcs: b.data || [], loading: false }; renderSH();
+    }
+
+    // ---------- Dashboard tab: overview ----------
+    const ov = { hub: null, period: 'today' };
+    const istKey = (t) => new Date(t).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    async function loadOverview() {
+      if (ov.hub === null) ov.hub = st.hub || '';
+      const box = $('ovBox'); if (!box.innerHTML) box.innerHTML = '<div class="empty">Loading…</div>';
+      const today = istKey(Date.now()), since7 = new Date(Date.parse(today + 'T00:00:00+05:30') - 6 * 864e5).toISOString();
+      const start = ov.period === 'today' ? new Date(Date.parse(today + 'T00:00:00+05:30')).toISOString() : since7;
+      let q = db.from('qc_checks').select('id, qc_at, hub, qc_name, technician, vehicle_number, result, remarks').gte('qc_at', since7).order('qc_at', { ascending: false }).limit(3000);
+      let nf = db.from('qc_checks').select('id', { count: 'exact', head: true }).ilike('job_card_check', '%Not fitted -%').gte('qc_at', start);
+      if (ov.hub) { q = q.eq('hub', ov.hub); nf = nf.eq('hub', ov.hub); }
+      let rs = db.from('repeat_services').select('vehicle_number', { count: 'exact', head: true }).gte('card_time', start);
+      if (ov.hub) rs = rs.ilike('hub_name', ov.hub);
+      const [{ data, error }, nfr, rsr] = await Promise.all([q, nf, rs]);
+      if (error) { box.innerHTML = `<div class="empty">Could not load: ${esc(error.message)}</div>`; return; }
+      const all = data || [], P = all.filter(r => r.qc_at >= start);
+      const n = (res) => P.filter(r => r.result === res).length, pc = (x) => P.length ? Math.round(x * 100 / P.length) + '%' : '–';
+      const mis = await mistakesFor(P.filter(r => r.result === 'REJECTED').map(r => r.id).slice(0, 400));
+      const reasons = {}; Object.values(mis).flat().forEach(m => { const k = String(m.mistake).split(' / ')[0]; reasons[k] = (reasons[k] || 0) + 1; });
+      const topR = Object.entries(reasons).sort((a, b) => b[1] - a[1]).slice(0, 5), totR = Object.values(reasons).reduce((a, b) => a + b, 0);
+      const T = {}; P.forEach(r => { const k = r.technician || '—'; (T[k] = T[k] || { n: 0, ok: 0 }); T[k].n++; if (r.result === 'APPROVED') T[k].ok++; });
+      const techs = Object.entries(T).sort((a, b) => b[1].n - a[1].n).slice(0, 6);
+      const days = [...Array(7)].map((_, i) => istKey(Date.parse(today + 'T00:00:00+05:30') - (6 - i) * 864e5));
+      const byDay = days.map(d => ({ d, a: all.filter(r => istKey(r.qc_at) === d && r.result === 'APPROVED').length, r: all.filter(r => istKey(r.qc_at) === d && r.result === 'REJECTED').length }));
+      const mx = Math.max(1, ...byDay.map(x => x.a + x.r));
+      const first = cap(String(myName()).split(' ')[0] || '');
+      const kpi = (ic, bg, fg, val, lbl, extra, go) => `<div class="kpi ${go ? 'click' : ''}" ${go ? `data-goto="${go}"` : ''}><i style="background:${bg};color:${fg}">${ic}</i><div><b>${val}</b><span>${lbl}</span>${extra ? `<br><em style="color:${fg}">${extra}</em>` : ''}</div></div>`;
+      box.innerHTML = `<div class="ov-hello"><h2>Hello ${esc(first || 'there')} 👋</h2><p>Here's the QC overview for ${ov.hub ? esc(ov.hub) : 'all hubs'}</p></div>
+        <div class="ov-bar"><select id="ovHub"><option value="">All hubs</option>${HUBS_LIVE.map(h => `<option ${h === ov.hub ? 'selected' : ''}>${esc(h)}</option>`).join('')}</select>
+          <select id="ovPeriod"><option value="today" ${ov.period === 'today' ? 'selected' : ''}>Today</option><option value="7" ${ov.period === '7' ? 'selected' : ''}>Last 7 days</option></select></div>
+        <div class="ov-kpis">
+          ${kpi('🛵', '#eef2ff', '#4338ca', P.length, 'QCs done', '')}
+          ${kpi('✓', '#e8ebf2', '#1f2a44', n('APPROVED'), 'Approved', pc(n('APPROVED')))}
+          ${kpi('✕', '#fde8e8', '#b91c1c', n('REJECTED'), 'Rejected', pc(n('REJECTED')))}
+          ${kpi('⚠', '#fff4e0', '#b45309', nfr.error ? '–' : (nfr.count || 0), 'Parts not fitted', 'billed but not on bike', 'Full')}
+          ${rsr.error ? '' : kpi('🔧', '#f3e8ff', '#7e22ce', rsr.count || 0, 'Back within 7 days', 'repeat service', 'Full')}
+        </div>
+        <div class="ov-grid">
+          <div class="ov-card"><h3>QC trend · last 7 days</h3><div class="bars">${byDay.map(x => `<div class="col"><em>${x.a + x.r || ''}</em><div class="stk" style="height:${Math.round((x.a + x.r) * 100 / mx)}%"><div class="a" style="flex:${x.a}"></div><div class="r" style="flex:${x.r}"></div></div><small>${x.d === today ? 'Today' : new Date(x.d + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' })}</small></div>`).join('')}</div>
+            <div class="legend"><span><i style="background:#1f2a44"></i>Approved</span><span><i style="background:#dc2626"></i>Rejected</span></div></div>
+          <div class="ov-card"><h3>Top rejection reasons</h3>${topR.length ? topR.map(([k, c]) => `<div class="hbar"><div class="t"><span>${esc(k)}</span><b>${Math.round(c * 100 / totR)}%</b></div><div class="tr"><div class="fl" style="width:${Math.round(c * 100 / topR[0][1])}%"></div></div></div>`).join('') : '<p class="note">No rejections in this period.</p>'}</div>
+          <div class="ov-card"><h3>Technician performance</h3>${techs.length ? techs.map(([k, t]) => { const p = Math.round(t.ok * 100 / t.n); return `<div class="hbar"><div class="t"><span>${esc(k)}</span><b style="color:${p >= 80 ? '#1f2a44' : p >= 50 ? '#b45309' : '#b91c1c'}">${p}% <small style="color:var(--muted);font-weight:600">(${t.ok}/${t.n})</small></b></div><div class="tr"><div class="fl" style="width:${p}%;background:${p >= 80 ? '#1f2a44' : p >= 50 ? '#f59e0b' : '#dc2626'}"></div></div></div>`; }).join('') : '<p class="note">No QCs in this period.</p>'}</div>
+        </div>
+        <div class="ov-card"><h3>Recent activity</h3>${P.slice(0, 8).map(r => { const ok = r.result === 'APPROVED', bad = r.result === 'REJECTED';
+          return `<div class="act"><span class="ic" style="background:${ok ? '#1f2a44' : bad ? '#dc2626' : '#f59e0b'}">${ok ? '✓' : bad ? '✕' : '!'}</span><span class="tx"><b>QC ${cap(r.result)} – ${esc(r.vehicle_number)}</b><small>by ${esc(r.qc_name || '')} · tech: ${esc(r.technician || '—')}${bad && r.remarks ? ' · ' + esc(String(r.remarks).slice(0, 60)) : ''}</small></span><time>${istKey(r.qc_at) === today ? 'Today' : dShort(r.qc_at)}, ${fmtTime(r.qc_at)}</time></div>`; }).join('') || '<p class="note">No QCs in this period yet.</p>'}</div>
+        <div class="ov-links"><button type="button" data-goto="Mine">My QCs →</button><button type="button" data-goto="Full">Full dashboard →</button></div>`;
+    }
+    $('ovBox').addEventListener('change', (e) => { if (e.target.id === 'ovHub') { ov.hub = e.target.value; loadOverview(); } if (e.target.id === 'ovPeriod') { ov.period = e.target.value; loadOverview(); } });
     $('histForm').addEventListener('submit', (e) => { e.preventDefault(); runHist(); });
     document.addEventListener('click', (e) => { const b = e.target.closest('[data-hist]'); if (!b) return; closeSheet(); showTab('History'); runHist(b.dataset.hist); });
 
@@ -1033,7 +1256,7 @@
         <button type="button" id="mReload">Refresh</button>
         <button type="button" class="out" id="mOut">Sign out</button>`;
       m.classList.toggle('hidden');
-      $('mReload').onclick = () => { m.classList.add('hidden'); if (tab === 'Mine') loadMine(); if (tab === 'Dash') $('dashFrame').contentWindow.location.reload(); };
+      $('mReload').onclick = () => { m.classList.add('hidden'); if (tab === 'Mine') loadMine(); if (tab === 'Dash') loadOverview(); if (tab === 'Full') $('dashFrame').contentWindow.location.reload(); };
       if ($('mInstall')) $('mInstall').onclick = async () => { m.classList.add('hidden'); installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; };
       $('mOut').onclick = async () => {
         m.classList.add('hidden');
