@@ -58,6 +58,8 @@
     #instSheet ol { margin: 10px 0 0; padding-left: 20px; } #instSheet li { margin: 8px 0; font-size: 15px; }
     #instSheet .close { width: 100%; margin-top: 12px; border: 0; border-radius: 12px; background: #fff; padding: 13px; font-weight: 700; font-size: 15px; }
     @media (min-width: 900px) { #instBar { display: none !important; } }
+    .home-web { text-decoration: none; } .home-web span { display: none; }
+    @media (min-width: 900px) { .home-web { width: auto !important; border-radius: 999px !important; padding: 0 14px; gap: 6px; display: flex !important; align-items: center; font-weight: 700; font-size: 13.5px; } .home-web span { display: inline; } }
     header { background: var(--brand); color: #fff; padding: 10px 12px; padding-top: calc(10px + env(safe-area-inset-top, 0px));
       display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.15); z-index: 5; }
     header img { width: 34px; height: 34px; border-radius: 50%; background: #fff; object-fit: cover; flex: none; }
@@ -933,6 +935,7 @@
           let r = await db.rpc('my_roles');
           if (r.error) { const o = await db.rpc('my_role'); r = { data: o.data ? [o.data] : [] }; }
           const rs = r.data || []; myRoles = rs; myRole = ['admin', 'recovery', 'manager', 'agent'].find(x => rs.includes(x)) || rs[0] || '';
+          addWebHome(rs);
           // Installed as the old "Recovery bikes" app but this person also has Recovery / Manager / Police / QC access:
           // open the full Bounce app instead, so they get the dashboard and tracker tiles too
           const installed = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true;
@@ -1021,6 +1024,17 @@
     $('instGo').addEventListener('click', doInstall);
     $('instX').addEventListener('click', () => { store.set('ra-inst-hide', String(Date.now())); instShow(); });
     instShow();
+
+    // Opened on the website (not the installed app): a Home button back to the website's home page for this person
+    function addWebHome(roles) {
+      if (document.getElementById('homeBtn') || parent !== window) return;
+      if (matchMedia('(display-mode: standalone)').matches || navigator.standalone === true) return;
+      const url = roles.some(r => r === 'admin' || r === 'recovery') ? 'dashboard.html' : roles.includes('qc') ? 'qc.html' : '';
+      const h = document.querySelector('#app > header'); if (!url || !h) return;
+      const a = document.createElement('a'); a.href = url; a.className = 'hbtn home-web'; a.id = 'homeBtn'; a.title = 'Home'; a.setAttribute('aria-label', 'Home');
+      a.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Home</span>';
+      const img = h.querySelector('img'); if (img) img.replaceWith(a); else h.prepend(a);
+    }
   </script>
   <script>
     // Inside the Bounce app (someone with several sections): a Home button replaces the logo and goes back to the app's home screen
