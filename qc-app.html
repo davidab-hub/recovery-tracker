@@ -150,6 +150,7 @@
     .jc-fresh { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; padding: 8px 10px; border-radius: 10px; background: #f1f5f9; font-size: 12.5px; color: #475569; }
     .jc-fresh.old { background: #fff7ed; color: #9a3412; }
     .jc-fresh button { flex: none; border: 1.5px solid currentColor; background: #fff; color: inherit; border-radius: 8px; padding: 6px 10px; font-weight: 700; font-size: 12.5px; cursor: pointer; }
+    .jc-fresh.busy { background: #eff6ff; color: #1e40af; }
     .jc-fresh-note { margin: 8px 0 0; font-size: 12.5px; color: #9a3412; }
     .jc-h { margin: 18px 0 2px; font-size: 18px; font-weight: 800; } .jc-sub { margin: 0 0 10px; color: var(--muted); font-size: 13.5px; }
     .jc-list { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--card); }
@@ -547,10 +548,32 @@
       const min = Math.max(0, Math.round((Date.now() - t.getTime()) / 60000));
       return { txt: 'Job card data as of ' + t.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) + (min ? ` (${min} min ago)` : ' (just now)'), old: min > 15 };
     }
+    // "Refresh" asks the server for a fresh pull from Metabase (all job cards, about 2 min), then reloads this bike
+    let jcRef = null;
+    const jcRefTxt = () => `⏳ Getting the latest job card from the DMS… usually about 2 min (${Math.round((Date.now() - jcRef.t) / 1000)} s). You can start checking meanwhile.`;
+    async function jcRefreshNow() {
+      const v = cleanVeh($('vehicle').value); if (!v || (jcRef && !jcRef.fail)) return;
+      const me = jcRef = { t: Date.now() }; renderJC();
+      let req;
+      try { const { data, error } = await db.rpc('request_jc_refresh'); if (error) throw error; req = new Date(data.requested_at); }
+      catch (e) { jcRef = null; jc.loading = true; renderJC(); loadJC(v); return; }   // server refresh not available: just reload
+      const tick = setInterval(() => { const el = document.getElementById('jcFreshTxt'); if (el && jcRef === me) el.textContent = jcRefTxt(); else if (jcRef !== me) clearInterval(tick); }, 1000);
+      for (let i = 0; i < 36 && jcRef === me; i++) {          // check every 10 s, give up after 6 min
+        await new Promise(r => setTimeout(r, 10000));
+        const { data } = await db.from('job_cards_meta').select('uploaded_at').eq('id', 1).maybeSingle();
+        if (jcRef !== me) break;
+        if (data?.uploaded_at && new Date(data.uploaded_at) >= req) {
+          clearInterval(tick); jcRef = null;
+          if (cleanVeh($('vehicle').value) === v) { jc.loading = true; renderJC(); loadJC(v); } else renderJC();
+          return;
+        }
+      }
+      clearInterval(tick); if (jcRef === me) { jcRef = { fail: true }; renderJC(); }
+    }
     const rupee = (n) => n == null || n === '' || isNaN(n) ? '' : '₹' + Math.round(Number(n)).toLocaleString('en-IN');
     const isLabour = (it) => /labou?r|service|charge/i.test(String(it.type || ''));
     async function loadJC(v) {
-      const my = ++jcSeq; jc.loading = true; jc.veh = v;
+      const my = ++jcSeq; if (v !== jc.veh) jcRef = null; jc.loading = true; jc.veh = v;
       $('jcLine').className = 'mini jc-line'; $('jcLine').textContent = 'Looking for the job card…';
       try {
         const [{ data, error }, m] = await Promise.all([
@@ -593,8 +616,9 @@
           <div class="jc-tags"><span class="${c.billed ? 'billed' : 'notbilled'}">${c.billed ? 'Billed' : 'Not billed'}</span>${c.status && !/^(not\s*)?billed$/i.test(c.status) ? `<span>${esc(c.status)}</span>` : ''}${c.fleet_status ? `<span class="fleet">Fleet: ${esc(c.fleet_status)}</span>` : ''}</div>
           <div class="jc-grid"><div><small>Job card</small><b>${esc(c.job_card_number)}</b></div><div><small>Technician</small><b>${esc(c.technician || '—')}</b></div>
             <div><small>${c.closed_at_text ? 'Closed at' : 'Opened at'}</small><b>${esc(c.closed_at_text || c.created_at_text || '—')}</b></div><div><small>Odometer</small><b>${c.bike_odo != null ? Number(c.bike_odo).toLocaleString('en-IN') + ' km' : '—'}</b></div></div>
-          <div class="jc-fresh ${jcAge().old ? 'old' : ''}"><span>🕒 ${esc(jcAge().txt)} · updates every 10 min</span><button type="button" id="jcRefresh">↻ Refresh</button></div>
-          ${jcAge().old ? '<p class="jc-fresh-note">If the workshop just changed parts or quantities, tap Refresh before checking.</p>' : ''}</div>`;
+          ${jcRef && !jcRef.fail ? `<div class="jc-fresh busy"><span id="jcFreshTxt">${esc(jcRefTxt())}</span></div>`
+            : `<div class="jc-fresh ${jcAge().old ? 'old' : ''}"><span>🕒 ${esc(jcAge().txt)} · updates every 10 min</span><button type="button" id="jcRefresh">↻ Refresh</button></div>
+          ${jcRef?.fail ? '<p class="jc-fresh-note">Could not get newer data from the DMS right now. Please try Refresh again in a few minutes.</p>' : jcAge().old ? '<p class="jc-fresh-note">If the workshop just changed parts or quantities, tap Refresh before checking.</p>' : ''}`}</div>`;
         h += `<p class="jc-h">${c.billed ? 'Billed parts' : 'Parts on the job card'}</p><p class="jc-sub">Is each part actually fitted on the bike?</p><div class="jc-list">` +
           (jc.parts.length ? jc.parts.map((it, i) => {
             const f = jc.fit[i], bad = f === 'N';
@@ -621,7 +645,7 @@
       $('jcBox').innerHTML = h;
     }
     $('jcBox').addEventListener('click', (e) => {
-      if (e.target.closest('#jcRefresh')) { const v = cleanVeh($('vehicle').value); if (v) { jc.loading = true; renderJC(); loadJC(v); } return; }
+      if (e.target.closest('#jcRefresh')) { jcRefreshNow(); return; }
       const f = e.target.closest('[data-fit]'), q = e.target.closest('[data-xq]'), d = e.target.closest('[data-xdel]'), sg = e.target.closest('[data-sug]');
       if (f) { const i = f.dataset.fit; jc.fit[i] = f.dataset.v; if (f.dataset.v === 'Y') { delete jc.reason[i]; delete jc.other[i]; delete jc.photo[i]; } renderJC(); }
       if (q) { const x = jc.extra[q.dataset.xq]; x.qty = Math.max(1, Math.min(20, x.qty + Number(q.dataset.d))); renderJC(); }
