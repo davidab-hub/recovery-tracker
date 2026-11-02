@@ -1071,7 +1071,9 @@
     let HUBS_LIVE = HUBS, tab = 'New', me = null, myRole = null;
     // The open tab is kept in the address (qc-app.html#service-history), so a refresh stays on the same tab
     const TAB_HASH = { New: 'qc-form', Job: 'job-card', History: 'service-history', Dash: 'dashboard', Mine: 'my-qcs', Full: 'full-dashboard' };
-    const START_TAB = Object.keys(TAB_HASH).find(k => TAB_HASH[k] === location.hash.slice(1).toLowerCase()) || 'New';
+    // (also kept for this browser tab, because inside the Bounce app or the installed app the address isn't kept on pull-to-refresh)
+    const savedTab = (() => { try { return sessionStorage.getItem('qc-tab'); } catch (e) { return null; } })();
+    const START_TAB = Object.keys(TAB_HASH).find(k => TAB_HASH[k] === location.hash.slice(1).toLowerCase()) || (TAB_HASH[savedTab] ? savedTab : 'New');
     const fmtWhen = (iso) => new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     const fmtTime = (iso) => new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
     const cap = (s) => s ? s.charAt(0) + s.slice(1).toLowerCase() : '';
@@ -1086,6 +1088,7 @@
     function showTab(t) {
       tab = t; renderHeader();
       if (location.hash.slice(1) !== TAB_HASH[t]) try { history.replaceState(history.state, '', location.pathname + location.search + '#' + TAB_HASH[t]); } catch (e) {}
+      try { sessionStorage.setItem('qc-tab', t); } catch (e) {}
       ['New', 'Job', 'History', 'Dash', 'Mine', 'Full'].forEach(x => $('p' + x).classList.toggle('hidden', x !== t));
       if (t === 'Full' && !$('dashFrame').src) $('dashFrame').src = 'qc.html?embed=1';
       const navT = { Mine: 'Dash', Full: 'Dash' }[t] || t;
