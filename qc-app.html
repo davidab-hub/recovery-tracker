@@ -1401,7 +1401,8 @@
     // Install button for everyone who opens the link on a phone (Android: real install prompt · iPhone: Add to Home Screen steps)
     const UA = navigator.userAgent, isIOS = /iPhone|iPad|iPod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const isPhone = isIOS || /Android|Mobile/i.test(UA);
-    const isInstalled = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    const framed = (() => { try { return window.top !== window; } catch (e) { return true; } })();   // inside the Bounce app: no install bar
+    const isInstalled = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true || framed;
     function instShow() {
       const hideBar = Date.now() - Number(store.get('qc-inst-hide') || 0) < 2 * 864e5;
       $('installBtn').classList.toggle('hidden', !isPhone || isInstalled());
