@@ -1385,6 +1385,7 @@
       $('splash').classList.add('hidden');
       session = s; me = s?.user || null;
       if (!s) { $('app').classList.add('hidden'); $('login').classList.remove('hidden'); $('pMine').innerHTML = ''; return; }
+      if (tab !== START_TAB) showTab(START_TAB);   // open straight on the tab that was open before the refresh (no flash of the QC Form)
       $('login').classList.add('hidden'); $('app').classList.remove('hidden');
       let rr = await db.rpc('my_roles');   // several roles per person
       if (rr.error) { const o = await db.rpc('my_role'); rr = { data: o.data ? [o.data] : [] }; }
@@ -1394,7 +1395,7 @@
       $('noAccess').classList.toggle('hidden', allowed);
       $('qcForm').classList.toggle('hidden', !allowed); $('doneBox').classList.add('hidden');
       document.querySelector('nav.tabs').classList.toggle('hidden', !allowed);
-      showTab('New');
+      if (!allowed) showTab('New'); else if (tab !== START_TAB) showTab(START_TAB);
       if (!allowed) return;
       $('who').innerHTML = `QC by <b>${esc(myName())}</b> · ${new Date().toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`;
       const { data: h } = await db.from('qc_checks').select('hub').gte('qc_at', new Date(Date.now() - 60 * 864e5).toISOString()).limit(3000);
