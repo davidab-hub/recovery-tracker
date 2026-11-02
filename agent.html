@@ -47,6 +47,17 @@
 
     /* ---------- App shell ---------- */
     #app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+    .inst { display: flex; align-items: center; gap: 10px; background: #1f2433; color: #fff; padding: 9px 10px 9px 12px; flex: none; z-index: 4; }
+    .inst .ii img { width: 34px; height: 34px; border-radius: 9px; background: #fff; display: block; }
+    .inst .it { flex: 1; min-width: 0; } .inst .it b { display: block; font-size: 14px; } .inst .it small { display: block; font-size: 11.5px; opacity: .8; }
+    .inst .ib { border: 0; border-radius: 9px; background: var(--brand); color: #fff; font: 800 13.5px inherit; font-family: inherit; padding: 9px 14px; }
+    .inst .ix { border: 0; background: none; color: #fff; opacity: .7; font-size: 22px; padding: 0 4px; }
+    #instBg { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 2000; }
+    #instSheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2001; background: #f4f5f7; border-radius: 18px 18px 0 0; padding: 14px 12px calc(16px + env(safe-area-inset-bottom, 0px)); }
+    #instSheet .box { background: #fff; border-radius: 14px; padding: 16px; } #instSheet h3 { margin: 0 0 4px; } #instSheet p { margin: 0; color: #6b7280; font-size: 13px; }
+    #instSheet ol { margin: 10px 0 0; padding-left: 20px; } #instSheet li { margin: 8px 0; font-size: 15px; }
+    #instSheet .close { width: 100%; margin-top: 12px; border: 0; border-radius: 12px; background: #fff; padding: 13px; font-weight: 700; font-size: 15px; }
+    @media (min-width: 900px) { #instBar { display: none !important; } }
     header { background: var(--brand); color: #fff; padding: 10px 12px; padding-top: calc(10px + env(safe-area-inset-top, 0px));
       display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.15); z-index: 5; }
     header img { width: 34px; height: 34px; border-radius: 50%; background: #fff; object-fit: cover; flex: none; }
@@ -244,6 +255,8 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
       </button>
     </header>
+    <div class="inst hidden" id="instBar"><span class="ii"><img src="icon-192.png" alt=""></span><span class="it"><b>Install the Bounce Recovery app</b><small>Opens full screen from your home screen · faster</small></span>
+      <button type="button" class="ib" id="instGo">Install</button><button type="button" class="ix" id="instX" aria-label="Not now">×</button></div>
     <div class="cities" id="cities"></div>
     <div class="scopes hidden" id="scopes"></div>
     <main>
@@ -275,6 +288,7 @@
 
   <div id="sheetBg" class="hidden"></div>
   <div id="sheet" class="hidden"></div>
+  <div id="instBg" class="hidden"></div><div id="instSheet" class="hidden"></div>
   <div id="menu" class="hidden"></div>
   <input type="file" id="mfrFile" accept=".xlsx,.xls,.csv" hidden>
 
@@ -889,11 +903,11 @@
     $('menuBtn').addEventListener('click', (e) => {
       e.stopPropagation();
       const m = $('menu'), name = me?.user_metadata?.name || '', ph = me?.user_metadata?.phone || me?.email || '';
-      m.innerHTML = `<div class="me"><b>${esc(name || 'Signed in')}</b>${esc(ph)}</div>${canUpload() ? '<button type="button" id="mUpload">⬆ Upload today\'s MFR file</button>' : ''}<button type="button" id="mRefresh">Refresh data</button>${installEvt ? '<button type="button" id="mInstall">⬇ Install app on this phone</button>' : ''}<button type="button" class="out" id="mOut">Sign out</button>`;
+      m.innerHTML = `<div class="me"><b>${esc(name || 'Signed in')}</b>${esc(ph)}</div>${canUpload() ? '<button type="button" id="mUpload">⬆ Upload today\'s MFR file</button>' : ''}<button type="button" id="mRefresh">Refresh data</button>${isPhone && !isInstalled() && !framed ? '<button type="button" id="mInstall">⬇ Install app on this phone</button>' : ''}<button type="button" class="out" id="mOut">Sign out</button>`;
       m.classList.toggle('hidden');
       $('mRefresh').onclick = () => { m.classList.add('hidden'); load(); };
       if ($('mUpload')) $('mUpload').onclick = () => { m.classList.add('hidden'); $('mfrFile').click(); };
-      if ($('mInstall')) $('mInstall').onclick = async () => { m.classList.add('hidden'); installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; };
+      if ($('mInstall')) $('mInstall').onclick = () => { m.classList.add('hidden'); doInstall(); };
       $('mOut').onclick = async () => { m.classList.add('hidden'); await db.auth.signOut(); };
     });
     document.addEventListener('click', (e) => { if (!e.target.closest('#menu')) $('menu').classList.add('hidden'); });
@@ -980,12 +994,33 @@
     // ---------- Install as an app ----------
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('agent-sw.js').catch(() => {});
     let installEvt = null;
-    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; $('installBtn')?.classList.remove('hidden'); });
-    window.addEventListener('appinstalled', () => { installEvt = null; $('installBtn')?.classList.add('hidden'); });
-    document.addEventListener('click', async (e) => {
-      if (!e.target.closest('#installBtn') || !installEvt) return;
-      installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; $('installBtn').classList.add('hidden');
-    });
+    // Install button for everyone who opens the link on a phone (Android: real install prompt · iPhone: Add to Home Screen steps)
+    const UA = navigator.userAgent, isIOS = /iPhone|iPad|iPod/i.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isPhone = isIOS || /Android|Mobile/i.test(UA);
+    const framed = (() => { try { return window.top !== window; } catch (e) { return true; } })();   // inside the Bounce app: no install bar
+    const isInstalled = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    function instShow() {
+      const hideBar = Date.now() - Number(store.get('ra-inst-hide') || 0) < 2 * 864e5, off = !isPhone || isInstalled() || framed;
+      $('installBtn')?.classList.toggle('hidden', off);
+      $('instBar').classList.toggle('hidden', off || hideBar);
+    }
+    function closeInst() { $('instSheet').classList.add('hidden'); $('instBg').classList.add('hidden'); }
+    async function doInstall() {
+      if (installEvt) { installEvt.prompt(); await installEvt.userChoice.catch(() => null); installEvt = null; instShow(); return; }
+      const inApp = /FBAN|FBAV|Instagram|Line\/|WhatsApp|wv\)/i.test(UA);
+      $('instSheet').innerHTML = `<div class="box"><h3>📲 Install Bounce Recovery</h3><p>Takes 10 seconds. The app then opens from your home screen like any other app.</p><ol>` + (isIOS
+        ? `${inApp ? '<li>Open this link in <b>Safari</b> first.</li>' : ''}<li>Tap the <b>Share</b> button <b>⬆︎</b> at the bottom of Safari.</li><li>Scroll down and tap <b>Add to Home Screen</b>.</li><li>Tap <b>Add</b>. Open <b>Bounce Recovery</b> from your home screen.</li>`
+        : `${inApp ? '<li>Open this link in <b>Chrome</b> first (⋮ → Open in Chrome).</li>' : ''}<li>Tap the <b>⋮</b> menu at the top right of Chrome.</li><li>Tap <b>Install app</b> (or <b>Add to Home screen</b>).</li><li>Tap <b>Install</b>. Open <b>Bounce Recovery</b> from your home screen.</li>`) + '</ol></div><button type="button" class="close" id="instClose">Close</button>';
+      $('instSheet').classList.remove('hidden'); $('instBg').classList.remove('hidden');
+      $('instClose').onclick = closeInst;
+    }
+    $('instBg').addEventListener('click', closeInst);
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; instShow(); });
+    window.addEventListener('appinstalled', () => { installEvt = null; instShow(); });
+    document.addEventListener('click', (e) => { if (e.target.closest('#installBtn')) doInstall(); });
+    $('instGo').addEventListener('click', doInstall);
+    $('instX').addEventListener('click', () => { store.set('ra-inst-hide', String(Date.now())); instShow(); });
+    instShow();
   </script>
   <script>
     // Inside the Bounce app (someone with several sections): a Home button replaces the logo and goes back to the app's home screen
