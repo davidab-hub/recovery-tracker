@@ -957,5 +957,34 @@
       });
     })();
   </script>
+  <script>
+    // Auto-update: when a new version of this page is published, everyone who has it open moves to it by itself
+    // (only when they are not in the middle of something: 20 s without a tap/typing, nothing open; unfinished QCs are saved anyway)
+    (function () {
+      try { const u = new URL(location.href); if (u.searchParams.has('_v')) { u.searchParams.delete('_v'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } } catch (e) {}
+      const page = location.pathname, hash = (t) => { let h = 0; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return h; };
+      const get = () => fetch(page + '?_v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : null).catch(() => null);
+      let base = null, lastAct = Date.now(), pending = false;
+      ['pointerdown', 'keydown', 'input', 'touchstart'].forEach(ev => addEventListener(ev, () => { lastAct = Date.now(); }, { capture: true, passive: true }));
+      get().then(t => { if (t) base = hash(t); });
+      const busy = () => { const s = document.getElementById('sheet'), a = document.activeElement;
+        return Date.now() - lastAct < 20000 || document.visibilityState !== 'visible' || (s && !s.classList.contains('hidden')) || (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); };
+      function apply() {
+        if (busy()) { setTimeout(apply, 5000); return; }
+        try { if (Date.now() - Number(sessionStorage.getItem('autoUpd') || 0) < 120000) return; sessionStorage.setItem('autoUpd', String(Date.now())); } catch (e) {}
+        const t = document.createElement('div'); t.textContent = '⟳ Updating to the latest version…';
+        t.style.cssText = 'position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:999px;font:600 13.5px system-ui,sans-serif;z-index:99999;box-shadow:0 6px 20px rgba(0,0,0,.3)';
+        document.body.appendChild(t);
+        setTimeout(() => { const u = new URL(location.href); u.searchParams.set('_v', Date.now()); location.replace(u.toString()); }, 1200);
+      }
+      async function check() {
+        if (pending) return; const t = await get(); if (!t) return;
+        if (base === null) { base = hash(t); return; }
+        if (hash(t) !== base) { pending = true; apply(); }
+      }
+      setInterval(check, 120000);
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+    })();
+  </script>
 </body>
 </html>
