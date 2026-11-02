@@ -231,6 +231,8 @@
     /* ===== 4 tabs: QC Form · Job Card · Service History · Dashboard ===== */
     .hbike { flex: none; border: 0; border-radius: 999px; padding: 7px 11px; background: rgba(255,255,255,.18); color: #fff; font: 800 12.5px/1 inherit; font-family: inherit; letter-spacing: .3px; max-width: 46%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
     nav.tabs .side-logo { display: none; }
+    .home-web { text-decoration: none; } .home-web span { display: none; }
+    @media (min-width: 900px) { .home-web { width: auto !important; border-radius: 999px !important; padding: 0 14px; gap: 6px; display: flex !important; align-items: center; font-weight: 700; font-size: 13.5px; } .home-web span { display: inline; } }
     .inst { display: flex; align-items: center; gap: 10px; background: #1f2433; color: #fff; padding: 9px 10px 9px 12px; flex: none; z-index: 4; }
     .inst .ii img { width: 34px; height: 34px; border-radius: 9px; background: #fff; display: block; }
     .inst .it { flex: 1; min-width: 0; } .inst .it b { display: block; font-size: 14px; } .inst .it small { display: block; font-size: 11.5px; opacity: .8; }
@@ -1379,6 +1381,7 @@
       let rr = await db.rpc('my_roles');   // several roles per person
       if (rr.error) { const o = await db.rpc('my_role'); rr = { data: o.data ? [o.data] : [] }; }
       const myRoles = rr.data || []; myRole = myRoles.includes('admin') ? 'admin' : myRoles.includes('qc') ? 'qc' : (myRoles[0] || null);
+      addWebHome(myRoles);
       const allowed = myRole === 'qc' || myRole === 'admin';
       $('noAccess').classList.toggle('hidden', allowed);
       $('qcForm').classList.toggle('hidden', !allowed); $('doneBox').classList.add('hidden');
@@ -1421,6 +1424,17 @@
     $('instGo').addEventListener('click', doInstall);
     $('instX').addEventListener('click', () => { store.set('qc-inst-hide', String(Date.now())); instShow(); });
     instShow();
+
+    // Opened on the website (not the installed app): a Home button back to the website's home page for this person
+    function addWebHome(roles) {
+      if (document.getElementById('homeBtn') || parent !== window) return;
+      if (matchMedia('(display-mode: standalone)').matches || navigator.standalone === true) return;
+      const url = roles.some(r => r === 'admin' || r === 'recovery') ? 'dashboard.html' : roles.includes('qc') ? 'qc.html' : '';
+      const h = document.querySelector('#app > header'); if (!url || !h) return;
+      const a = document.createElement('a'); a.href = url; a.className = 'hbtn home-web'; a.id = 'homeBtn'; a.title = 'Home'; a.setAttribute('aria-label', 'Home');
+      a.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Home</span>';
+      const img = h.querySelector('img'); if (img) img.replaceWith(a); else h.prepend(a);
+    }
   </script>
   <script>
     // Inside the Bounce app (someone with several sections): a Home button replaces the logo and goes back to the app's home screen
