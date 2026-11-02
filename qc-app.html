@@ -147,6 +147,10 @@
     .jc-tags .billed { background: #e8eaff; color: #3730a3; } .jc-tags .notbilled { background: #fff3e0; color: #b45309; } .jc-tags .fleet { background: #e8f0fe; color: #1d4ed8; }
     .jc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
     .jc-grid small { display: block; color: var(--muted); font-size: 12.5px; } .jc-grid b { font-size: 14.5px; }
+    .jc-fresh { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; padding: 8px 10px; border-radius: 10px; background: #f1f5f9; font-size: 12.5px; color: #475569; }
+    .jc-fresh.old { background: #fff7ed; color: #9a3412; }
+    .jc-fresh button { flex: none; border: 1.5px solid currentColor; background: #fff; color: inherit; border-radius: 8px; padding: 6px 10px; font-weight: 700; font-size: 12.5px; cursor: pointer; }
+    .jc-fresh-note { margin: 8px 0 0; font-size: 12.5px; color: #9a3412; }
     .jc-h { margin: 18px 0 2px; font-size: 18px; font-weight: 800; } .jc-sub { margin: 0 0 10px; color: var(--muted); font-size: 13.5px; }
     .jc-list { border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--card); }
     .jc-item { padding: 12px 14px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
@@ -537,6 +541,12 @@
     let jcSeq = 0, jcNames = null;
     const jc = { veh: '', card: null, parts: [], labour: [], fit: {}, reason: {}, other: {}, photo: {}, extra: [], vphoto: null, note: '', loading: false, meta: null };
     function jcReset() { Object.assign(jc, { veh: '', card: null, parts: [], labour: [], fit: {}, reason: {}, other: {}, photo: {}, extra: [], vphoto: null, note: '', loading: false }); }
+    // When the job card data was last refreshed from Metabase (every 10 min during the day)
+    function jcAge() {
+      const t = jc.meta?.uploaded_at ? new Date(jc.meta.uploaded_at) : null; if (!t) return { txt: '', old: false };
+      const min = Math.max(0, Math.round((Date.now() - t.getTime()) / 60000));
+      return { txt: 'Job card data as of ' + t.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) + (min ? ` (${min} min ago)` : ' (just now)'), old: min > 15 };
+    }
     const rupee = (n) => n == null || n === '' || isNaN(n) ? '' : '₹' + Math.round(Number(n)).toLocaleString('en-IN');
     const isLabour = (it) => /labou?r|service|charge/i.test(String(it.type || ''));
     async function loadJC(v) {
@@ -545,13 +555,15 @@
       try {
         const [{ data, error }, m] = await Promise.all([
           db.from('job_cards').select('*').eq('vehicle_number', v).order('card_time', { ascending: false, nullsFirst: false }).limit(1),
-          jc.meta ? Promise.resolve({ data: jc.meta }) : db.from('job_cards_meta').select('file_name, cards, uploaded_at').eq('id', 1).maybeSingle()]);
+          db.from('job_cards_meta').select('file_name, cards, uploaded_at').eq('id', 1).maybeSingle()]);
         if (my !== jcSeq) return;               // the QC typed another number meanwhile
         jc.meta = m.data || jc.meta;
         if (error) throw error;
+        const before = jc.parts.map(p => p.name + '|' + p.qty).join(';');
         jc.card = data && data[0] || null;
         const items = Array.isArray(jc.card?.items) ? jc.card.items : [];
         jc.parts = items.filter(it => !isLabour(it)); jc.labour = items.filter(isLabour);
+        if (jc.parts.map(p => p.name + '|' + p.qty).join(';') !== before) { jc.fit = {}; jc.reason = {}; jc.other = {}; jc.photo = {}; }
       } catch (e) { if (my !== jcSeq) return; jc.card = null; jc.parts = []; jc.labour = []; }
       jc.loading = false;
       const up = jc.meta?.uploaded_at ? ' (list updated ' + new Date(jc.meta.uploaded_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ')' : '';
@@ -580,7 +592,9 @@
         h = `<div class="jc-card"><div class="jc-top"><b>${esc(c.vehicle_number)}</b><span>${meta}</span></div>
           <div class="jc-tags"><span class="${c.billed ? 'billed' : 'notbilled'}">${c.billed ? 'Billed' : 'Not billed'}</span>${c.status && !/^(not\s*)?billed$/i.test(c.status) ? `<span>${esc(c.status)}</span>` : ''}${c.fleet_status ? `<span class="fleet">Fleet: ${esc(c.fleet_status)}</span>` : ''}</div>
           <div class="jc-grid"><div><small>Job card</small><b>${esc(c.job_card_number)}</b></div><div><small>Technician</small><b>${esc(c.technician || '—')}</b></div>
-            <div><small>${c.closed_at_text ? 'Closed at' : 'Opened at'}</small><b>${esc(c.closed_at_text || c.created_at_text || '—')}</b></div><div><small>Odometer</small><b>${c.bike_odo != null ? Number(c.bike_odo).toLocaleString('en-IN') + ' km' : '—'}</b></div></div></div>`;
+            <div><small>${c.closed_at_text ? 'Closed at' : 'Opened at'}</small><b>${esc(c.closed_at_text || c.created_at_text || '—')}</b></div><div><small>Odometer</small><b>${c.bike_odo != null ? Number(c.bike_odo).toLocaleString('en-IN') + ' km' : '—'}</b></div></div>
+          <div class="jc-fresh ${jcAge().old ? 'old' : ''}"><span>🕒 ${esc(jcAge().txt)} · updates every 10 min</span><button type="button" id="jcRefresh">↻ Refresh</button></div>
+          ${jcAge().old ? '<p class="jc-fresh-note">If the workshop just changed parts or quantities, tap Refresh before checking.</p>' : ''}</div>`;
         h += `<p class="jc-h">${c.billed ? 'Billed parts' : 'Parts on the job card'}</p><p class="jc-sub">Is each part actually fitted on the bike?</p><div class="jc-list">` +
           (jc.parts.length ? jc.parts.map((it, i) => {
             const f = jc.fit[i], bad = f === 'N';
@@ -607,6 +621,7 @@
       $('jcBox').innerHTML = h;
     }
     $('jcBox').addEventListener('click', (e) => {
+      if (e.target.closest('#jcRefresh')) { const v = cleanVeh($('vehicle').value); if (v) { jc.loading = true; renderJC(); loadJC(v); } return; }
       const f = e.target.closest('[data-fit]'), q = e.target.closest('[data-xq]'), d = e.target.closest('[data-xdel]'), sg = e.target.closest('[data-sug]');
       if (f) { const i = f.dataset.fit; jc.fit[i] = f.dataset.v; if (f.dataset.v === 'Y') { delete jc.reason[i]; delete jc.other[i]; delete jc.photo[i]; } renderJC(); }
       if (q) { const x = jc.extra[q.dataset.xq]; x.qty = Math.max(1, Math.min(20, x.qty + Number(q.dataset.d))); renderJC(); }
