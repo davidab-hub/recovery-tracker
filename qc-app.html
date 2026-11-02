@@ -231,6 +231,7 @@
     /* ===== 4 tabs: QC Form · Job Card · Service History · Dashboard ===== */
     .hbike { flex: none; border: 0; border-radius: 999px; padding: 7px 11px; background: rgba(255,255,255,.18); color: #fff; font: 800 12.5px/1 inherit; font-family: inherit; letter-spacing: .3px; max-width: 46%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
     nav.tabs .side-logo { display: none; }
+    #jcLine.ok { cursor: pointer; } #jcLine.ok::after { content: ' · View ›'; font-weight: 700; color: var(--brand); }
     .home-web { text-decoration: none; } .home-web span { display: none; }
     @media (min-width: 900px) { .home-web { width: auto !important; border-radius: 999px !important; padding: 0 14px; gap: 6px; display: flex !important; align-items: center; font-weight: 700; font-size: 13.5px; } .home-web span { display: inline; } }
     .inst { display: flex; align-items: center; gap: 10px; background: #1f2433; color: #fff; padding: 9px 10px 9px 12px; flex: none; z-index: 4; }
@@ -366,14 +367,14 @@
           <button type="button" class="btn btn-light" id="naOut">Sign out</button>
         </div>
     <form id="qcForm" class="hidden" autocomplete="off">
-      <div class="steps"><span class="on" data-s="1">1 · Bike</span><span data-s="2">2 · Checklist</span><span data-s="3">3 · Job card</span><span data-s="4">4 · Result</span></div>
+      <div class="steps"><span class="on" data-s="1">1 · Bike</span><span data-s="2">2 · Checklist</span><span data-s="4">3 · Result</span></div>
 
       <!-- Step 1: hub, vehicle, technician, photo -->
       <section class="step" data-step="1">
         <div class="qcard"><p class="lbl">Hub</p><div class="chips" id="hubChips"></div></div>
         <div class="qcard"><p class="lbl">Vehicle number</p>
           <input id="vehicle" class="big" inputmode="text" autocapitalize="characters" placeholder="DL9SCV2401" maxlength="14">
-          <p class="mini" id="lastQc"></p><p class="mini jc-line" id="jcLine"></p></div>
+          <p class="mini" id="lastQc"></p><p class="mini jc-line" id="jcLine" data-goto="Job" title="Open the Job Card tab"></p></div>
         <div class="qcard"><p class="lbl"><span>Technician</span><span class="lbl-note" id="techNote"></span></p>
           <div class="chips" id="techChips"></div>
           <input id="techOther" class="hidden" placeholder="Type technician name" maxlength="60"></div>
@@ -859,16 +860,15 @@
       document.querySelectorAll('.step').forEach(s => s.classList.toggle('hidden', Number(s.dataset.step) !== n));
       document.querySelectorAll('.steps span').forEach(s => s.classList.toggle('on', Number(s.dataset.s) <= n));
       $('backBtn').classList.toggle('hidden', n === 1);
-      $('nextBtn').textContent = n === 1 ? 'Next: checklist →' : n === 2 ? 'Next: job card →' : 'Submit QC';
+      $('nextBtn').textContent = n === 1 ? 'Next: checklist →' : n === 2 ? 'Next: result →' : 'Submit QC';
       if (n === 2) renderChecks();
       if (n === 4) { paintResult(); suggest(); }
       $('pNew').scrollTo({ top: 0, behavior: 'smooth' });
     }
-    $('backBtn').addEventListener('click', () => go(step - 1));
+    $('backBtn').addEventListener('click', () => go(step === 4 ? 2 : step - 1));   // the job card is its own tab
     $('nextBtn').addEventListener('click', async () => {
       const err = check(step); if (err) { setErr(err); return; }
-      if (step === 2) { go(4); showTab('Job'); return; }       // checklist done -> Job Card tab (result waits in the QC Form)
-      if (step < 4) return go(step + 1);
+      if (step < 4) return go(step === 2 ? 4 : step + 1);      // Bike -> Checklist -> Result (the job card is checked in its own tab)
       for (const n of [1, 2, 3]) { const e = check(n); if (e) { if (n === 3) showTab('Job'); else go(n); setErr(e); return; } }
       await submit();
     });
