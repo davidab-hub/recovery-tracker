@@ -349,7 +349,7 @@
     // The open tab is kept in the address (agent.html#bikes), so a refresh stays on the same tab
     const TAB_HASH = { Map: 'map', Bikes: 'bikes', Ageing: 'ageing', Find: 'find' };
     const hashTab = () => Object.keys(TAB_HASH).find(k => TAB_HASH[k] === location.hash.slice(1).toLowerCase());
-    let bikes = [], meta = null, city = store.get('ra-city') || 'All', tab = hashTab() || 'Map', me = null;
+    let bikes = [], meta = null, city = store.get('ra-city') || 'All', tab = hashTab() || (() => { try { const t = sessionStorage.getItem('ra-tab'); return TAB_HASH[t] ? t : null; } catch (e) { return null; } })() || 'Map', me = null;
     // Who each bike is given to (filled every morning by area), the areas, and which bikes to show
     let assign = new Map(), zones = [], agents = [], myRole = null, myRoles = [], scope = null, here = null, nearSort = false;
     const ownerOf = (b) => assign.get(Number(b.bike_id)) || null;
@@ -887,6 +887,7 @@
     function render() {
       renderChips(); renderHeader();
       if (location.hash.slice(1) !== TAB_HASH[tab]) try { history.replaceState(history.state, '', location.pathname + location.search + '#' + TAB_HASH[tab]); } catch (e) {}
+      try { sessionStorage.setItem('ra-tab', tab); } catch (e) {}
       ['Map', 'Bikes', 'Ageing', 'Find'].forEach(t => $('p' + t).classList.toggle('hidden', t !== tab));
       document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
       if (tab === 'Map') renderMap(); if (tab === 'Bikes') renderBikes(); if (tab === 'Ageing') renderAgeing();
