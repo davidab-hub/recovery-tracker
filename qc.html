@@ -174,6 +174,10 @@
     td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
     tr:last-child td { border-bottom: none; }
     .bad { color: var(--red); font-weight: 600; }
+    td.parts { white-space: normal; min-width: 180px; max-width: 320px; line-height: 1.35; }
+    td.parts b { color: #c5221f; }
+    .gap { display: inline-block; min-width: 26px; text-align: center; border-radius: 6px; padding: 1px 6px; font-weight: 700; background: var(--soft); }
+    .gap.hot { background: #fde2e1; color: #a50e0e; }
     /* Count strip at the top of each panel */
     .counts { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
     .count { background: var(--soft); border-radius: 8px; padding: 5px 10px; min-width: 76px; }
@@ -385,6 +389,17 @@
           <thead><tr><th>Technician</th><th>Hub</th><th class="num">QCs</th><th class="num">Approved</th><th class="num">Rejected</th>
             <th class="num">Rejection %</th><th class="num">Mistakes</th><th>#1 mistake</th><th>#2 mistake</th><th>#3 mistake</th></tr></thead>
           <tbody id="techRows"></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="panel" style="margin-top:10px">
+      <h3>Back in service within 7 days</h3>
+      <p class="note">Bikes that got a new job card less than 7 days after the last one · same hub and dates as above · <b style="color:#c5221f">⚠ red</b> = a part from the last visit was replaced again</p>
+      <div class="counts" id="repCounts"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Bike</th><th>Hub</th><th class="num">Days</th><th>Last service</th><th>Parts then</th><th>This service</th><th>Parts now</th></tr></thead>
+          <tbody id="repRows"></tbody>
         </table>
       </div>
     </section>
@@ -607,8 +622,47 @@
       qcs.forEach(q => { q.day = istDay(q.qc_at); q.city = q.city || HUB_CITY[q.hub] || 'Other'; });
       qcById = new Map(qcs.map(q => [q.id, q]));
       misByQc = new Map(); mistakes.forEach(m => { (misByQc.get(m.qc_id) || misByQc.set(m.qc_id, []).get(m.qc_id)).push(m); });
+      try { await loadRepeats(); } catch (e) { repeats = null; }
       fillFilters(); render();
       s.className = 'synced ok'; s.querySelector('span').textContent = 'Synced ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    }
+    // Bikes back in service within 7 days of their last job card (from the job cards, last ~4 months)
+    let repeats = [];
+    async function loadRepeats() {
+      const hubs = [...new Set(qcs.map(q => q.hub))].filter(Boolean);
+      const since = new Date(Date.now() - 125 * 864e5).toISOString(), out = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await db.from('repeat_services')
+          .select('vehicle_number, hub_name, job_card_number, card_time, technician, items, prev_card, prev_time, prev_tech, prev_items')
+          .gte('card_time', since).or(hubs.map(h => `hub_name.ilike."${h}"`).join(',')).order('card_time', { ascending: false }).range(from, from + 999);
+        if (error) throw error;
+        out.push(...data); if (data.length < 1000) break;
+      }
+      repeats = out.map(r => ({ ...r, hub: String(r.hub_name || '').toUpperCase(), day: istDay(r.card_time) }));
+    }
+    const pkey = (n) => String(n || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const samePart = (a, b) => { const x = pkey(a.name), y = pkey(b.name); return (a.code && a.code === b.code) || (x.length > 3 && y.length > 3 && (x === y || x.includes(y) || y.includes(x))); };
+    const isLab = (it) => /labou?r|service|charge/i.test(String(it.type || ''));
+    function renderRepeats(from, to, city, hub) {
+      if (repeats === null) { $('repCounts').innerHTML = ''; $('repRows').innerHTML = '<tr><td colspan="7" style="color:var(--muted)">Not available yet.</td></tr>'; return; }
+      const R = repeats.filter(r => r.day >= from && r.day <= to && (!hub || r.hub === hub) && (!city || (HUB_CITY[r.hub] || 'Other') === city));
+      const dd = (t) => new Date(t).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      let again = 0, sameDay = 0;
+      const rows = R.map(r => {
+        const now = (r.items || []).filter(x => !isLab(x)), then = (r.prev_items || []).filter(x => !isLab(x));
+        const hitNow = now.map(x => then.some(y => samePart(x, y)));
+        if (hitNow.some(Boolean)) again++;
+        const days = (new Date(r.card_time) - new Date(r.prev_time)) / 864e5; if (days < 1) sameDay++;
+        const list = (arr, hits) => arr.map((x, i) => (hits && hits[i] ? `<b>⚠ ${esc(x.name)}</b>` : esc(x.name)) + ((x.qty ?? 1) > 1 ? ' ×' + x.qty : '')).join(', ') || '<span style="color:var(--muted)">labour only</span>';
+        return `<tr><td><strong>${esc(r.vehicle_number)}</strong></td><td>${esc(r.hub)}</td>
+          <td class="num"><span class="gap ${days < 3 ? 'hot' : ''}">${days < 1 ? '0' : Math.floor(days)}</span></td>
+          <td>${dd(r.prev_time)} · ${esc(r.prev_card)}<br><span style="color:var(--muted)">${esc(r.prev_tech || '—')}</span></td>
+          <td class="parts">${list(then, then.map(y => now.some(x => samePart(x, y))))}</td>
+          <td>${dd(r.card_time)} · ${esc(r.job_card_number)}<br><span style="color:var(--muted)">${esc(r.technician || '—')}</span></td>
+          <td class="parts">${list(now, hitNow)}</td></tr>`;
+      });
+      chips('repCounts', [{ n: R.length, t: 'Back within 7 days' }, { n: again, t: 'Same part replaced again', color: '#c5221f' }, { n: sameDay, t: 'Same day' }]);
+      $('repRows').innerHTML = rows.slice(0, 300).join('') || '<tr><td colspan="7" style="color:var(--muted)">No bikes back in service within 7 days for this filter.</td></tr>';
     }
     function fillFilters() {
       const keep = (sel, values, all) => { const cur = sel.value;
@@ -759,6 +813,7 @@
       chips('techCounts', [{ n: techs.length, t: 'Technicians', key: 'tech' },
         { n: count(techs, t => t.n >= 5 && t.rej / t.n > 0.5), t: 'Over 50% rejected' },
         ...(T['Freelancer'] ? [{ n: T['Freelancer'].n, t: 'Freelancer QCs', key: 't:Freelancer' }] : [])]);
+      renderRepeats(from, to, city, hub);
     }
 
     // ---- Sign-in ----
