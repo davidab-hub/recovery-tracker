@@ -218,6 +218,56 @@
     .adminlink svg { width: 15px; height: 15px; }
     .adminlink:hover, .adminlink.active { background: var(--brand-tint); color: #fff; }
     .admin-grid { align-items: start; }
+    /* ---- Team & access cards ---- */
+    .t-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    .t-head h3 { margin: 0; font-size: 18px; } .t-sum { width: 100%; margin-top: -6px; color: var(--muted); font-size: 13px; } .t-sum b { color: #b45309; }
+    .t-add { margin-left: auto; border: 0; background: var(--red); color: #fff; border-radius: 12px; padding: 10px 16px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(227,38,43,.25); }
+    .t-search { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 12px; padding: 0 12px; background: var(--input); margin-bottom: 10px; }
+    .t-search input { border: 0; outline: 0; padding: 10px 0; font: inherit; font-size: 14px; flex: 1; background: transparent; color: var(--text); }
+    .t-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    @media (max-width: 700px) { .t-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; } .t-chips::-webkit-scrollbar { display: none; } }
+    .t-chip { flex: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); background: var(--input); color: var(--text); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+    .t-chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); } .t-chip em { font-style: normal; color: var(--muted); }
+    .t-chip.on { background: #111827; color: #fff; border-color: #111827; } .t-chip.on em { color: #d1d5db; }
+    .t-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; align-items: start; }
+    .t-card { border: 1px solid var(--border); border-radius: 16px; background: var(--card); padding: 14px 14px 14px 16px; position: relative; overflow: hidden; }
+    .t-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--c); }
+    .t-top { display: flex; gap: 12px; align-items: center; }
+    .t-av { width: 44px; height: 44px; border-radius: 14px; background: color-mix(in srgb, var(--c) 14%, var(--card)); color: var(--c); font-weight: 800; display: flex; align-items: center; justify-content: center; flex: none; font-size: 15px; }
+    html[data-theme="dark"] .t-av { color: #fff; }
+    .t-who { min-width: 0; flex: 1; } .t-who b { display: block; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .t-who small { color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
+    .t-ic { display: flex; gap: 6px; } .t-ic a { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 15px; text-decoration: none; background: var(--input); }
+    .t-roles { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0 2px; }
+    .t-role { font-size: 11.5px; font-weight: 700; color: var(--rc); background: color-mix(in srgb, var(--rc) 11%, var(--card)); border-radius: 999px; padding: 3px 9px; }
+    html[data-theme="dark"] .t-role { color: color-mix(in srgb, var(--rc) 45%, #fff); }
+    .t-seen { font-size: 12px; color: var(--muted); margin-top: 8px; display: flex; align-items: center; gap: 6px; } .t-seen i { width: 7px; height: 7px; border-radius: 50%; background: #16a34a; flex: none; }
+    .t-seen.never { color: #b45309; font-weight: 600; } .t-seen.never i { background: #f59e0b; }
+    .t-act { display: flex; gap: 6px; margin-top: 12px; align-items: center; }
+    .t-act button { flex: 1; border: 1px solid var(--border); background: var(--input); color: var(--text); border-radius: 10px; padding: 8px 6px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+    .t-act .pri { background: #111827; color: #fff; border-color: #111827; } .t-act .more { flex: 0 0 40px; } .t-me { flex: 1; font-size: 12.5px; color: var(--muted); font-weight: 600; }
+    .t-edit { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 4px; }
+    .t-opt { display: flex; align-items: center; gap: 10px; padding: 8px 0; cursor: pointer; } .t-opt + .t-opt { border-top: 1px dashed var(--border); } .t-opt.off { opacity: .45; }
+    .t-opt div { flex: 1; } .t-opt b { font-size: 13.5px; } .t-opt small { display: block; color: var(--muted); font-size: 11.5px; }
+    .t-sw { appearance: none; -webkit-appearance: none; width: 40px; height: 23px; border-radius: 999px; background: #d1d5db; position: relative; flex: none; cursor: pointer; margin: 0; transition: background .15s; }
+    .t-sw::after { content: ''; position: absolute; left: 2px; top: 2px; width: 19px; height: 19px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: left .15s; }
+    .t-sw:checked { background: var(--sc); } .t-sw:checked::after { left: 19px; }
+    .t-save { display: flex; gap: 6px; margin-top: 8px; } .t-save button { flex: 1; border-radius: 10px; padding: 9px; font: inherit; font-weight: 800; border: 1px solid var(--border); background: var(--input); color: var(--text); cursor: pointer; }
+    .t-save .ok { background: #16a34a; color: #fff; border-color: #16a34a; }
+    .t-modal { position: fixed; inset: 0; background: rgba(17,24,39,.45); display: flex; align-items: center; justify-content: center; z-index: 60; padding: 16px; }
+    .t-box { background: var(--card); color: var(--text); border-radius: 20px; width: min(560px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 20px; box-shadow: 0 24px 60px rgba(17,24,39,.3); }
+    .t-box h3 { margin: 0 0 2px; font-size: 19px; } .t-step { color: var(--muted); font-size: 12.5px; margin-bottom: 14px; }
+    .t-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } @media (max-width: 600px) { .t-tiles { grid-template-columns: 1fr; } }
+    .t-tile { border: 1.5px solid var(--border); border-radius: 14px; padding: 12px; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; background: var(--card); color: var(--text); font: inherit; text-align: left; }
+    .t-tile.on { border-color: var(--tc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--tc) 18%, transparent); }
+    .t-tile i { width: 30px; height: 30px; border-radius: 10px; background: color-mix(in srgb, var(--tc) 14%, var(--card)); flex: none; position: relative; } .t-tile i::after { content: ''; position: absolute; inset: 10px; border-radius: 50%; background: var(--tc); }
+    .t-tile b { display: block; font-size: 14px; } .t-tile small { color: var(--muted); font-size: 11.5px; }
+    .t-mode { display: flex; gap: 6px; margin-bottom: 4px; } .t-mode button { flex: 1; border: 1px solid var(--border); background: var(--input); color: var(--text); border-radius: 10px; padding: 8px; font: inherit; font-weight: 700; cursor: pointer; } .t-mode .on { background: #111827; color: #fff; border-color: #111827; }
+    .t-box .form input[type=tel] { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
+    .t-pin { display: flex; gap: 8px; } .t-pin input { flex: 1; } .t-pin button { border: 1px solid var(--border); background: var(--input); color: var(--text); border-radius: 8px; padding: 0 12px; font: inherit; font-weight: 700; cursor: pointer; }
+    .t-box textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 10px; font: inherit; font-size: 13px; background: var(--input); color: var(--text); resize: vertical; }
+    .t-next { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+    .t-next button, .t-next a { border-radius: 12px; padding: 10px 16px; font: inherit; font-weight: 800; border: 1px solid var(--border); background: var(--input); color: var(--text); cursor: pointer; text-decoration: none; }
+    .t-next .go { background: var(--red); color: #fff; border-color: var(--red); } .t-next .t-wa { background: #16a34a; color: #fff; border-color: transparent; }
     .form label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
     .form input[type=text], .form input[type=email], .form select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
     .rolesel { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: var(--input); color: var(--text); font-family: inherit; }
@@ -339,71 +389,6 @@
     </section>
 
     <div id="adminArea" class="hidden">
-      <section class="grid2 admin-grid">
-        <div class="panel">
-          <h3>Invite a team member</h3>
-          <p class="note">Creates their login and gives you a sign-in link to send them. They open it, choose a password, and they're in.</p>
-          <form id="inviteForm" class="form">
-            <label for="iName">Name</label><input id="iName" type="text" placeholder="e.g. Rahul Sharma" maxlength="80">
-            <label for="iEmail">Work email</label><input id="iEmail" type="email" placeholder="name@bounceshare.com" required>
-            <label for="iRole">Role</label>
-            <select id="iRole" required>
-              <option value="" disabled selected>Choose a role…</option>
-              <option value="qc">QC team</option>
-              <option value="recovery">Recovery team</option>
-              <option value="police">Police team</option>
-              <option value="manager">Manager (sees all QC, Recovery &amp; Police dashboards)</option>
-              <option value="admin">Admin</option>
-            </select>
-            <p class="role-help"><b>QC team:</b> QC Dashboard + New QC · <b>Recovery team:</b> Recovery Dashboard + Tracker + Agent App · <b>Admin:</b> everything, incl. managing users</p>
-            <button class="btn btn-clear" type="submit" id="inviteBtn">Create login &amp; get link</button>
-            <p class="err" id="inviteErr"></p>
-          </form>
-        </div>
-        <div class="panel" id="sharePanel">
-          <h3>Send the sign-in link</h3>
-          <p class="note" id="shareNote">After you invite someone (or click "New link"), their link appears here.</p>
-          <div id="shareBox" class="hidden">
-            <div class="who-line" id="shareWho"></div>
-            <textarea id="shareLink" readonly rows="3"></textarea>
-            <div class="share-btns">
-              <button class="btn btn-clear" type="button" id="copyBtn">Copy link</button>
-              <a class="btn btn-wa" id="waBtn" target="_blank" rel="noopener">WhatsApp</a>
-              <a class="btn btn-light" id="mailBtn">Email</a>
-            </div>
-            <p class="note">The link works <strong>once</strong> and expires in <strong>24 hours</strong>. Send it only to that person. If it expires, click "New link" next to their name.</p>
-          </div>
-        </div>
-      </section>
-
-      <section class="grid2 admin-grid" style="margin-top:10px">
-        <div class="panel">
-          <h3>Add a phone login</h3>
-          <p class="note">For people without an email. They sign in with their phone number and a 6-digit PIN.<br>
-            Everyone uses the same <a href="app.html" target="_blank">Bounce app</a> and sees only their team's screens: <b>Recovery agent</b> → today's bikes, no dashboards · <b>QC team</b> → New QC, My QCs, Bike history, QC Dashboard · <b>Recovery team</b> → Recovery Dashboard, Tracker and today's bikes. You can change anyone's access later with the Role dropdown below.</p>
-          <form id="agentForm" class="form">
-            <label for="aRole">App</label>
-            <select id="aRole"><option value="agent">Recovery agent (today's bikes only)</option><option value="qc">QC team (QC + QC Dashboard)</option><option value="recovery">Recovery team (dashboards + bikes)</option><option value="police">Police team (Police team page only)</option></select>
-            <label for="aName">Name</label><input id="aName" type="text" placeholder="e.g. Ravi Kumar" maxlength="80" required>
-            <label for="aPhone">Phone number</label><input id="aPhone" type="tel" inputmode="numeric" placeholder="10-digit mobile number" maxlength="14" required>
-            <label for="aPin">PIN (6 digits)</label>
-            <div style="display:flex;gap:8px"><input id="aPin" type="text" inputmode="numeric" maxlength="6" pattern="\d{6}" required style="flex:1"><button class="btn btn-light" type="button" id="genPin">New PIN</button></div>
-            <button class="btn btn-clear" type="submit" id="agentBtn" style="margin-top:12px">Create phone login</button>
-            <p class="err" id="agentErr"></p>
-          </form>
-        </div>
-        <div class="panel hidden" id="agentShare">
-          <h3>Send them their login</h3>
-          <div class="who-line" id="agentWho"></div>
-          <textarea id="agentMsg" readonly rows="6"></textarea>
-          <div class="share-btns">
-            <button class="btn btn-clear" type="button" id="agentCopy">Copy message</button>
-            <a class="btn btn-wa" id="agentWa" target="_blank" rel="noopener">WhatsApp</a>
-          </div>
-          <p class="note">Send the PIN only to that person. If they forget it, click "New PIN" next to their name.</p>
-        </div>
-      </section>
-
       <section class="panel" style="margin-top:10px;display:none" id="jcPanel">
         <h3>Job cards for QC</h3>
         <p class="note">Job cards now refresh automatically from Metabase — every 30 minutes by day, hourly at night. No upload needed.
@@ -414,18 +399,14 @@
         <p class="note" id="jcMsg" style="margin-top:6px"></p>
       </section>
 
-      <section class="panel" style="margin-top:10px">
-        <h3>People with access</h3>
-        <p class="note">Change someone's role with the dropdown — it applies the next time they open a page. QC team: QC Dashboard + New QC · Recovery team: Recovery Dashboard + Tracker · Admin: everything.</p>
-        <div class="counts" id="userCounts"></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Name</th><th>Email</th><th>Roles <small style="font-weight:500;color:var(--muted)">(tick all that apply)</small></th><th title="Can see customer KYC documents on the Police team page">KYC access</th><th>Status</th><th>Last sign-in</th><th>Added</th><th></th></tr></thead>
-            <tbody id="userRows"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
-          </table>
-        </div>
+      <section class="panel" style="margin-top:10px" id="peoplePanel">
+        <div class="t-head"><h3>Team &amp; access</h3><button type="button" class="t-add" id="addPerson">+ Add person</button><div class="t-sum" id="teamSum">Loading…</div></div>
+        <label class="t-search"><span>🔍</span><input id="teamSearch" type="search" placeholder="Search by name or phone" autocomplete="off"></label>
+        <div class="t-chips" id="teamChips"></div>
+        <div class="t-grid" id="teamGrid"></div>
         <p class="err" id="listErr"></p>
       </section>
+      <div class="t-modal hidden" id="addModal"><div class="t-box" id="addBox"></div></div>
     </div>
   </main>
   </div>
@@ -451,124 +432,209 @@
       return data;
     }
 
+    // ---- Team & access: one card per person, coloured by their main role ----
     let users = [];
-    const ROLE_OPTS = [['', 'No access (choose…)'], ['manager', 'Manager'], ['qc', 'QC team'], ['recovery', 'Recovery team'], ['police', 'Police team'], ['agent', 'Recovery agent'], ['mfr', 'MFR upload'], ['admin', 'Admin']];
-    const ROLE_NAME = Object.fromEntries(ROLE_OPTS);
-    // Tick boxes: a person can have several roles (e.g. QC team + Police team). Admin = everything.
-    const ROLE_TICKS = [['manager', 'Manager'], ['qc', 'QC'], ['recovery', 'Recovery'], ['police', 'Police'], ['agent', 'Agent'], ['mfr', 'MFR upload'], ['admin', 'Admin']];
-    const roleBoxes = (u) => { const has = u.roles || (u.role ? [u.role] : []), adm = has.includes('admin');
-      return `<div class="roleboxes ${has.length ? '' : 'none'}" data-id="${u.id}">${ROLE_TICKS.map(([v, t]) =>
-        `<label class="${has.includes(v) ? 'on' : ''}"><input type="checkbox" value="${v}" ${has.includes(v) ? 'checked' : ''} ${adm && v !== 'admin' ? 'disabled' : ''}>${t}</label>`).join('')}</div>`; };
+    const ROLE = {   // key: [label, colour, what it gives]
+      agent: ['Recovery agent', '#e3262b', "Recovery App: today's bikes"],
+      recovery: ['Recovery team', '#2563eb', 'Recovery Dashboard, Agents & areas'],
+      qc: ['QC team', '#d97706', 'QC App + QC Dashboard'],
+      police: ['Police team', '#1e3a8a', 'Police team page'],
+      manager: ['Manager', '#7c3aed', 'All QC, Recovery & Police dashboards'],
+      mfr: ['MFR upload', '#0d9488', 'Upload the morning MFR file'],
+      admin: ['Admin', '#111827', 'Everything, incl. adding people & PINs'],
+    };
+    const ORDER = ['agent', 'recovery', 'qc', 'police', 'manager', 'mfr', 'admin'];
+    const ROLE_NAME = Object.fromEntries(Object.entries(ROLE).map(([k, v]) => [k, v[0]]));
+    const rolesOf = (u) => (u.roles && u.roles.length ? u.roles : (u.role ? [u.role] : []));
+    const isAgentOnly = (u) => rolesOf(u).length > 0 && rolesOf(u).every(r => r === 'agent');
+    const inFilter = (u, f) => !f ? true : f === 'agent' ? isAgentOnly(u) : rolesOf(u).includes(f);   // Recovery agents = agent-only logins
+    const mainRole = (u) => ['admin', 'manager', 'recovery', 'qc', 'police', 'agent', 'mfr'].find(r => rolesOf(u).includes(r));
+    const initials = (n) => String(n || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    function seen(iso) {
+      if (!iso) return null;
+      const d = new Date(iso), mins = (Date.now() - d) / 6e4;
+      if (mins < 2) return 'just now';
+      if (mins < 60) return Math.round(mins) + ' min ago';
+      if (mins < 60 * 12) return Math.round(mins / 60) + ' h ago';
+      const day = (x) => new Date(x.getTime() + 330 * 6e4).toISOString().slice(0, 10), today = day(new Date());
+      if (day(d) === today) return 'today, ' + d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+      const days = Math.round(mins / 1440);
+      return days <= 1 ? 'yesterday' : days < 30 ? days + ' days ago' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    }
+    let teamFilter = (() => { try { return localStorage.getItem('team-filter') || ''; } catch (e) { return ''; } })();
+    let teamSearch = '', editing = null, draft = null;
+
     async function loadUsers() {
       $('listErr').textContent = '';
       try { users = (await call('list')).users; } catch (e) { $('listErr').textContent = e.message; return; }
-      const pending = users.filter(u => u.status === 'pending').length, noRole = users.filter(u => !u.role).length;
-      const n = (r) => users.filter(u => (u.roles || [u.role]).includes(r)).length;
-      $('userCounts').innerHTML = [[users.length, 'People'], [n('admin'), 'Admins'], [n('qc'), 'QC team'], [n('recovery'), 'Recovery team'], [n('police'), 'Police team'], [n('manager'), 'Managers'], [n('mfr'), 'MFR upload'], [n('agent'), 'Recovery agents'], [users.filter(u => u.kyc).length, 'KYC access'], [noRole, 'No role yet'], [pending, 'Waiting to set password']]
-        .map(([n, t]) => `<div class="count"><div class="n">${n}</div><div class="t">${t}</div></div>`).join('');
-      $('userRows').innerHTML = users.map(u => `<tr>
-          <td><strong>${esc(u.name || '—')}</strong>${u.is_me ? ' <span class="tag">you</span>' : ''}</td>
-          <td>${u.is_agent ? '📱 ' + esc(u.phone || u.email.split('@')[0]) : esc(u.email)}</td>
-          <td>${u.is_me ? '<span class="tag tag-admin">Admin</span>' : roleBoxes(u)}</td>
-          <td><label class="kyc-tg" title="Can see customer name, mobile and KYC documents on the Police team page"><input type="checkbox" data-kyc="${u.id}" ${u.kyc ? 'checked' : ''}> ${u.kyc ? 'Yes' : 'No'}</label></td>
-          <td>${u.status === 'pending' ? '<span class="tag tag-wait">Link sent · not set up</span>' : '<span class="tag tag-ok">Active</span>'}</td>
-          <td>${when(u.last_sign_in_at)}</td><td>${when(u.created_at)}</td>
-          <td class="acts">
-            ${u.is_agent ? `<button class="btn btn-light sm" data-act="pin" data-id="${u.id}">New PIN</button>` : `<button class="btn btn-light sm" data-act="link" data-id="${u.id}">New link</button>`}
-            ${u.is_me ? '' : `<button class="btn btn-light sm danger" data-act="remove" data-id="${u.id}">Remove</button>`}
-          </td></tr>`).join('') || '<tr><td colspan="8" style="color:var(--muted)">No users yet.</td></tr>';
+      renderTeam();
     }
-
-    function showLink({ link, email, name }) {
-      const who = name || email;
-      const msg = `Hi ${name || ''}, here is your login for the Bounce dashboards. Open this link, choose a password, and you're in (works once, valid for 24 hours):\n${link}\n\nAfter that, sign in any time at https://davidab-hub.github.io/recovery-tracker/ with ${email}.`;
-      $('shareBox').classList.remove('hidden');
-      $('shareNote').classList.add('hidden');
-      $('shareWho').innerHTML = `For <strong>${esc(who)}</strong> · ${esc(email)}`;
-      $('shareLink').value = link;
-      $('waBtn').href = 'https://wa.me/?text=' + encodeURIComponent(msg);
-      $('mailBtn').href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent('Your login for the Bounce dashboards')}&body=${encodeURIComponent(msg)}`;
-      $('copyBtn').textContent = 'Copy link';
-      $('sharePanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    function card(u) {
+      const m = mainRole(u) || 'agent', c = ROLE[m][1], s = seen(u.last_sign_in_at), never = !s || u.status === 'pending';
+      const contact = u.is_agent ? esc(u.phone || u.email.split('@')[0]) : esc(u.email);
+      const icons = u.is_agent && u.phone
+        ? `<a href="tel:+91${esc(u.phone)}" title="Call">📞</a><a href="https://wa.me/91${esc(u.phone)}" target="_blank" rel="noopener" title="WhatsApp">💬</a>`
+        : `<a href="mailto:${esc(u.email)}" title="Email">✉️</a>`;
+      const chips = ORDER.filter(r => rolesOf(u).includes(r)).map(r => `<span class="t-role" style="--rc:${ROLE[r][1]}">${ROLE[r][0]}</span>`).join('')
+        + (u.kyc ? '<span class="t-role" style="--rc:#475569">KYC access</span>' : '') || '<span class="t-role" style="--rc:#b45309">No access yet</span>';
+      let body;
+      if (editing === u.id) {
+        const has = (r) => draft.roles.includes(r), adm = has('admin');
+        body = `<div class="t-edit">${ORDER.map(r => `<label class="t-opt ${adm && r !== 'admin' ? 'off' : ''}"><div><b>${ROLE[r][0]}</b><small>${ROLE[r][2]}</small></div>
+            <input type="checkbox" class="t-sw" data-role="${r}" style="--sc:${ROLE[r][1]}" ${has(r) ? 'checked' : ''} ${adm && r !== 'admin' ? 'disabled' : ''}></label>`).join('')}
+          <label class="t-opt"><div><b>KYC access</b><small>See customers' KYC documents on the Police team page</small></div><input type="checkbox" class="t-sw" data-kyc="1" style="--sc:#475569" ${draft.kyc ? 'checked' : ''}></label>
+          <div class="t-save"><button type="button" data-act="cancel">Cancel</button><button type="button" class="ok" data-act="save">Save changes</button></div></div>`;
+      } else {
+        body = `<div class="t-act">${u.is_me ? '<span class="t-me">This is you</span>' : `<button type="button" class="pri" data-act="edit">Edit access</button>`}
+          ${u.is_agent ? '<button type="button" data-act="pin">🔑 New PIN</button>' : '<button type="button" data-act="link">🔗 New link</button>'}
+          ${u.is_me ? '' : '<button type="button" class="more" data-act="more" title="More">⋯</button>'}</div>`;
+      }
+      return `<div class="t-card" data-id="${u.id}" style="--c:${c}"><div class="t-top"><div class="t-av">${esc(initials(u.name || contact))}</div>
+          <div class="t-who"><b>${esc(u.name || '—')}</b><small>${contact}</small></div><div class="t-ic">${icons}</div></div>
+        <div class="t-roles">${chips}</div>
+        <div class="t-seen ${never ? 'never' : ''}"><i></i>${never ? (u.status === 'pending' ? 'Sign-in link sent · not set up yet' : 'Has not signed in yet') : 'Last seen ' + s}</div>${body}</div>`;
     }
-
-    $('inviteForm').addEventListener('submit', async (e) => {
-      e.preventDefault(); $('inviteErr').textContent = ''; $('inviteBtn').disabled = true; $('inviteBtn').textContent = 'Creating…';
-      try {
-        const r = await call('invite', { name: $('iName').value, email: $('iEmail').value, role: $('iRole').value });
-        showLink(r); $('inviteForm').reset(); loadUsers();
-      } catch (err) { $('inviteErr').textContent = err.message; }
-      $('inviteBtn').disabled = false; $('inviteBtn').textContent = 'Create login & get link';
+    function renderTeam() {
+      const counts = Object.fromEntries(ORDER.map(r => [r, users.filter(u => inFilter(u, r)).length]));
+      const never = users.filter(u => !u.last_sign_in_at || u.status === 'pending').length;
+      const q = teamSearch.trim().toLowerCase().replace(/\s+/g, '');
+      const list = users.filter(u => inFilter(u, teamFilter) && (!q || [u.name, u.phone, u.email].some(x => String(x || '').toLowerCase().replace(/\s+/g, '').includes(q))));
+      $('teamSum').innerHTML = `${users.length} people · ${counts.agent} recovery agents${never ? ` · <b>${never} not signed in yet</b>` : ''}`;
+      $('teamChips').innerHTML = `<button type="button" class="t-chip ${teamFilter ? '' : 'on'}" data-f="">Everyone <em>${users.length}</em></button>`
+        + ORDER.map(r => `<button type="button" class="t-chip ${teamFilter === r ? 'on' : ''}" data-f="${r}" style="--c:${ROLE[r][1]}"><i></i>${ROLE[r][0]}${r === 'agent' ? 's' : ''} <em>${counts[r]}</em></button>`).join('');
+      $('teamGrid').innerHTML = list.map(card).join('') || `<p class="note">Nobody here yet.</p>`;
+    }
+    $('teamChips').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-f]'); if (!b) return;
+      teamFilter = b.dataset.f; try { localStorage.setItem('team-filter', teamFilter); } catch (err) {}
+      editing = null; renderTeam();
     });
-    // ---- Recovery agents: phone + PIN ----
+    $('teamSearch').addEventListener('input', (e) => { teamSearch = e.target.value; renderTeam(); });
+
+    // ---- Edit access (nothing changes until "Save changes") ----
+    $('teamGrid').addEventListener('change', (e) => {
+      const sw = e.target.closest('.t-sw'); if (!sw || !draft) return;
+      if (sw.dataset.kyc) { draft.kyc = sw.checked; return; }
+      const r = sw.dataset.role;
+      if (sw.checked) {
+        if (r === 'admin') draft.roles = ['admin'];                                                    // admin sees everything
+        else if (r === 'manager') draft.roles = ORDER.filter(x => x !== 'admin');                       // manager = every team (untick what they don't need)
+        else draft.roles = [...new Set([...draft.roles, r])];
+      } else draft.roles = draft.roles.filter(x => x !== r);
+      renderTeam();
+    });
     const newPin = () => String(Math.floor(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000)));
-    $('aPin').value = newPin();
-    $('genPin').addEventListener('click', () => { $('aPin').value = newPin(); });
-    function showAgent({ name, phone, pin, role }) {
-      const app = 'https://davidab-hub.github.io/recovery-tracker/app.html';   // one app for everyone; it shows each person their team's screens
-      const sees = { qc: 'New QC, My QCs, Bike history and the QC Dashboard', recovery: "the Recovery Dashboard, Tracker and today's bikes" }[role] || "today's bikes to recover";
-      const msg = `Hi ${name || ''}, here is your login for the Bounce app (${sees}):\n${app}\n\nPhone: ${phone}\nPIN: ${pin}\n\nOpen the link in Chrome and sign in with your phone number and PIN. Tip: ⋮ → Add to Home screen to keep it like an app.`;
-      $('agentShare').classList.remove('hidden');
-      $('agentWho').innerHTML = `For <strong>${esc(name || phone)}</strong> · ${esc(phone)}`;
-      $('agentMsg').value = msg;
-      $('agentWa').href = `https://wa.me/91${phone}?text=` + encodeURIComponent(msg);
-      $('agentCopy').textContent = 'Copy message';
-      $('agentShare').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-    $('agentForm').addEventListener('submit', async (e) => {
-      e.preventDefault(); $('agentErr').textContent = '';
-      const pin = $('aPin').value.trim();
-      if (!/^\d{6}$/.test(pin)) { $('agentErr').textContent = 'The PIN must be exactly 6 digits.'; return; }
-      $('agentBtn').disabled = true; $('agentBtn').textContent = 'Creating…';
-      try {
-        const r = await call('create_agent', { name: $('aName').value, phone: $('aPhone').value, pin, role: $('aRole').value });
-        showAgent({ ...r, pin }); const keep = $('aRole').value; $('agentForm').reset(); $('aRole').value = keep; $('aPin').value = newPin(); loadUsers();
-      } catch (err) { $('agentErr').textContent = err.message; }
-      $('agentBtn').disabled = false; $('agentBtn').textContent = 'Create phone login';
-    });
-    $('agentCopy').addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText($('agentMsg').value); } catch (e) { $('agentMsg').select(); document.execCommand('copy'); }
-      $('agentCopy').textContent = 'Copied ✓';
-    });
-
-    $('copyBtn').addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText($('shareLink').value); } catch (e) { $('shareLink').select(); document.execCommand('copy'); }
-      $('copyBtn').textContent = 'Copied ✓';
-    });
-    $('userRows').addEventListener('click', async (e) => {
+    $('teamGrid').addEventListener('click', async (e) => {
       const b = e.target.closest('button[data-act]'); if (!b) return;
-      const u = users.find(x => x.id === b.dataset.id); if (!u) return;
+      const u = users.find(x => x.id === b.closest('.t-card').dataset.id); if (!u) return;
+      const who = u.name || u.phone || u.email, act = b.dataset.act;
+      $('listErr').textContent = '';
       try {
-        if (b.dataset.act === 'link') showLink(await call('link', { id: u.id }));
-        if (b.dataset.act === 'pin') {
+        if (act === 'edit') { editing = u.id; draft = { roles: rolesOf(u).slice(), kyc: !!u.kyc }; renderTeam(); return; }
+        if (act === 'cancel') { editing = null; draft = null; renderTeam(); return; }
+        if (act === 'save') {
+          const before = rolesOf(u);
+          if (draft.roles.includes('admin') && !before.includes('admin') && !confirm(`Make ${who} an admin? They will see everything and can add and remove people.`)) return;
+          if (draft.kyc && !u.kyc && !confirm(`Give ${who} KYC access? They will see customers' names, mobile numbers and KYC documents on the Police team page.`)) return;
+          b.disabled = true; b.textContent = 'Saving…';
+          if (draft.roles.slice().sort().join() !== before.slice().sort().join()) await call('set_roles', { id: u.id, roles: draft.roles });
+          if (draft.kyc !== !!u.kyc) await call('set_kyc', { id: u.id, value: draft.kyc });
+          editing = null; draft = null; await loadUsers();
+          $('listErr').innerHTML = `<span style="color:#15803d">✓ Saved for ${esc(who)}</span>`; return;
+        }
+        if (act === 'pin') {
           const pin = newPin();
-          if (!confirm(`Give ${u.name || u.phone} a new PIN (${pin})? Their old PIN stops working.`)) return;
-          const r = await call('set_pin', { id: u.id, pin }); showAgent({ ...r, pin });
+          if (!confirm(`Give ${who} a new PIN (${pin})? Their old PIN stops working.`)) return;
+          const r = await call('set_pin', { id: u.id, pin }); showShare('pin', { ...r, pin }); return;
         }
-        if (b.dataset.act === 'remove') {
-          if (!confirm(`Remove ${u.email}? They will lose access straight away.`)) return;
-          await call('remove', { id: u.id }); loadUsers();
+        if (act === 'link') { showShare('link', await call('link', { id: u.id })); return; }
+        if (act === 'more') {
+          if (!confirm(`Remove ${who}? Their login is deleted and they lose access straight away.`)) return;
+          await call('remove', { id: u.id }); await loadUsers();
+          $('listErr').innerHTML = `<span style="color:#15803d">✓ ${esc(who)} removed</span>`;
         }
-      } catch (err) { $('listErr').textContent = err.message; }
+      } catch (err) { $('listErr').textContent = err.message; renderTeam(); }
     });
 
-    $('userRows').addEventListener('change', async (e) => {
-      const box = e.target.closest('.roleboxes'); if (!box) return;
-      const u = users.find(x => x.id === box.dataset.id); if (!u) return;
-      // Manager = shortcut: ticking it ticks every other role (not Admin). Untick whatever this person doesn't need.
-      if (e.target.value === 'manager' && e.target.checked)
-        box.querySelectorAll('input').forEach(x => { if (x.value !== 'admin') x.checked = true; });
-      let picked = [...box.querySelectorAll('input:checked')].map(x => x.value);
-      const before = u.roles || (u.role ? [u.role] : []);
-      if (picked.includes('admin') && !before.includes('admin') && !confirm(`Make ${u.email} an admin? They will see everything and can add and remove users.`)) { e.target.checked = false; return; }
-      if (picked.includes('admin')) picked = ['admin'];   // admin already sees everything
-      box.querySelectorAll('input').forEach(x => x.disabled = true); $('listErr').textContent = '';
-      let msg = '';
-      try { await call('set_roles', { id: u.id, roles: picked });
-        msg = `<span style="color:#15803d">✓ ${esc(u.name || u.email)}: ${esc(picked.map(r => ROLE_NAME[r]).join(' + ') || 'No access')}</span>`; }
-      catch (err) { msg = esc(err.message); }
-      await loadUsers(); $('listErr').innerHTML = msg;
+    // ---- Add a person: 1) what will they do  2) name + phone (or email)  3) send them their login ----
+    const PHONE_OK = ['agent', 'recovery', 'qc', 'police'], EMAIL_OK = ['recovery', 'qc', 'police', 'manager', 'admin'];
+    let add = null;
+    function openAdd() { add = { step: 1, role: teamFilter && teamFilter !== 'mfr' ? teamFilter : 'agent', mode: 'phone', pin: newPin() }; drawAdd(); $('addModal').classList.remove('hidden'); }
+    function closeAdd() { $('addModal').classList.add('hidden'); add = null; }
+    function drawAdd(err = '') {
+      const box = $('addBox'), R = ROLE[add.role];
+      if (add.step === 1) {
+        box.innerHTML = `<h3>Add a person</h3><div class="t-step">Step 1 of 2 · What will they do?</div>
+          <div class="t-tiles">${ORDER.filter(r => r !== 'mfr').map(r => `<button type="button" class="t-tile ${r === add.role ? 'on' : ''}" data-role="${r}" style="--tc:${ROLE[r][1]}"><i></i><span><b>${ROLE[r][0]}</b><small>${ROLE[r][2]}</small></span></button>`).join('')}</div>
+          <div class="t-next"><button type="button" data-add="close">Cancel</button><button type="button" class="go" data-add="next">Next →</button></div>`;
+        return;
+      }
+      if (add.step === 2) {
+        if (!PHONE_OK.includes(add.role)) add.mode = 'email';
+        const both = PHONE_OK.includes(add.role) && EMAIL_OK.includes(add.role);
+        box.innerHTML = `<h3>New ${esc(R[0].toLowerCase())}</h3><div class="t-step">Step 2 of 2 · ${esc(R[2])}</div>
+          ${both ? `<div class="t-mode"><button type="button" class="${add.mode === 'phone' ? 'on' : ''}" data-add="phone">Phone + PIN</button><button type="button" class="${add.mode === 'email' ? 'on' : ''}" data-add="email">Email invite</button></div>` : ''}
+          <form id="addForm" class="form" autocomplete="off">
+            <label for="nName">Name</label><input id="nName" type="text" maxlength="80" required placeholder="e.g. Ravi Kumar">
+            ${add.mode === 'phone'
+              ? `<label for="nPhone">Phone number</label><input id="nPhone" type="tel" inputmode="numeric" maxlength="14" required placeholder="10-digit mobile number">
+                 <label for="nPin">PIN (6 digits)</label><div class="t-pin"><input id="nPin" type="text" inputmode="numeric" maxlength="6" value="${add.pin}" required><button type="button" data-add="pin">New PIN</button></div>`
+              : `<label for="nEmail">Work email</label><input id="nEmail" type="email" required placeholder="name@bounceshare.com">`}
+            <p class="err">${esc(err)}</p>
+            <div class="t-next"><button type="button" data-add="back">← Back</button><button type="submit" class="go" id="addGo">${add.mode === 'phone' ? 'Create login' : 'Create login & get link'}</button></div>
+          </form>`;
+        setTimeout(() => $('nName')?.focus(), 50);
+        return;
+      }
+      box.innerHTML = add.result;
+    }
+    function shareHtml(kind, r) {
+      if (kind === 'link') {
+        const msg = `Hi ${r.name || ''}, here is your login for the Bounce dashboards. Open this link, choose a password, and you're in (works once, valid for 24 hours):\n${r.link}\n\nAfter that, sign in any time at https://davidab-hub.github.io/recovery-tracker/ with ${r.email}.`;
+        return `<h3>Send ${esc(r.name || r.email)} their sign-in link</h3><div class="t-step">The link works once and expires in 24 hours. Send it only to them.</div>
+          <textarea readonly rows="5" id="shareMsg">${esc(msg)}</textarea>
+          <div class="t-next"><button type="button" data-add="copy">Copy</button><a class="t-wa" href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">WhatsApp</a>
+          <a class="t-wa" style="background:#111827" href="mailto:${encodeURIComponent(r.email)}?subject=${encodeURIComponent('Your login for the Bounce dashboards')}&body=${encodeURIComponent(msg)}">Email</a><button type="button" class="go" data-add="close">Done</button></div>`;
+      }
+      const sees = { qc: 'New QC, My QCs, Bike history and the QC Dashboard', recovery: 'the Recovery Dashboard, Agents & areas and the Recovery App', police: 'the Police team page' }[r.role] || "today's bikes to recover";
+      const msg = `Hi ${r.name || ''}, here is your login for the Bounce app (${sees}):\nhttps://davidab-hub.github.io/recovery-tracker/app.html\n\nPhone: ${r.phone}\nPIN: ${r.pin}\n\nOpen the link in Chrome and sign in with your phone number and PIN. Tip: ⋮ → Add to Home screen to keep it like an app.`;
+      return `<h3>Send ${esc(r.name || r.phone)} their login</h3><div class="t-step">Send the PIN only to them. If they forget it, use "New PIN" on their card.</div>
+        <textarea readonly rows="7" id="shareMsg">${esc(msg)}</textarea>
+        <div class="t-next"><button type="button" data-add="copy">Copy</button><a class="t-wa" href="https://wa.me/91${esc(r.phone)}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">WhatsApp</a><button type="button" class="go" data-add="close">Done</button></div>`;
+    }
+    function showShare(kind, r) { add = { step: 3, role: 'agent', result: shareHtml(kind, r) }; drawAdd(); $('addModal').classList.remove('hidden'); }
+    $('addPerson').addEventListener('click', openAdd);
+    $('addModal').addEventListener('click', async (e) => {
+      if (e.target === $('addModal')) return closeAdd();
+      const t = e.target.closest('[data-role]'); if (t && add?.step === 1) { add.role = t.dataset.role; return drawAdd(); }
+      const b = e.target.closest('[data-add]'); if (!b) return;
+      const a = b.dataset.add;
+      if (a === 'close') { closeAdd(); return; }
+      if (a === 'next') { add.step = 2; add.mode = PHONE_OK.includes(add.role) ? 'phone' : 'email'; return drawAdd(); }
+      if (a === 'back') { add.step = 1; return drawAdd(); }
+      if (a === 'phone' || a === 'email') { add.mode = a; return drawAdd(); }
+      if (a === 'pin') { add.pin = newPin(); $('nPin').value = add.pin; return; }
+      if (a === 'copy') { const m = $('shareMsg'); try { await navigator.clipboard.writeText(m.value); } catch (err) { m.select(); document.execCommand('copy'); } b.textContent = 'Copied ✓'; }
     });
+    $('addModal').addEventListener('submit', async (e) => {
+      e.preventDefault(); if (!add) return;
+      const go = $('addGo'), name = $('nName').value.trim();
+      go.disabled = true; go.textContent = 'Creating…';
+      try {
+        if (add.mode === 'phone') {
+          const pin = $('nPin').value.trim();
+          if (!/^\d{6}$/.test(pin)) throw new Error('The PIN must be exactly 6 digits.');
+          const r = await call('create_agent', { name, phone: $('nPhone').value, pin, role: add.role });
+          add.step = 3; add.result = shareHtml('pin', { ...r, pin });
+        } else {
+          const r = await call('invite', { name, email: $('nEmail').value, role: add.role });
+          add.step = 3; add.result = shareHtml('link', r);
+        }
+        drawAdd(); loadUsers();
+      } catch (err) { const keep = { n: name, p: $('nPhone')?.value, m: $('nEmail')?.value }; drawAdd(err.message);
+        $('nName').value = keep.n; if ($('nPhone')) $('nPhone').value = keep.p || ''; if ($('nEmail')) $('nEmail').value = keep.m || ''; }
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && add) closeAdd(); });
 
     // ---- Job cards for the QC app: Metabase export (CSV or Excel) → one row per job card with its final parts ----
     // Works with the "job card status log" export (one row per status change) and with the short daily export
@@ -690,18 +756,6 @@
         loadJcMeta();
       } catch (err) { $('jcMsg').innerHTML = `<span class="err">${esc(err.message || err)}</span>`; }
       finally { lbl.style.pointerEvents = ''; lbl.style.opacity = ''; }
-    });
-
-    // ---- KYC access (customer documents on the Police team page) ----
-    $('userRows').addEventListener('change', async (e) => {
-      const cb = e.target.closest('input[data-kyc]'); if (!cb) return;
-      const u = users.find(x => x.id === cb.dataset.kyc); if (!u) return;
-      const who = u.name || u.email;
-      if (cb.checked && !confirm(`Give ${who} KYC access? They will be able to see customers' names, mobile numbers and KYC documents (Aadhaar/PAN, licence, RC, insurance) on the Police team page. (They also need the Police team role.)`)) { cb.checked = false; return; }
-      cb.disabled = true; $('listErr').textContent = '';
-      try { await call('set_kyc', { id: u.id, value: cb.checked }); await loadUsers();
-        $('listErr').innerHTML = `<span style="color:#15803d">✓ ${esc(who)}: KYC access ${cb.checked ? 'given' : 'removed'}</span>`; }
-      catch (err) { cb.checked = !cb.checked; cb.disabled = false; $('listErr').textContent = err.message; }
     });
 
     // ---- Sign-in ----
