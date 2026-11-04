@@ -148,7 +148,7 @@
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const CITY = 'Bangalore';
 
-    let zones = [], agents = [], bikes = [], assign = new Map(), map = null;
+    let zones = [], agents = [], bikes = [], assign = new Map(), map = null, isAdmin = !!DEMO;   // only the admin adds agents, gives PINs or removes agents
 
     // ---------- data ----------
     async function call(action, extra = {}) {   // agent logins go through the admin-users function (it checks your access)
@@ -196,7 +196,7 @@
         return `<div class="agent"><span class="dot" style="background:${agentColor(a.id)}"></span>
           <div class="who"><b>${esc(a.name)}</b><span>${esc(a.phone || '')}${ar.length ? ' · Area: ' + esc(ar.map(x => x.name).join(', ')) : '<span class="tag off">no area</span>'}</span></div>
           <div class="n">${countOf(a.id)}<small>bikes</small></div>
-          <div class="acts"><button class="btn light sm" type="button" data-pin="${a.id}">New PIN</button><button class="btn light sm" type="button" data-rm="${a.id}">Remove</button></div></div>`;
+          ${isAdmin ? `<div class="acts"><button class="btn light sm" type="button" data-pin="${a.id}">New PIN</button><button class="btn light sm" type="button" data-rm="${a.id}">Remove</button></div>` : ''}</div>`;
       }).join('') : '<p class="note">No agents yet.</p>';
 
       $('aArea').innerHTML = '<option value="">Area (optional)</option>' + zones.map(z => `<option value="${z.id}">${esc(z.name)}</option>`).join('');
@@ -384,8 +384,10 @@
           const { data: { session } } = await db.auth.getSession();
           if (!session) { $('gate').innerHTML = 'Please <a href="app.html">sign in</a> first.'; $('gate').classList.remove('hidden'); return; }
           const r = await db.rpc('my_roles'); const rs = r.data || [];
-          if (!rs.includes('admin') && !rs.includes('areas')) { $('gate').textContent = 'This page is for area managers. Ask the admin to tick “Area manager” for you.'; $('gate').classList.remove('hidden'); return; }
+          if (!rs.includes('admin') && !rs.includes('recovery')) { $('gate').textContent = 'This page is for the Recovery team.'; $('gate').classList.remove('hidden'); return; }
+          isAdmin = rs.includes('admin');
         }
+        $('addForm').classList.toggle('hidden', !isAdmin);
         await load(); $('page').classList.remove('hidden'); render();
       } catch (e) { $('gate').textContent = 'Could not load: ' + (e.message || e); $('gate').classList.remove('hidden'); }
     }
