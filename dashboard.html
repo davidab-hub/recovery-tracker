@@ -648,15 +648,22 @@
       if (loading) return; loading = true; $('loadErr').textContent = '';
       try {
         const since = new Date(Date.now() - 120 * 864e5).toISOString().slice(0, 10);   // last ~4 months (for "Pick dates")
-        const cases = await pageAll(() => db.from('recovery_cases').select('case_date, city, outcome, moved_by, amount, drop_loc').gte('case_date', since).eq('outcome', 'Moved to Hub').order('id'));
+        // Ask for everything at once instead of one after another: the dashboard is ready about twice as fast
+        const casesP = pageAll(() => db.from('recovery_cases').select('case_date, city, outcome, moved_by, amount, drop_loc').gte('case_date', since).eq('outcome', 'Moved to Hub').order('id'));
+        const fleetP = Promise.all([   // Metabase data (refreshed every 30 min)
+          db.rpc('fleet_summary').then(fs => { if (fs.error) throw fs.error; return fs.data || []; }),
+          pageAll(() => db.from('fleet_daily').select('day, city, hub, model, inflow, outflow, recovered, moved_hub, moved_active').gte('day', since).order('day')),
+          pageAll(() => db.from('fleet_agent_daily').select('day, agent, city, hub, outflow, recovered, moved_hub, moved_active').gte('day', since).order('day')),
+          pageAll(() => db.from('fleet_live').select('reg_number, city, hub, status, police_case_type, mfr_since, age_days').not('police_case_type', 'is', null).order('reg_number')),
+        ]).catch(e => ({ err: e }));
+        const cases = await casesP;
         DATA = cases.map(r => ({ d: r.case_date, c: r.city || '', o: r.outcome || '', m: r.moved_by === 'Own truck' ? 'Van' : (r.moved_by || ''), amt: Number(r.amount) || 0, l: r.drop_loc || '' }));
-        try {   // Metabase data (refreshed every 30 min)
-          const fs = await db.rpc('fleet_summary'); if (fs.error) throw fs.error;
-          FLEET = fs.data || []; FLEET_AT = FLEET.reduce((m, r) => r.synced_at > m ? r.synced_at : m, '') || null;
-          FDAY = await pageAll(() => db.from('fleet_daily').select('day, city, hub, model, inflow, outflow, recovered, moved_hub, moved_active').gte('day', since).order('day'));
-          FAG = await pageAll(() => db.from('fleet_agent_daily').select('day, agent, city, hub, outflow, recovered, moved_hub, moved_active').gte('day', since).order('day'));
-          POLICE = await pageAll(() => db.from('fleet_live').select('reg_number, city, hub, status, police_case_type, mfr_since, age_days').not('police_case_type', 'is', null).order('reg_number'));
-        } catch (e) { console.warn('metabase', e); $('loadErr').textContent = 'Could not load the Metabase data: ' + e.message; }
+        const fl = await fleetP;
+        if (fl.err) { console.warn('metabase', fl.err); $('loadErr').textContent = 'Could not load the Metabase data: ' + fl.err.message; }
+        else {
+          [FLEET, FDAY, FAG, POLICE] = fl;
+          FLEET_AT = FLEET.reduce((m, r) => r.synced_at > m ? r.synced_at : m, '') || null;
+        }
         SHEET_LAST = DATA.reduce((m, r) => r.d > m ? r.d : m, '');
         TODAY = new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
         FIRST = [FDAY.length ? FDAY[0].day : TODAY, DATA.reduce((m, r) => r.d < m ? r.d : m, '9999')].sort()[0];
