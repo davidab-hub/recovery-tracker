@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Agents &amp; areas</title>
+  <script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');</script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <style>
+    :root { --brand: #e3262b; --page: #f4f5f8; --card: #fff; --text: #111827; --muted: #6b7280; --border: #e5e7eb; --soft: #f3f4f6; --ok: #15803d; --warn: #b45309; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--page); color: var(--text); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 16px; }
+    header h1 { font-size: 22px; margin: 0; }
+    header p { margin: 2px 0 12px; color: var(--muted); font-size: 13.5px; }
+    .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+    .stat b { display: block; font-size: 22px; line-height: 1.1; }
+    .stat span { color: var(--muted); font-size: 12.5px; }
+    .stat.warn b { color: var(--warn); }
+    .grid { display: grid; gap: 12px; }
+    @media (min-width: 900px) { .grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; } .mapcard { position: sticky; top: 12px; } }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px; }
+    .card h2 { font-size: 16px; margin: 0 0 2px; }
+    .card .note { color: var(--muted); font-size: 12.5px; margin: 0 0 10px; }
+    #map { height: 380px; border-radius: 10px; background: #e9ecef; z-index: 0; }
+    @media (min-width: 900px) { #map { height: 560px; } }
+    .bar { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+    .btn { border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 700; font-size: 14px; cursor: pointer; background: #111827; color: #fff; }
+    .btn.red { background: var(--brand); }
+    .btn.light { background: var(--soft); color: var(--text); }
+    .btn.sm { padding: 6px 10px; font-size: 12.5px; border-radius: 8px; }
+    .btn:disabled { opacity: .5; cursor: default; }
+    .msg { font-size: 13px; color: var(--muted); }
+    .msg.ok { color: var(--ok); } .msg.err { color: var(--brand); }
+    .area { border: 1px solid var(--border); border-radius: 12px; padding: 10px; margin-top: 8px; }
+    .area-top { display: flex; align-items: center; gap: 8px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+    .area-top b { flex: 1; min-width: 0; }
+    .area-top .cnt { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; background: #111827; color: #fff; border-radius: 999px; padding: 5px 6px 5px 11px; font-size: 13px; font-weight: 600; }
+    .chip i { font-style: normal; font-weight: 500; opacity: .7; font-size: 12px; }
+    .chip button { border: 0; background: rgba(255,255,255,.2); color: #fff; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 13px; line-height: 20px; padding: 0; }
+    .chips select { border: 1.5px dashed #cbd0d8; background: #fff; border-radius: 999px; padding: 5px 10px; font-size: 13px; color: var(--muted); max-width: 170px; }
+    .empty { font-size: 12.5px; color: var(--warn); }
+    .agent { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border); }
+    .agent:first-of-type { border-top: 0; }
+    .agent .who { flex: 1; min-width: 0; }
+    .agent .who b { display: block; }
+    .agent .who span { font-size: 12.5px; color: var(--muted); }
+    .agent .n { font-weight: 800; font-size: 18px; text-align: right; min-width: 40px; }
+    .agent .n small { display: block; font-weight: 500; font-size: 11px; color: var(--muted); }
+    .acts { display: flex; gap: 6px; }
+    .tag { display: inline-block; border-radius: 999px; padding: 1px 7px; font-size: 11.5px; font-weight: 700; margin-left: 4px; }
+    .tag.off { background: #fef3c7; color: var(--warn); }
+    form.add { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+    form.add input, form.add select { border: 1.5px solid var(--border); border-radius: 10px; padding: 9px 10px; font-size: 14px; min-width: 0; background: #fff; }
+    form.add .full { grid-column: 1 / -1; }
+    .hidden { display: none !important; }
+    .leaflet-tooltip { font-size: 12px; }
+    .lbl span { display: inline-block; transform: translate(-50%, -50%); background: rgba(255,255,255,.92); border: 1.5px solid; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+    .gate { max-width: 420px; margin: 60px auto; text-align: center; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="gate hidden" id="gate"></div>
+    <div id="page" class="hidden">
+      <header>
+        <h1>Agents &amp; areas</h1>
+        <p>Bangalore · bikes are given out to agents every morning when the MFR list comes in</p>
+      </header>
+      <div class="stats">
+        <div class="stat"><b id="sBikes">–</b><span>bikes today</span></div>
+        <div class="stat"><b id="sAssigned">–</b><span>with an agent</span></div>
+        <div class="stat warn"><b id="sNone">–</b><span>no agent yet</span></div>
+      </div>
+      <div class="grid">
+        <div class="card mapcard">
+          <div id="map"></div>
+          <div class="bar">
+            <button class="btn red" id="assignBtn" type="button">Assign today's bikes now</button>
+            <span class="msg" id="assignMsg"></span>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <h2>Areas</h2>
+            <p class="note">Pick who covers each area. Two agents in one area share it: each gets the bikes on their side.</p>
+            <div id="areas"></div>
+          </div>
+          <div class="card" style="margin-top:12px">
+            <h2>Recovery agents</h2>
+            <p class="note">Agents sign in to the Recovery App with their phone number and a 6-digit PIN.</p>
+            <div id="agents"></div>
+            <form class="add" id="addForm" autocomplete="off">
+              <input id="aName" placeholder="Name" required maxlength="80">
+              <input id="aPhone" placeholder="Phone (10 digits)" inputmode="numeric" required>
+              <input id="aPin" placeholder="6-digit PIN" inputmode="numeric" maxlength="6" required>
+              <select id="aArea"><option value="">Area (optional)</option></select>
+              <button class="btn full" type="submit">Add agent</button>
+              <span class="msg full" id="addMsg"></span>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
+    const DEMO = window.DEMO_DATA || null;   // preview only
+    const db = DEMO ? null : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const CITY = 'Bangalore';
+
+    let zones = [], agents = [], bikes = [], assign = new Map(), map = null, layer = null;
+
+    // ---------- data ----------
+    async function call(action, extra = {}) {   // agent logins go through the admin-users function (it checks your access)
+      const { data, error } = await db.functions.invoke('admin-users', { body: { action, ...extra } });
+      if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch (e) {} throw new Error(m); }
+      if (data?.error) throw new Error(data.error);
+      return data;
+    }
+    async function load() {
+      if (DEMO) { ({ zones, agents, bikes } = structuredClone(DEMO)); assign = new Map(DEMO.assign.map(a => [a.bike_id, a])); return; }
+      const [z, b, a, u] = await Promise.all([
+        db.from('recovery_zones').select('*').eq('city', CITY).order('sort'),
+        db.from('mfr_bikes').select('bike_id, reg_number, lat, lng, age_days').eq('city_name', CITY),
+        db.from('mfr_assignments').select('bike_id, agent_id, agent_name, zone_id, manual').limit(5000),
+        call('list'),
+      ]);
+      for (const r of [z, b, a]) if (r.error) throw r.error;
+      zones = z.data; bikes = b.data; assign = new Map(a.data.map(x => [Number(x.bike_id), x]));
+      agents = (u.users || []).filter(x => (x.roles || []).includes('agent')).map(x => ({ id: x.id, name: x.name || x.phone, phone: x.phone, last: x.last_sign_in_at }));
+    }
+
+    // ---------- view ----------
+    const zoneOf = (id) => zones.find(z => z.id === id);
+    const agentColor = (id) => { const z = zones.find(z => z.agent_ids.includes(id)); return z ? z.color : '#6b7280'; };
+    const countOf = (id) => [...assign.values()].filter(a => a.agent_id === id).length;
+    const areasOf = (id) => zones.filter(z => z.agent_ids.includes(id));
+
+    function render() {
+      const mine = bikes.filter(b => assign.has(Number(b.bike_id)));
+      const withAgent = mine.filter(b => assign.get(Number(b.bike_id)).agent_id).length;
+      $('sBikes').textContent = bikes.length; $('sAssigned').textContent = withAgent; $('sNone').textContent = bikes.length - withAgent;
+
+      $('areas').innerHTML = zones.map(z => {
+        const n = [...assign.values()].filter(a => a.zone_id === z.id).length;
+        const on = z.agent_ids.map(id => agents.find(a => a.id === id)).filter(Boolean);
+        const free = agents.filter(a => !z.agent_ids.includes(a.id));
+        return `<div class="area"><div class="area-top"><span class="dot" style="background:${z.color}"></span><b>${esc(z.name)}</b><span class="cnt">${n} bikes</span></div>
+          <div class="chips">${on.map(a => `<span class="chip">${esc(a.name)} <i>${countOf(a.id)}</i><button type="button" title="Take ${esc(a.name)} off this area" data-off="${z.id}|${a.id}">×</button></span>`).join('')}
+            ${on.length ? '' : '<span class="empty">Nobody yet: these bikes show as “Not assigned”</span>'}
+            ${free.length ? `<select data-add="${z.id}"><option value="">+ Add agent</option>${free.map(a => `<option value="${a.id}">${esc(a.name)}${areasOf(a.id).length ? ' (' + esc(areasOf(a.id).map(x => x.name).join(', ')) + ')' : ''}</option>`).join('')}</select>` : ''}</div></div>`;
+      }).join('');
+
+      $('agents').innerHTML = agents.length ? agents.slice().sort((a, b) => countOf(b.id) - countOf(a.id)).map(a => {
+        const ar = areasOf(a.id);
+        return `<div class="agent"><span class="dot" style="background:${agentColor(a.id)}"></span>
+          <div class="who"><b>${esc(a.name)}</b><span>${esc(a.phone || '')}${ar.length ? ' · Area: ' + esc(ar.map(x => x.name).join(', ')) : '<span class="tag off">no area</span>'}</span></div>
+          <div class="n">${countOf(a.id)}<small>bikes</small></div>
+          <div class="acts"><button class="btn light sm" type="button" data-pin="${a.id}">New PIN</button><button class="btn light sm" type="button" data-rm="${a.id}">Remove</button></div></div>`;
+      }).join('') : '<p class="note">No agents yet.</p>';
+
+      $('aArea').innerHTML = '<option value="">Area (optional)</option>' + zones.map(z => `<option value="${z.id}">${esc(z.name)}</option>`).join('');
+      drawMap();
+    }
+
+    function drawMap() {
+      if (!window.L) return;
+      if (!map) {
+        map = L.map('map', { zoomControl: true, attributionControl: true });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+        layer = L.layerGroup().addTo(map);
+      }
+      layer.clearLayers();
+      const g = [];
+      for (const z of zones) {
+        const p = L.polygon(z.polygon, { color: z.color, weight: 2, fillOpacity: .1 }).addTo(layer);
+        const names = z.agent_ids.map(id => agents.find(a => a.id === id)?.name).filter(Boolean).join(' + ') || 'Nobody yet';
+        p.bindTooltip(`${esc(z.name)} · ${esc(names)}`);
+        L.marker(p.getBounds().getCenter(), { interactive: false, icon: L.divIcon({ className: 'lbl', html: `<span style="border-color:${z.color};color:${z.color}">${esc(z.name)}</span>`, iconSize: [0, 0] }) }).addTo(layer);
+        g.push(p);
+      }
+      for (const b of bikes) {
+        if (b.lat == null) continue;
+        const a = assign.get(Number(b.bike_id)), who = a?.agent_id ? agents.find(x => x.id === a.agent_id) : null;
+        L.circleMarker([b.lat, b.lng], { radius: 4.5, weight: 1, color: '#fff', fillOpacity: 1, fillColor: who ? agentColor(who.id) : '#9ca3af' })
+          .bindTooltip(`${esc(b.reg_number || '')} · ${who ? esc(who.name) + (a.manual ? ' (moved by hand)' : '') : 'Not assigned'}`).addTo(layer);
+      }
+      if (g.length && !map._fitted) { map.fitBounds(L.featureGroup(g).getBounds(), { padding: [10, 10] }); map._fitted = true; }
+    }
+
+    // ---------- actions ----------
+    const msg = (id, t, cls = '') => { $(id).textContent = t; $(id).className = 'msg ' + cls + ($(id).classList.contains('full') ? ' full' : ''); };
+    async function assignNow(note) {
+      msg('assignMsg', note || 'Assigning…'); $('assignBtn').disabled = true;
+      try {
+        if (DEMO) { await new Promise(r => setTimeout(r, 300)); }
+        else { const { data, error } = await db.rpc('assign_mfr_now'); if (error) throw error; await load(); }
+        render(); msg('assignMsg', 'Done · bikes given out by area', 'ok');
+      } catch (e) { msg('assignMsg', e.message || String(e), 'err'); }
+      $('assignBtn').disabled = false;
+    }
+    async function setAreaAgents(zid, ids) {
+      const z = zoneOf(zid); z.agent_ids = ids;
+      if (!DEMO) { const { error } = await db.from('recovery_zones').update({ agent_ids: ids, updated_at: new Date().toISOString() }).eq('id', zid); if (error) throw error; }
+      await assignNow('Saved · re-assigning this area’s bikes…');
+    }
+    $('assignBtn').onclick = () => assignNow();
+    $('areas').addEventListener('change', async (e) => {
+      const s = e.target.closest('select[data-add]'); if (!s || !s.value) return;
+      const z = zoneOf(Number(s.dataset.add));
+      try { await setAreaAgents(z.id, [...z.agent_ids, s.value]); } catch (err) { msg('assignMsg', err.message, 'err'); }
+    });
+    document.addEventListener('click', async (e) => {
+      const off = e.target.closest('[data-off]'), pin = e.target.closest('[data-pin]'), rm = e.target.closest('[data-rm]');
+      try {
+        if (off) {
+          const [zid, aid] = off.dataset.off.split('|'), z = zoneOf(Number(zid)), a = agents.find(x => x.id === aid);
+          if (!confirm(`Take ${a?.name} off ${z.name}? Their bikes in this area go to the other agent(s) here.`)) return;
+          await setAreaAgents(z.id, z.agent_ids.filter(x => x !== aid));
+        } else if (pin) {
+          const a = agents.find(x => x.id === pin.dataset.pin);
+          const p = prompt(`New 6-digit PIN for ${a.name}:`); if (p === null) return;
+          if (!/^\d{6}$/.test(p)) return alert('The PIN must be exactly 6 digits.');
+          if (!DEMO) await call('set_pin', { id: a.id, pin: p });
+          alert(`New PIN saved for ${a.name}. Share it with them directly.`);
+        } else if (rm) {
+          const a = agents.find(x => x.id === rm.dataset.rm);
+          if (!confirm(`Remove ${a.name}? They can no longer sign in to the Recovery App, and their bikes go to the other agents in their area. You can add them again later.`)) return;
+          if (!DEMO) await call('remove_agent', { id: a.id });
+          for (const z of zones) if (z.agent_ids.includes(a.id)) { z.agent_ids = z.agent_ids.filter(x => x !== a.id); if (!DEMO) await db.from('recovery_zones').update({ agent_ids: z.agent_ids }).eq('id', z.id); }
+          agents = agents.filter(x => x.id !== a.id);
+          await assignNow('Removed · re-assigning their bikes…');
+        }
+      } catch (err) { alert(err.message || String(err)); }
+    });
+    $('addForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const name = $('aName').value.trim(), phone = $('aPhone').value.replace(/\D/g, '').slice(-10), pin = $('aPin').value.trim(), zid = Number($('aArea').value) || null;
+      if (phone.length !== 10) return msg('addMsg', 'Please enter a 10-digit phone number.', 'err');
+      if (!/^\d{6}$/.test(pin)) return msg('addMsg', 'The PIN must be exactly 6 digits.', 'err');
+      msg('addMsg', 'Adding…');
+      try {
+        let id = 'demo-' + Date.now();
+        if (!DEMO) { await call('create_agent', { name, phone, pin, role: 'agent' }); await load(); id = agents.find(a => a.phone === phone)?.id; }
+        else agents.push({ id, name, phone });
+        $('addForm').reset(); msg('addMsg', `${name} added. They sign in with ${phone} and their PIN.`, 'ok');
+        if (zid && id) await setAreaAgents(zid, [...zoneOf(zid).agent_ids, id]); else render();
+      } catch (err) { msg('addMsg', err.message || String(err), 'err'); }
+    };
+
+    // ---------- start ----------
+    async function start() {
+      try {
+        if (!DEMO) {
+          const { data: { session } } = await db.auth.getSession();
+          if (!session) { $('gate').innerHTML = 'Please <a href="app.html">sign in</a> first.'; $('gate').classList.remove('hidden'); return; }
+          const r = await db.rpc('my_roles'); const rs = r.data || [];
+          if (!rs.includes('admin') && !rs.includes('areas')) { $('gate').textContent = 'This page is for area managers. Ask the admin to tick “Area manager” for you.'; $('gate').classList.remove('hidden'); return; }
+        }
+        await load(); $('page').classList.remove('hidden'); render();
+      } catch (e) { $('gate').textContent = 'Could not load: ' + (e.message || e); $('gate').classList.remove('hidden'); }
+    }
+    start();
+  </script>
+</body>
+</html>
