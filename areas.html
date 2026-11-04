@@ -60,6 +60,33 @@
     .hidden { display: none !important; }
     .leaflet-tooltip { font-size: 12px; }
     .lbl span { display: inline-block; transform: translate(-50%, -50%); background: rgba(255,255,255,.92); border: 1.5px solid; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+    /* map */
+    #map { position: relative; background: #eceef1; border-radius: 14px; height: 470px; }
+    @media (min-width: 900px) { #map { height: 590px; } }
+    #map.dark { background: #1f2329; }
+    .zp { filter: drop-shadow(0 2px 3px rgba(17,24,39,.18)); transition: fill-opacity .2s; }
+    .zl2 { position: absolute; transform: translate(-50%, -50%); background: #fff; border-radius: 10px; padding: 4px 9px 4px 7px; box-shadow: 0 4px 14px rgba(17,24,39,.16), 0 1px 2px rgba(17,24,39,.08); white-space: nowrap; display: flex; gap: 8px; align-items: center; pointer-events: none; }
+    .zl2 i { width: 5px; align-self: stretch; border-radius: 4px; background: var(--c); }
+    .zl2 b { display: block; font-size: 12px; font-weight: 800; color: #111827; letter-spacing: -.1px; }
+    .zl2 small { display: block; font-size: 10.5px; color: #6b7280; font-weight: 600; margin-top: 1px; }
+    .zl2 small em { font-style: normal; color: #b45309; }
+    .zl2 .old { display: inline-block; margin-left: 4px; font-size: 10px; font-weight: 800; color: #fff; background: #dc2626; border-radius: 999px; padding: 0 6px; vertical-align: 1px; }
+    .dark .zl2 { background: #2b3038; } .dark .zl2 b { color: #f3f4f6; } .dark .zl2 small { color: #9ca3af; }
+    .mapbar { position: absolute; z-index: 800; left: 10px; right: 10px; top: 10px; display: flex; gap: 6px; flex-wrap: wrap; pointer-events: none; }
+    .mapbar button { pointer-events: auto; border: 0; background: rgba(255,255,255,.96); border-radius: 999px; padding: 7px 12px; font-size: 12px; font-weight: 700; box-shadow: 0 2px 8px rgba(17,24,39,.15); cursor: pointer; color: #111827; }
+    .mapbar button.on { background: #111827; color: #fff; }
+    .mapbar .sp { flex: 1; }
+    .fcard { position: absolute !important; transform: none !important; left: 10px; top: 54px; z-index: 800; }
+    .agekey { position: absolute; z-index: 800; left: 10px; bottom: 10px; max-width: calc(100% - 70px); background: rgba(255,255,255,.96); border-radius: 12px; padding: 7px 10px; box-shadow: 0 2px 8px rgba(17,24,39,.15); font-size: 11px; font-weight: 700; color: #374151; display: none; }
+    .agekey.show { display: block; } .agekey div { display: flex; flex-wrap: wrap; gap: 4px 9px; } .agekey span { display: inline-flex; align-items: center; gap: 4px; }
+    .agekey i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .agekey .hol { background: #fff; border: 2px solid #6b7280; width: 7px; height: 7px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
+    .dark .agekey i { box-shadow: 0 0 0 1.5px #9ca3af; }
+    .dark .agekey, .dark .mapbar button:not(.on) { background: #2b3038; color: #e5e7eb; }
+    .maphint { position: absolute; z-index: 800; right: 56px; bottom: 12px; background: rgba(17,24,39,.78); color: #fff; font-size: 11.5px; padding: 5px 10px; border-radius: 999px; pointer-events: none; white-space: nowrap; }
+    .pin2 { background: none; border: 0; } .pin2 svg { filter: drop-shadow(0 1px 1.5px rgba(0,0,0,.35)); display: block; }
+    .area-top { cursor: pointer; } .area.focus { border-color: #111827; box-shadow: 0 0 0 1px #111827; }
+    .leaflet-tooltip { border-radius: 8px; border: 0; box-shadow: 0 4px 12px rgba(17,24,39,.18); padding: 5px 8px; }
     .gate { max-width: 420px; margin: 60px auto; text-align: center; color: var(--muted); }
   </style>
 </head>
@@ -119,7 +146,7 @@
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const CITY = 'Bangalore';
 
-    let zones = [], agents = [], bikes = [], assign = new Map(), map = null, layer = null;
+    let zones = [], agents = [], bikes = [], assign = new Map(), map = null;
 
     // ---------- data ----------
     async function call(action, extra = {}) {   // agent logins go through the admin-users function (it checks your access)
@@ -174,29 +201,113 @@
       drawMap();
     }
 
+    // ---------- map ----------
+    // Overview: each area as a coloured block with a label card (name, bikes, agent, bikes over 10 days).
+    // Tap an area (on the map or in the Areas list) to zoom in and see its bikes as pins in the Recovery App's age colours.
+    const PAL = ['#6366F1', '#14B8A6', '#F59E0B', '#EC4899', '#8B5CF6', '#0EA5E9', '#84CC16', '#EF4444'];
+    const AGE = [[1, '#1d67bc', '1–2 days'], [2, '#f9c134', '2–3'], [3, '#ed800d', '3–4'], [4, '#d93025', '4–5'], [10, '#6c4e43', '5–10'], [Infinity, '#000000', '10+']];   // same as the Recovery App
+    const ageColor = (d) => d == null ? '#9ca3af' : AGE.find(([max]) => d <= max)[1];
+    const colorOf = (z) => z.color || PAL[zones.indexOf(z) % PAL.length];
+    let focus = null, showBikes = false, dark = false, layers = null, tiles = null;
+    function inPoly(p, poly) { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [ya, xa] = poly[i], [yb, xb] = poly[j]; if ((ya > p[0]) !== (yb > p[0]) && p[1] < (xb - xa) * (p[0] - ya) / (yb - ya) + xa) c = !c; } return c; }
+    function edgeDist(p, poly) { let best = Infinity; const kx = Math.cos(p[0] * Math.PI / 180); for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const ax = (poly[j][1] - p[1]) * kx, ay = poly[j][0] - p[0], bx = (poly[i][1] - p[1]) * kx, by = poly[i][0] - p[0]; const dx = bx - ax, dy = by - ay, t = Math.max(0, Math.min(1, -(ax * dx + ay * dy) / ((dx * dx + dy * dy) || 1))); best = Math.min(best, Math.hypot(ax + t * dx, ay + t * dy)); } return best; }
+    const zoneBikes = (z) => bikes.filter(b => assign.get(Number(b.bike_id))?.zone_id === z.id && b.lat != null);
+    const teamOf = (z) => z.agent_ids.map(id => agents.find(a => a.id === id)).filter(Boolean);
+    const allBounds = () => L.featureGroup(zones.map(z => L.polygon(z.polygon))).getBounds();
+    function placeLabels() {   // one card per area, in the roomiest spot inside it, never overlapping another card
+      layers.labels.clearLayers(); if (focus) return;
+      const boxes = [], W = map.getSize().x / (map.getBounds().getEast() - map.getBounds().getWest()), S = map.getSize();
+      const size = z => { const b = L.polygon(z.polygon).getBounds(); return (b.getNorth() - b.getSouth()) * (b.getEast() - b.getWest()); };
+      const hit = (a, b) => !(a.x2 + 6 < b.x1 || b.x2 + 6 < a.x1 || a.y2 + 6 < b.y1 || b.y2 + 6 < a.y1);
+      for (const z of zones.slice().sort((a, b) => size(a) - size(b))) {
+        const team = teamOf(z), zb = zoneBikes(z), old = zb.filter(b => (b.age_days ?? 0) > 10).length;
+        const sub = team.length ? team.map(a => esc(a.name)).join(' + ') : '<em>No agent yet</em>';
+        const t1 = z.name + ' · ' + zb.length, t2 = team.length ? team.map(a => a.name).join(' + ') : 'No agent yet';
+        const w = Math.max(t1.length * 7.2 + (old ? 34 : 0), t2.length * 6.2) + 26, h = 38;
+        const poly = z.polygon, la = poly.map(p => p[0]), ln = poly.map(p => p[1]); const [a0, a1, o0, o1] = [Math.min(...la), Math.max(...la), Math.min(...ln), Math.max(...ln)];
+        let best = null, bs = -Infinity;
+        for (let i = 1; i < 40; i++) for (let j = 1; j < 40; j++) {
+          const p = [a0 + (a1 - a0) * i / 40, o0 + (o1 - o0) * j / 40]; if (!inPoly(p, poly)) continue;
+          const px = map.latLngToContainerPoint(p), bx = { x1: px.x - w / 2, x2: px.x + w / 2, y1: px.y - h / 2, y2: px.y + h / 2 };
+          if (bx.x1 < 8 || bx.y1 < 52 || bx.x2 > S.x - 8 || bx.y2 > S.y - 40) continue;
+          const s = edgeDist(p, poly) * W - (boxes.some(b => hit(b, bx)) ? 10000 : 0); if (s > bs) { bs = s; best = [p, bx]; }
+        }
+        if (!best) continue; boxes.push(best[1]);
+        L.marker(best[0], { interactive: false, icon: L.divIcon({ className: '', iconSize: [0, 0], html: `<div class="zl2" style="--c:${colorOf(z)}"><i></i><span><b>${esc(z.name)} · ${zb.length}${old ? '<span class="old">' + old + ' old</span>' : ''}</b><small>${sub}</small></span></div>` }) }).addTo(layers.labels);
+      }
+    }
+    function drawBikes() {
+      layers.bikes.clearLayers(); document.querySelector('.agekey').classList.toggle('show', showBikes || !!focus);
+      if (!showBikes && !focus) return;
+      const list = bikes.filter(b => b.lat != null && (!focus || assign.get(Number(b.bike_id))?.zone_id === focus.id)).sort((a, b) => (a.age_days ?? 0) - (b.age_days ?? 0));
+      for (const b of list) {
+        const a = assign.get(Number(b.bike_id)), who = a?.agent_id ? agents.find(x => x.id === a.agent_id) : null, c = ageColor(b.age_days);
+        const big = !!focus, w = big ? 17 : 12, h = big ? 24 : 17;
+        const fill = who ? c : '#ffffff', stroke = who ? '#ffffff' : c, sw = who ? 1 : 2.4;   // hollow pin = no agent yet
+        L.marker([b.lat, b.lng], { zIndexOffset: (b.age_days ?? 0) * 10, icon: L.divIcon({ className: 'pin2', iconSize: [w, h], iconAnchor: [w / 2, h], tooltipAnchor: [0, -h],
+          html: `<svg width="${w}" height="${h}" viewBox="0 0 16 22.4"><path d="M8 .6C3.9.6.6 3.9.6 8c0 3 1.6 5.6 3.6 8.3C5.8 18.6 7.3 20.4 8 21.8c.7-1.4 2.2-3.2 3.8-5.5 2-2.7 3.6-5.3 3.6-8.3C15.4 3.9 12.1.6 8 .6z" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>${who ? '<circle cx="8" cy="8" r="2.6" fill="#fff" opacity=".9"/>' : ''}</svg>` }) })
+          .bindTooltip(`<b>${esc(b.reg_number || '')}</b> · ${b.age_days ?? '?'} days<br>${who ? esc(who.name) + (a.manual ? ' · moved by hand' : '') : 'Not assigned'}`, { direction: 'top' }).addTo(layers.bikes);
+      }
+    }
+    function drawAreas() {
+      layers.areas.clearLayers();
+      const world = [[-89, -179], [-89, 179], [89, 179], [89, -179]];   // grey out everything outside the areas
+      L.polygon([world, ...zones.map(z => z.polygon)], { stroke: false, fillColor: dark ? '#000' : '#334155', fillOpacity: dark ? .35 : .14, interactive: false }).addTo(layers.areas);
+      for (const z of zones) {
+        const team = teamOf(z), c = colorOf(z), dim = focus && focus !== z, me = focus === z, base = team.length ? .5 : .22;
+        const p = L.polygon(z.polygon, { className: 'zp', color: me ? c : (dark ? '#1f2329' : '#ffffff'), weight: 3, fillColor: c, fillOpacity: dim ? .06 : me ? .1 : base }).addTo(layers.areas);
+        p.on('click', () => setFocus(focus === z ? null : z));
+        p.on('mouseover', () => { if (!focus) p.setStyle({ fillOpacity: base + .12 }); }).on('mouseout', () => { if (!focus) p.setStyle({ fillOpacity: base }); });
+      }
+    }
+    function setTiles() {
+      if (tiles) map.removeLayer(tiles);
+      tiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/' + (dark ? 'World_Dark_Gray_Base' : 'World_Light_Gray_Base') + '/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, attribution: 'Tiles © Esri' }).addTo(map);
+      $('map').classList.toggle('dark', dark);
+    }
+    function focusCard() {
+      document.querySelector('.fcard')?.remove(); if (!focus) return;
+      const z = focus, team = teamOf(z), zb = zoneBikes(z), old = zb.filter(b => (b.age_days ?? 0) > 10).length;
+      const d = document.createElement('div'); d.className = 'zl2 fcard'; d.style.setProperty('--c', colorOf(z));
+      d.innerHTML = '<i></i><span><b>' + esc(z.name) + ' · ' + zb.length + ' bikes' + (old ? '<span class="old">' + old + ' old</span>' : '') + '</b><small>' + (team.length ? team.map(a => esc(a.name)).join(' + ') : '<em>No agent yet</em>') + '</small></span>';
+      $('map').append(d);
+    }
+    function setFocus(z) {
+      focus = z; drawAreas(); drawBikes(); focusCard();
+      document.querySelector('.maphint').style.display = z ? 'none' : '';
+      const pts = z ? zoneBikes(z).map(b => [b.lat, b.lng]) : [];
+      map.flyToBounds(z ? L.polygon(z.polygon).getBounds().extend(pts.length ? L.latLngBounds(pts) : L.polygon(z.polygon).getBounds()) : allBounds(), { padding: z ? [28, 28] : [10, 10], duration: .5 });
+      $('allBtn').classList.toggle('on', !z);
+      document.querySelectorAll('#areas .area').forEach((el, i) => el.classList.toggle('focus', !!z && zones[i] === z));
+    }
     function drawMap() {
       if (!window.L) return;
       if (!map) {
-        map = L.map('map', { zoomControl: true, attributionControl: true });
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
-        layer = L.layerGroup().addTo(map);
+        map = L.map('map', { zoomControl: false, scrollWheelZoom: false, zoomSnap: .25 });
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+        setTiles();
+        layers = { areas: L.layerGroup().addTo(map), bikes: L.layerGroup().addTo(map), labels: L.layerGroup().addTo(map) };
+        const bar = document.createElement('div'); bar.className = 'mapbar';
+        bar.innerHTML = '<button id="allBtn" class="on" type="button">All areas</button><button id="bkBtn" type="button">All bikes</button><span class="sp"></span><button id="dkBtn" type="button">Dark</button>';
+        const hint = document.createElement('div'); hint.className = 'maphint'; hint.textContent = 'Tap an area to see its bikes';
+        const key = document.createElement('div'); key.className = 'agekey';
+        key.innerHTML = '<div><span style="color:#6b7280">Days in recovery</span>' + AGE.map(a => '<span><i style="background:' + a[1] + '"></i>' + a[2] + '</span>').join('') + '<span><i class="hol"></i>no agent</span></div>';
+        $('map').append(bar, hint, key); L.DomEvent.disableClickPropagation(bar); L.DomEvent.disableClickPropagation(key);
+        $('allBtn').onclick = () => setFocus(null);
+        $('bkBtn').onclick = (e) => { showBikes = !showBikes; e.target.classList.toggle('on', showBikes); drawBikes(); };
+        $('dkBtn').onclick = (e) => { dark = !dark; e.target.classList.toggle('on', dark); setTiles(); drawAreas(); drawBikes(); placeLabels(); };
+        map.on('zoomend moveend', placeLabels);
+        $('areas').addEventListener('click', (e) => {   // tap an area's name in the list to see it on the map
+          const t = e.target.closest('.area-top'); if (!t) return;
+          const z = zones[[...document.querySelectorAll('#areas .area')].indexOf(t.closest('.area'))]; if (!z) return;
+          setFocus(focus === z ? null : z); $('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
       }
-      layer.clearLayers();
-      const g = [];
-      for (const z of zones) {
-        const p = L.polygon(z.polygon, { color: z.color, weight: 2, fillOpacity: .1 }).addTo(layer);
-        const names = z.agent_ids.map(id => agents.find(a => a.id === id)?.name).filter(Boolean).join(' + ') || 'Nobody yet';
-        p.bindTooltip(`${esc(z.name)} · ${esc(names)}`);
-        L.marker(p.getBounds().getCenter(), { interactive: false, icon: L.divIcon({ className: 'lbl', html: `<span style="border-color:${z.color};color:${z.color}">${esc(z.name)}</span>`, iconSize: [0, 0] }) }).addTo(layer);
-        g.push(p);
-      }
-      for (const b of bikes) {
-        if (b.lat == null) continue;
-        const a = assign.get(Number(b.bike_id)), who = a?.agent_id ? agents.find(x => x.id === a.agent_id) : null;
-        L.circleMarker([b.lat, b.lng], { radius: 4.5, weight: 1, color: '#fff', fillOpacity: 1, fillColor: who ? agentColor(who.id) : '#9ca3af' })
-          .bindTooltip(`${esc(b.reg_number || '')} · ${who ? esc(who.name) + (a.manual ? ' (moved by hand)' : '') : 'Not assigned'}`).addTo(layer);
-      }
-      if (g.length && !map._fitted) { map.fitBounds(L.featureGroup(g).getBounds(), { padding: [10, 10] }); map._fitted = true; }
+      if (focus) focus = zones.find(z => z.id === focus.id) || null;
+      drawAreas();
+      if (!map._fitted) { map.invalidateSize(); map.fitBounds(allBounds(), { padding: [10, 10] }); map._fitted = true; }
+      drawBikes(); placeLabels(); focusCard();
+      document.querySelectorAll('#areas .area').forEach((el, i) => el.classList.toggle('focus', !!focus && zones[i] === focus));
     }
 
     // ---------- actions ----------
