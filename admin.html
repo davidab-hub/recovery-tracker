@@ -268,6 +268,9 @@
     .t-next { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
     .t-next button, .t-next a { border-radius: 12px; padding: 10px 16px; font: inherit; font-weight: 800; border: 1px solid var(--border); background: var(--input); color: var(--text); cursor: pointer; text-decoration: none; }
     .t-next .go { background: var(--red); color: #fff; border-color: var(--red); } .t-next .t-wa { background: #16a34a; color: #fff; border-color: transparent; }
+    .t-city { font-size: 11.5px; font-weight: 700; color: #0f766e; background: color-mix(in srgb, #0f766e 10%, var(--card)); border-radius: 999px; padding: 3px 9px; } .t-city.none { color: #b45309; background: color-mix(in srgb, #f59e0b 14%, var(--card)); }
+    .t-csel { border: 1px solid var(--border); border-radius: 10px; padding: 7px 8px; font: inherit; font-size: 13px; background: var(--input); color: var(--text); }
+    .t-box .form select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
     .form label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
     .form input[type=text], .form input[type=email], .form select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
     .rolesel { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: var(--input); color: var(--text); font-family: inherit; }
@@ -443,7 +446,9 @@
       mfr: ['MFR upload', '#0d9488', 'Upload the morning MFR file'],
       admin: ['Admin', '#111827', 'Everything, incl. adding people & PINs'],
     };
-    const ORDER = ['agent', 'recovery', 'qc', 'police', 'manager', 'mfr', 'admin'];
+    const ORDER = ['agent', 'recovery', 'qc', 'police', 'mfr', 'admin'];   // Manager is no longer offered (existing managers keep their access)
+    const CITIES = ['Bangalore', 'NCR', 'Hyderabad', 'Mumbai'];   // recovery agents only see / get bikes in their city
+    const cityOpts = (sel) => `<option value="">Choose city</option>` + CITIES.map(c => `<option ${c === sel ? 'selected' : ''}>${c}</option>`).join('');
     const ROLE_NAME = Object.fromEntries(Object.entries(ROLE).map(([k, v]) => [k, v[0]]));
     const rolesOf = (u) => (u.roles && u.roles.length ? u.roles : (u.role ? [u.role] : []));
     const isAgentOnly = (u) => rolesOf(u).length > 0 && rolesOf(u).every(r => r === 'agent');
@@ -482,6 +487,7 @@
         const has = (r) => draft.roles.includes(r), adm = has('admin');
         body = `<div class="t-edit">${ORDER.map(r => `<label class="t-opt ${adm && r !== 'admin' ? 'off' : ''}"><div><b>${ROLE[r][0]}</b><small>${ROLE[r][2]}</small></div>
             <input type="checkbox" class="t-sw" data-role="${r}" style="--sc:${ROLE[r][1]}" ${has(r) ? 'checked' : ''} ${adm && r !== 'admin' ? 'disabled' : ''}></label>`).join('')}
+          ${has('agent') && !adm ? `<label class="t-opt"><div><b>City</b><small>Recovery agents are only offered bikes in their city</small></div><select class="t-csel" data-city="1">${cityOpts(draft.city)}</select></label>` : ''}
           <label class="t-opt"><div><b>KYC access</b><small>See customers' KYC documents on the Police team page</small></div><input type="checkbox" class="t-sw" data-kyc="1" style="--sc:#475569" ${draft.kyc ? 'checked' : ''}></label>
           <div class="t-save"><button type="button" data-act="cancel">Cancel</button><button type="button" class="ok" data-act="save">Save changes</button></div></div>`;
       } else {
@@ -491,7 +497,7 @@
       }
       return `<div class="t-card" data-id="${u.id}" style="--c:${c}"><div class="t-top"><div class="t-av">${esc(initials(u.name || contact))}</div>
           <div class="t-who"><b>${esc(u.name || '—')}</b><small>${contact}</small></div><div class="t-ic">${icons}</div></div>
-        <div class="t-roles">${chips}</div>
+        <div class="t-roles">${rolesOf(u).includes('agent') ? `<span class="t-city ${u.city ? '' : 'none'}">📍 ${u.city ? esc(u.city) : 'City not set'}</span>` : ''}${chips}</div>
         <div class="t-seen ${never ? 'never' : ''}"><i></i>${never ? (u.status === 'pending' ? 'Sign-in link sent · not set up yet' : 'Has not signed in yet') : 'Last seen ' + s}</div>${body}</div>`;
     }
     function renderTeam() {
@@ -513,6 +519,7 @@
 
     // ---- Edit access (nothing changes until "Save changes") ----
     $('teamGrid').addEventListener('change', (e) => {
+      if (e.target.dataset.city && draft) { draft.city = e.target.value; return; }
       const sw = e.target.closest('.t-sw'); if (!sw || !draft) return;
       if (sw.dataset.kyc) { draft.kyc = sw.checked; return; }
       const r = sw.dataset.role;
@@ -530,15 +537,17 @@
       const who = u.name || u.phone || u.email, act = b.dataset.act;
       $('listErr').textContent = '';
       try {
-        if (act === 'edit') { editing = u.id; draft = { roles: rolesOf(u).slice(), kyc: !!u.kyc }; renderTeam(); return; }
+        if (act === 'edit') { editing = u.id; draft = { roles: rolesOf(u).slice(), kyc: !!u.kyc, city: u.city || '' }; renderTeam(); return; }
         if (act === 'cancel') { editing = null; draft = null; renderTeam(); return; }
         if (act === 'save') {
           const before = rolesOf(u);
           if (draft.roles.includes('admin') && !before.includes('admin') && !confirm(`Make ${who} an admin? They will see everything and can add and remove people.`)) return;
           if (draft.kyc && !u.kyc && !confirm(`Give ${who} KYC access? They will see customers' names, mobile numbers and KYC documents on the Police team page.`)) return;
+          if (isAgentOnly(draft) && !draft.city) throw new Error(`Choose a city for ${who}.`);
           b.disabled = true; b.textContent = 'Saving…';
           if (draft.roles.slice().sort().join() !== before.slice().sort().join()) await call('set_roles', { id: u.id, roles: draft.roles });
           if (draft.kyc !== !!u.kyc) await call('set_kyc', { id: u.id, value: draft.kyc });
+          if (draft.roles.includes('agent') && draft.city !== (u.city || '')) await call('set_city', { id: u.id, city: draft.city });
           editing = null; draft = null; await loadUsers();
           $('listErr').innerHTML = `<span style="color:#15803d">✓ Saved for ${esc(who)}</span>`; return;
         }
@@ -578,6 +587,7 @@
             <label for="nName">Name</label><input id="nName" type="text" maxlength="80" required placeholder="e.g. Ravi Kumar">
             ${add.mode === 'phone'
               ? `<label for="nPhone">Phone number</label><input id="nPhone" type="tel" inputmode="numeric" maxlength="14" required placeholder="10-digit mobile number">
+                 ${add.role === 'agent' ? `<label for="nCity">City</label><select id="nCity" required>${cityOpts(add.city)}</select>` : ''}
                  <label for="nPin">PIN (6 digits)</label><div class="t-pin"><input id="nPin" type="text" inputmode="numeric" maxlength="6" value="${add.pin}" required><button type="button" data-add="pin">New PIN</button></div>`
               : `<label for="nEmail">Work email</label><input id="nEmail" type="email" required placeholder="name@bounceshare.com">`}
             <p class="err">${esc(err)}</p>
@@ -624,14 +634,16 @@
         if (add.mode === 'phone') {
           const pin = $('nPin').value.trim();
           if (!/^\d{6}$/.test(pin)) throw new Error('The PIN must be exactly 6 digits.');
-          const r = await call('create_agent', { name, phone: $('nPhone').value, pin, role: add.role });
+          const city = add.role === 'agent' ? $('nCity').value : '';
+          if (add.role === 'agent' && !city) throw new Error('Please choose their city.');
+          const r = await call('create_agent', { name, phone: $('nPhone').value, pin, role: add.role, city });
           add.step = 3; add.result = shareHtml('pin', { ...r, pin });
         } else {
           const r = await call('invite', { name, email: $('nEmail').value, role: add.role });
           add.step = 3; add.result = shareHtml('link', r);
         }
         drawAdd(); loadUsers();
-      } catch (err) { const keep = { n: name, p: $('nPhone')?.value, m: $('nEmail')?.value }; drawAdd(err.message);
+      } catch (err) { const keep = { n: name, p: $('nPhone')?.value, m: $('nEmail')?.value }; add.city = $('nCity')?.value || add.city; drawAdd(err.message);
         $('nName').value = keep.n; if ($('nPhone')) $('nPhone').value = keep.p || ''; if ($('nEmail')) $('nEmail').value = keep.m || ''; }
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && add) closeAdd(); });
