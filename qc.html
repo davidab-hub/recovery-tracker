@@ -627,8 +627,8 @@
       qcs.forEach(q => { q.day = istDay(q.qc_at); q.city = q.city || HUB_CITY[q.hub] || 'Other'; });
       qcById = new Map(qcs.map(q => [q.id, q]));
       misByQc = new Map(); mistakes.forEach(m => { (misByQc.get(m.qc_id) || misByQc.set(m.qc_id, []).get(m.qc_id)).push(m); });
-      try { await loadRepeats(); } catch (e) { repeats = null; }
-      fillFilters(); render();
+      fillFilters(); render();   // show the QCs right away; the repeat-repairs section fills in when it's ready
+      loadRepeats().catch(() => { repeats = null; }).then(() => render());
       s.className = 'synced ok'; s.querySelector('span').textContent = 'Synced ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
     }
     // Bikes back in service within 7 days of their last job card (from the job cards, last ~4 months)
