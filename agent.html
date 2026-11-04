@@ -924,20 +924,28 @@
     async function load() {
       $('refreshBtn').classList.add('spin');
       try {
-        const all = [];
-        for (let from = 0; ; from += 1000) {
-          const { data, error } = await db.from('mfr_bikes').select('*').order('age_days', { ascending: false }).range(from, from + 999);
-          if (error) throw error;
-          all.push(...data); if (data.length < 1000) break;
-        }
+        // Ask for everything at once instead of one after another: the screen is ready about twice as fast
+        const bikesP = (async () => {
+          const all = [];
+          for (let from = 0; ; from += 1000) {
+            const { data, error } = await db.from('mfr_bikes').select('*').order('age_days', { ascending: false }).range(from, from + 999);
+            if (error) throw error;
+            all.push(...data); if (data.length < 1000) break;
+          }
+          return all;
+        })();
+        const [all, m, as, zs, r0, ag] = await Promise.all([bikesP,
+          db.from('mfr_meta').select('*').eq('id', 1).maybeSingle(),
+          db.from('mfr_assignments').select('bike_id, agent_id, agent_name, zone_id, manual').limit(5000),   // assignments + areas
+          db.from('recovery_zones').select('*').order('sort'),
+          myRole === null ? db.rpc('my_roles') : null,
+          agents.length ? null : db.rpc('recovery_agents')]);
         bikes = all;
-        const m = await db.from('mfr_meta').select('*').eq('id', 1).maybeSingle();
         meta = m.data || null;
-        // Assignments + areas (quietly skipped if they aren't set up)
-        const [as, zs] = await Promise.all([db.from('mfr_assignments').select('bike_id, agent_id, agent_name, zone_id, manual').limit(5000), db.from('recovery_zones').select('*').order('sort')]);
         assign = new Map((as.data || []).map(a => [Number(a.bike_id), a])); zones = zs.data || [];
+        if (ag) agents = ag.data || [];
         if (myRole === null) {   // several roles per person: use the strongest one for this page
-          let r = await db.rpc('my_roles');
+          let r = r0;
           if (r.error) { const o = await db.rpc('my_role'); r = { data: o.data ? [o.data] : [] }; }
           const rs = r.data || []; myRoles = rs; myRole = ['admin', 'recovery', 'manager', 'agent'].find(x => rs.includes(x)) || rs[0] || '';
           addWebHome(rs);
@@ -946,7 +954,6 @@
           const installed = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true;
           if (parent === window && installed && rs.some(x => ['admin', 'recovery', 'manager', 'police', 'qc'].includes(x))) { location.replace('app.html'); return; }
         }
-        if (!agents.length) { const r = await db.rpc('recovery_agents'); agents = r.data || []; }
         if (scope === null) scope = 'all';   // everyone starts on all bikes; "My bikes" shows only theirs
         staleNote();
         if (city !== 'All' && !bikes.some(b => b.city_name === city) && !CITIES.some(c => c.key === city)) city = 'All';
