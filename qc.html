@@ -612,7 +612,12 @@
         out.push(...data); if (data.length < 1000) return out;
       }
     }
+    let loadBusy = false;   // sign-in fires twice when the page opens: fetch the data only once
     async function load() {
+      if (loadBusy) return; loadBusy = true;
+      try { await loadNow(); } finally { loadBusy = false; }
+    }
+    async function loadNow() {
       const s = $('synced'); s.className = 'synced'; s.querySelector('span').textContent = 'Syncing…';
       try {
         [qcs, mistakes] = await Promise.all([
