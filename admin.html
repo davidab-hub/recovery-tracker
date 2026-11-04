@@ -452,10 +452,10 @@
     }
 
     let users = [];
-    const ROLE_OPTS = [['', 'No access (choose…)'], ['manager', 'Manager'], ['qc', 'QC team'], ['recovery', 'Recovery team'], ['police', 'Police team'], ['agent', 'Recovery agent'], ['mfr', 'MFR upload'], ['admin', 'Admin']];
+    const ROLE_OPTS = [['', 'No access (choose…)'], ['manager', 'Manager'], ['qc', 'QC team'], ['recovery', 'Recovery team'], ['police', 'Police team'], ['agent', 'Recovery agent'], ['mfr', 'MFR upload'], ['areas', 'Area manager'], ['admin', 'Admin']];
     const ROLE_NAME = Object.fromEntries(ROLE_OPTS);
     // Tick boxes: a person can have several roles (e.g. QC team + Police team). Admin = everything.
-    const ROLE_TICKS = [['manager', 'Manager'], ['qc', 'QC'], ['recovery', 'Recovery'], ['police', 'Police'], ['agent', 'Agent'], ['mfr', 'MFR upload'], ['admin', 'Admin']];
+    const ROLE_TICKS = [['manager', 'Manager'], ['qc', 'QC'], ['recovery', 'Recovery'], ['police', 'Police'], ['agent', 'Agent'], ['mfr', 'MFR upload'], ['areas', 'Area manager'], ['admin', 'Admin']];
     const roleBoxes = (u) => { const has = u.roles || (u.role ? [u.role] : []), adm = has.includes('admin');
       return `<div class="roleboxes ${has.length ? '' : 'none'}" data-id="${u.id}">${ROLE_TICKS.map(([v, t]) =>
         `<label class="${has.includes(v) ? 'on' : ''}"><input type="checkbox" value="${v}" ${has.includes(v) ? 'checked' : ''} ${adm && v !== 'admin' ? 'disabled' : ''}>${t}</label>`).join('')}</div>`; };
