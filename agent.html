@@ -355,7 +355,7 @@
     const ownerOf = (b) => assign.get(Number(b.bike_id)) || null;
     const isMine = (b) => !!me && ownerOf(b)?.agent_id === me.id;
     const mineCount = () => bikes.filter(isMine).length;
-    const canMove = () => myRole === 'admin' || myRole === 'recovery';
+    const canMove = () => myRole === 'admin' || myRole === 'recovery' || myRoles.includes('areas');
     const firstName = (n) => String(n || '').trim().split(/\s+/)[0];
     const kmTo = (b) => { if (!here || b.lat == null) return null;
       const dy = (b.lat - here[0]) * 111.32, dx = (b.lng - here[1]) * 111.32 * Math.cos(here[0] * Math.PI / 180); return Math.hypot(dx, dy); };
@@ -947,7 +947,7 @@
           if (parent === window && installed && rs.some(x => ['admin', 'recovery', 'manager', 'police', 'qc'].includes(x))) { location.replace('app.html'); return; }
         }
         if (!agents.length) { const r = await db.rpc('recovery_agents'); agents = r.data || []; }
-        if (scope === null) scope = mineCount() ? 'mine' : 'all';   // agents start on their own bikes
+        if (scope === null) scope = 'all';   // everyone starts on all bikes; "My bikes" shows only theirs
         staleNote();
         if (city !== 'All' && !bikes.some(b => b.city_name === city) && !CITIES.some(c => c.key === city)) city = 'All';
         render();
