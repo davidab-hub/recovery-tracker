@@ -271,22 +271,23 @@
     // Small live numbers on the tiles (skipped quietly if anything fails)
     async function loadCounts() {
       const put = (k, t) => { const el = $('n-' + k); if (el) el.textContent = t; };
-      try {
-        if (mine.some(s => s.key === 'bikes')) {
+      // the three counts are asked for at the same time, not one after another
+      await Promise.all([
+        mine.some(s => s.key === 'bikes') && (async () => {
           const { data } = await db.from('mfr_meta').select('bikes, synced_at').eq('id', 1).maybeSingle();
           if (data) put('bikes', `${data.bikes} bikes today`);
-        }
-        if (mine.some(s => s.key === 'police')) {
+        })().catch(() => {}),
+        mine.some(s => s.key === 'police') && (async () => {
           const { count } = await db.from('police_vehicles').select('id', { count: 'exact', head: true }).neq('status', 'Released');
           if (count != null) put('police', `${count} open cases`);
-        }
-        if (mine.some(s => s.key === 'qc' || s.key === 'qcdash')) {
+        })().catch(() => {}),
+        mine.some(s => s.key === 'qc' || s.key === 'qcdash') && (async () => {
           const d = new Date(); const ist = new Date(d.getTime() + 330 * 60e3); ist.setUTCHours(0, 0, 0, 0);
           const since = new Date(ist.getTime() - 330 * 60e3).toISOString();
           const { count } = await db.from('qc_checks').select('id', { count: 'exact', head: true }).gte('qc_at', since);
           if (count != null) { put('qcdash', `${count} QCs today`); put('qc', `${count} QCs today`); }
-        }
-      } catch (e) {}
+        })().catch(() => {}),
+      ]);
     }
 
     async function showFor(session) {
