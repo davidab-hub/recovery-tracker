@@ -161,11 +161,11 @@
         db.from('recovery_zones').select('*').eq('city', CITY).order('sort'),
         db.from('mfr_bikes').select('bike_id, reg_number, lat, lng, age_days').eq('city_name', CITY),
         db.from('mfr_assignments').select('bike_id, agent_id, agent_name, zone_id, manual').limit(5000),
-        call('list'),
+        db.rpc('recovery_agents'),   // quick list of people whose only access is the Recovery agent app
       ]);
-      for (const r of [z, b, a]) if (r.error) throw r.error;
+      for (const r of [z, b, a, u]) if (r.error) throw r.error;
       zones = z.data; bikes = b.data; assign = new Map(a.data.map(x => [Number(x.bike_id), x]));
-      agents = (u.users || []).filter(x => (x.roles || []).length && x.roles.every(r => r === 'agent')).map(x => ({ id: x.id, name: x.name || x.phone, phone: x.phone, last: x.last_sign_in_at }));
+      agents = (u.data || []).map(x => ({ id: x.id, name: x.name || x.phone, phone: x.phone }));
     }
 
     // ---------- view ----------
