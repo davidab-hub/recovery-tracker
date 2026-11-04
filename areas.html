@@ -11,6 +11,7 @@
     * { box-sizing: border-box; }
     body { margin: 0; background: var(--page); color: var(--text); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
     .wrap { max-width: 1180px; margin: 0 auto; padding: 16px; }
+    .backlink { display: inline-block; margin-bottom: 6px; font-size: 14px; font-weight: 700; color: var(--muted); text-decoration: none; } .backlink:hover { color: var(--text); } .embed .backlink { display: none; }
     header h1 { font-size: 22px; margin: 0; }
     header p { margin: 2px 0 12px; color: var(--muted); font-size: 13.5px; }
     .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
@@ -97,6 +98,7 @@
     <div class="gate hidden" id="gate"></div>
     <div id="page" class="hidden">
       <header>
+        <a class="backlink" href="dashboard.html" onclick="if (document.referrer.indexOf(location.host) > -1 && history.length > 1) { history.back(); return false; }">← Back</a>
         <h1>Agents &amp; areas</h1>
         <p>Bangalore · bikes are given out to agents every morning when the MFR list comes in</p>
       </header>
