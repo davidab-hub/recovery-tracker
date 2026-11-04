@@ -217,23 +217,27 @@
     function placeLabels() {   // one card per area, in the roomiest spot inside it, never overlapping another card
       layers.labels.clearLayers(); if (focus) return;
       const boxes = [], W = map.getSize().x / (map.getBounds().getEast() - map.getBounds().getWest()), S = map.getSize();
+      const cx = (placeLabels.cv ||= document.createElement('canvas')).getContext('2d');
+      const tw = (t, font) => { cx.font = font; return cx.measureText(t).width; };
       const size = z => { const b = L.polygon(z.polygon).getBounds(); return (b.getNorth() - b.getSouth()) * (b.getEast() - b.getWest()); };
-      const hit = (a, b) => !(a.x2 + 6 < b.x1 || b.x2 + 6 < a.x1 || a.y2 + 6 < b.y1 || b.y2 + 6 < a.y1);
+      const hit = (a, b) => !(a.x2 + 4 < b.x1 || b.x2 + 4 < a.x1 || a.y2 + 4 < b.y1 || b.y2 + 4 < a.y1);
       for (const z of zones.slice().sort((a, b) => size(a) - size(b))) {
         const team = teamOf(z), zb = zoneBikes(z), old = zb.filter(b => (b.age_days ?? 0) > 10).length;
-        const sub = team.length ? team.map(a => esc(a.name)).join(' + ') : '<em>No agent yet</em>';
-        const t1 = z.name + ' · ' + zb.length, t2 = team.length ? team.map(a => a.name).join(' + ') : 'No agent yet';
-        const w = Math.max(t1.length * 7.2 + (old ? 34 : 0), t2.length * 6.2) + 26, h = 38;
+        const [short, dir] = z.name.split('·').map(s => s.trim());   // "Area 4 · North" → card shows "Area 4 · 28" over "North · Yogesh"
+        const who = team.length ? team.map(a => a.name).join(' + ') : 'No agent yet';
+        const t1 = short + ' · ' + zb.length, t2 = (dir ? dir + ' · ' : '') + who;
+        const w = Math.max(tw(t1, '800 12px system-ui, sans-serif') + (old ? tw(old + ' old', '800 10px system-ui, sans-serif') + 16 : 0), tw(t2, '600 10.5px system-ui, sans-serif')) + 30, h = 36;
         const poly = z.polygon, la = poly.map(p => p[0]), ln = poly.map(p => p[1]); const [a0, a1, o0, o1] = [Math.min(...la), Math.max(...la), Math.min(...ln), Math.max(...ln)];
         let best = null, bs = -Infinity;
         for (let i = 1; i < 40; i++) for (let j = 1; j < 40; j++) {
           const p = [a0 + (a1 - a0) * i / 40, o0 + (o1 - o0) * j / 40]; if (!inPoly(p, poly)) continue;
           const px = map.latLngToContainerPoint(p), bx = { x1: px.x - w / 2, x2: px.x + w / 2, y1: px.y - h / 2, y2: px.y + h / 2 };
-          if (bx.x1 < 8 || bx.y1 < 52 || bx.x2 > S.x - 8 || bx.y2 > S.y - 40) continue;
+          if (bx.x1 < 6 || bx.y1 < 48 || bx.x2 > S.x - 6 || bx.y2 > S.y - 34) continue;
           const s = edgeDist(p, poly) * W - (boxes.some(b => hit(b, bx)) ? 10000 : 0); if (s > bs) { bs = s; best = [p, bx]; }
         }
         if (!best) continue; boxes.push(best[1]);
-        L.marker(best[0], { interactive: false, icon: L.divIcon({ className: '', iconSize: [0, 0], html: `<div class="zl2" style="--c:${colorOf(z)}"><i></i><span><b>${esc(z.name)} · ${zb.length}${old ? '<span class="old">' + old + ' old</span>' : ''}</b><small>${sub}</small></span></div>` }) }).addTo(layers.labels);
+        const sub = (dir ? esc(dir) + ' · ' : '') + (team.length ? team.map(a => esc(a.name)).join(' + ') : '<em>No agent yet</em>');
+        L.marker(best[0], { interactive: false, icon: L.divIcon({ className: '', iconSize: [0, 0], html: `<div class="zl2" style="--c:${colorOf(z)}"><i></i><span><b>${esc(short)} · ${zb.length}${old ? '<span class="old">' + old + ' old</span>' : ''}</b><small>${sub}</small></span></div>` }) }).addTo(layers.labels);
       }
     }
     function drawBikes() {
