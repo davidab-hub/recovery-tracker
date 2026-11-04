@@ -165,7 +165,7 @@
       ]);
       for (const r of [z, b, a]) if (r.error) throw r.error;
       zones = z.data; bikes = b.data; assign = new Map(a.data.map(x => [Number(x.bike_id), x]));
-      agents = (u.users || []).filter(x => (x.roles || []).includes('agent')).map(x => ({ id: x.id, name: x.name || x.phone, phone: x.phone, last: x.last_sign_in_at }));
+      agents = (u.users || []).filter(x => (x.roles || []).length && x.roles.every(r => r === 'agent')).map(x => ({ id: x.id, name: x.name || x.phone, phone: x.phone, last: x.last_sign_in_at }));
     }
 
     // ---------- view ----------
