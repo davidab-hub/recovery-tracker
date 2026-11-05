@@ -1010,7 +1010,7 @@
     }
     // Every "Take photo" button in the QC form opens the in-app camera
     document.addEventListener('click', (e) => {
-      const lab = e.target.closest('label.photo'); if (!lab || !$('qcForm').contains(lab)) return;
+      const lab = e.target.closest('label.photo'); if (!lab || !($('qcForm').contains(lab) || $('pJob').contains(lab))) return;   // QC form + Job Card tab
       const input = lab.querySelector('input[type=file]'); if (!input) return;
       if (input.dataset.native) { delete input.dataset.native; return; }   // "Phone camera" chosen: normal file picker
       if (!navigator.mediaDevices?.getUserMedia || !window.DataTransfer || !window.isSecureContext) return;
