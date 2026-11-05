@@ -526,13 +526,24 @@
     let upTarget = null;
     $('sBody').addEventListener('click', async (e) => {
       const up = e.target.closest('[data-up]'), vw = e.target.closest('[data-view]'), mk = e.target.closest('[data-mark]');
-      if (up) { upTarget = up.dataset.up; $('filePick').accept = upTarget === 'allot' ? 'image/*' : 'image/*,application/pdf'; $('filePick').click(); }
+      if (up) { upTarget = up.dataset.up; $('filePick').accept = upTarget === 'allot' ? 'image/*' : 'image/*,application/pdf';
+        if (navigator.mediaDevices?.getUserMedia && window.DataTransfer && window.isSecureContext) camOpen(); else $('filePick').click(); }
       if (vw) viewFile(vw.dataset.view, vw.dataset.name);
       if (mk) { const c = cases.find(x => x.id === openId); const [d, st] = mk.dataset.mark.split(':');
         const docs = { ...(kycRow.docs || {}) }; docs[d] = st === 'available' ? { state: 'available', by: myName, at: new Date().toISOString() } : { state: 'pending' };
         saveKyc(c, { docs }, st === 'available' ? '✓ Marked available' : '✓ Marked pending'); }
     });
-    function shrink(file, max) {
+    async function shrink(file, max) {   // decode the photo straight at the small size when the phone supports it (much less memory)
+      if (window.createImageBitmap) {
+        let bmp = null;
+        try {
+          bmp = await createImageBitmap(file, { resizeWidth: max, resizeQuality: 'medium', imageOrientation: 'from-image' });
+          if (bmp.height > max) { bmp.close(); bmp = await createImageBitmap(file, { resizeHeight: max, resizeQuality: 'medium', imageOrientation: 'from-image' }); }
+          const cv = document.createElement('canvas'); cv.width = bmp.width; cv.height = bmp.height; cv.getContext('2d').drawImage(bmp, 0, 0);
+          const b = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.75)); cv.width = cv.height = 0;
+          if (b && b.size > 1000) return b;
+        } catch (e) { /* older phones: the slower way below */ } finally { if (bmp && bmp.close) bmp.close(); }
+      }
       return new Promise((resolve, reject) => {
         const img = new Image(), url = URL.createObjectURL(file);
         img.onload = () => {
@@ -545,6 +556,51 @@
         img.src = url;
       });
     }
+    // ---------- In-app camera ----------
+    // Opening the phone's camera app can make Android close this page on phones with little memory, and the photo is lost.
+    // So photos are taken inside the page. "Choose file" still opens the normal picker (gallery, PDFs, phone camera).
+    const CAM = { stream: null };
+    function camUI() {
+      if ($('camBox')) return;
+      const d = document.createElement('div'); d.id = 'camBox';
+      d.style.cssText = 'position:fixed;inset:0;background:#000;z-index:10000;display:none;flex-direction:column';
+      d.innerHTML = `<video id="camVid" playsinline muted autoplay style="flex:1;width:100%;object-fit:cover;background:#000"></video>
+        <p id="camMsg" style="position:absolute;top:40%;left:0;right:0;text-align:center;color:#fff;font:600 15px system-ui;padding:0 24px"></p>
+        <div style="display:flex;align-items:center;justify-content:space-around;padding:18px 12px calc(18px + env(safe-area-inset-bottom,0px));background:#000">
+          <button type="button" id="camClose" style="background:none;border:0;color:#fff;font:600 15px system-ui;padding:12px">Cancel</button>
+          <button type="button" id="camShot" aria-label="Take photo" style="width:74px;height:74px;border-radius:50%;border:5px solid #fff;background:#e3262b"></button>
+          <button type="button" id="camFile" style="background:none;border:0;color:#fff;font:600 13px system-ui;padding:12px;max-width:110px">Choose file</button>
+        </div>`;
+      document.body.appendChild(d);
+      $('camClose').onclick = camClose;
+      $('camFile').onclick = () => { camClose(); $('filePick').click(); };
+      $('camShot').onclick = camShot;
+    }
+    async function camOpen() {
+      camUI(); $('camBox').style.display = 'flex'; $('camMsg').textContent = 'Starting camera…'; $('camShot').disabled = true;
+      try {
+        CAM.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1600 }, height: { ideal: 1200 } }, audio: false });
+        $('camVid').srcObject = CAM.stream; await $('camVid').play().catch(() => {});
+        $('camMsg').textContent = ''; $('camShot').disabled = false;
+      } catch (e) { $('camMsg').textContent = 'Camera not available here. Tap "Choose file".'; }
+    }
+    function camClose() {
+      if (CAM.stream) CAM.stream.getTracks().forEach(t => t.stop());
+      CAM.stream = null; if ($('camVid')) $('camVid').srcObject = null; if ($('camBox')) $('camBox').style.display = 'none';
+    }
+    function camShot() {
+      const v = $('camVid'); if (!v.videoWidth) return;
+      const k = Math.min(1, 1600 / Math.max(v.videoWidth, v.videoHeight));
+      const cv = document.createElement('canvas'); cv.width = Math.round(v.videoWidth * k); cv.height = Math.round(v.videoHeight * k);
+      cv.getContext('2d').drawImage(v, 0, 0, cv.width, cv.height);
+      cv.toBlob((b) => {
+        cv.width = cv.height = 0; camClose(); if (!b) return;
+        const f = new File([b], 'photo_' + Date.now() + '.jpg', { type: 'image/jpeg', lastModified: Date.now() });
+        try { const dt = new DataTransfer(); dt.items.add(f); $('filePick').files = dt.files; $('filePick').dispatchEvent(new Event('change', { bubbles: true })); }
+        catch (e) { $('filePick').click(); }
+      }, 'image/jpeg', 0.85);
+    }
+    window.addEventListener('popstate', () => { if ($('camBox') && $('camBox').style.display !== 'none') camClose(); });
     $('filePick').addEventListener('change', async (e) => {
       const file = e.target.files[0]; e.target.value = ''; const c = cases.find(x => x.id === openId); if (!file || !c || !upTarget) return;
       const isAllot = upTarget === 'allot', doc = isAllot ? null : upTarget.split(':')[1], out = isAllot ? $('aMsg') : $('kMsg');
