@@ -736,10 +736,10 @@
           <a class="${p ? '' : 'off'}" href="${p ? 'https://wa.me/91' + p : '#'}" target="_blank" rel="noopener">${ICON.wa}WhatsApp</a>
           <a class="go ${dir ? '' : 'off'}" href="${dir || '#'}" target="_blank" rel="noopener">${ICON.go}Navigate</a>
         </div>
-        ${referrals(b)}
         ${(() => { const n = nearestHub(b); return n ? `<div class="hubline"><div class="t">Nearest hub: <b>${esc(n.h.name)}</b><small>about ${kmText(n.km)} away (straight line)</small></div>
           <a href="${hubDir(n.h, b)}" target="_blank" rel="noopener">Route to hub</a></div>` : ''; })()}
         ${assignedBox(b)}
+        ${referrals(b)}
         ${streetView(b)}
         <dl>${rows.filter(r => r[1]).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
         <button class="close-sheet" type="button" id="closeSheet">Close</button>`;
