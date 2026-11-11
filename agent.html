@@ -198,6 +198,29 @@
     .result-title { margin: 14px 14px 0; font-weight: 700; font-size: 14px; }
 
     /* ---------- Bike sheet ---------- */
+    /* Log this call / Update bike status */
+    .ubtns { display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; margin: 12px 0 4px; }
+    .ub { border: 1.5px solid var(--border); background: #fff; border-radius: 12px; padding: 13px 8px; font-weight: 700; font-size: 14.5px; color: var(--text); }
+    .ub.main { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .lastlog { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 9px 12px; margin-top: 8px; font-size: 13px; line-height: 1.45; }
+    .lastlog b { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 2px; }
+    .uf .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .uf .opt { border: 1.5px solid var(--border); background: #fff; border-radius: 12px; padding: 11px 10px; text-align: left; font-weight: 600; font-size: 14px; color: var(--text); min-height: 50px; line-height: 1.25; }
+    .uf .opt span { margin-right: 5px; }
+    .uf .opt.on { border-color: var(--brand); background: #fff1f1; color: var(--brand-dark); }
+    .uf .opt.wide { grid-column: 1 / -1; }
+    .uf .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .uf .pill { border: 1.5px solid var(--border); background: #fff; border-radius: 999px; padding: 9px 13px; font-weight: 600; font-size: 14px; color: var(--text); }
+    .uf .pill.on { border-color: var(--brand); background: var(--brand); color: #fff; }
+    .uf label i { font-style: normal; color: var(--muted); font-weight: 500; }
+    .uf select { width: 100%; box-sizing: border-box; border: 1.5px solid var(--border); border-radius: 12px; padding: 12px; font: inherit; font-size: 15px; background: #fff; }
+    .uf .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .uf .sec { border-top: 1px solid var(--border); margin-top: 16px; }
+    .uf .photos { display: flex; gap: 8px; flex-wrap: wrap; }
+    .uf .ph { width: 74px; height: 74px; border: 2px dashed #cbd5e1; border-radius: 12px; display: grid; place-items: center; color: var(--muted); font-size: 26px; background: #fff; overflow: hidden; position: relative; }
+    .uf .ph img { width: 100%; height: 100%; object-fit: cover; }
+    .uf .ph button { position: absolute; top: 2px; right: 2px; border: 0; border-radius: 50%; width: 22px; height: 22px; background: rgba(0,0,0,.6); color: #fff; font-size: 13px; line-height: 22px; padding: 0; }
+    .uf .auto { color: var(--muted); font-size: 12.5px; margin-top: 10px; line-height: 1.45; }
     #sheetBg { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1000; }
     #sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001; background: #fff; border-radius: 18px 18px 0 0; max-height: 88%; overflow-y: auto;
       padding: 8px 16px calc(16px + var(--safe-b)); box-shadow: 0 -8px 30px rgba(0,0,0,.2); }
@@ -456,7 +479,7 @@
         <div class="info"><div class="reg">${esc(b.reg_number)}${ownerTag(b)}</div><div class="rider">${esc(b.rider_name || 'No rider name')}</div></div>
         ${nearSort && kmTo(b) != null ? `<span class="km">${kmText(kmTo(b))}</span>` : ''}
         <span class="age" style="background:${ageColor(b.age_days)}${ageColor(b.age_days) === '#f9c134' ? ';color:#111' : ''}">${esc(days(b) || '—')}</span>
-        ${p ? `<a class="ibtn call" href="tel:+91${p}" aria-label="Call rider" data-stop>${ICON.call}</a>` : ''}
+        ${p ? `<a class="ibtn call" href="tel:+91${p}" aria-label="Call rider" data-stop data-callbike="${b.bike_id}">${ICON.call}</a>` : ''}
       </div>`;
     }
     const groupHtml = (id, title, count, inner, open, dot) => `<div class="group ${open ? 'open' : ''}" data-g="${esc(id)}">
@@ -771,7 +794,7 @@
       const by = list(b.referrer_phone), refd = list(b.referred_phones);
       if (!by.length && !refd.length) return '';
       const row = (label, sub, ph) => `<div class="refrow"><div class="t"><b>${esc(label)}</b><small>+91 ${esc(ph)}${sub ? ' · ' + esc(sub) : ''}</small></div>
-        <a href="tel:+91${ph}" aria-label="Call ${esc(label)}">${ICON.call}Call</a></div>`;
+        <a href="tel:+91${ph}" aria-label="Call ${esc(label)}" data-callbike="${b.bike_id}">${ICON.call}Call</a></div>`;
       return `<div class="refbox"><h3>Referrals</h3>
         ${by.map((ph) => row('Referred by', '', ph)).join('')}
         ${refd.map((ph, i) => row(names[i] && names[i] !== '(not signed up)' ? names[i] : 'Referred friend ' + (refd.length > 1 ? i + 1 : ''), names[i] === '(not signed up)' ? 'not signed up' : 'referred by this rider', ph)).join('')}
@@ -816,7 +839,7 @@
           <small>${esc(b.rider_name || 'No rider name')} · ${esc(cityLabel(b.city_name))}</small></div>
           <span class="agechip" style="${ageColor(b.age_days) === '#f9c134' ? 'color:#111' : ''}">${esc(days(b) || '—')}</span></div>
           ${b.loc_note ? `<div class="note">“${esc(b.loc_note)}”<i>${esc(b.loc_by || '')}${b.loc_at ? ' · ' + esc(ago(b.loc_at)) : ''}</i></div>` : ''}
-          <div class="nl-acts ${p ? '' : 'one'}">${p ? `<a href="tel:+91${p}" aria-label="Call rider">${ICON.call}Call rider</a>` : ''}<button type="button" data-addloc="${b.bike_id}">${PIN_ADD}Add location</button></div></div>`; }).join('') || '<div class="empty">All bikes have a location.</div>'}
+          <div class="nl-acts ${p ? '' : 'one'}">${p ? `<a href="tel:+91${p}" aria-label="Call rider" data-callbike="${b.bike_id}">${ICON.call}Call rider</a>` : ''}<button type="button" data-addloc="${b.bike_id}">${PIN_ADD}Add location</button></div></div>`; }).join('') || '<div class="empty">All bikes have a location.</div>'}
         <button class="close-sheet" type="button" id="closeSheet">Close</button>`);
     }
     // Read a point out of a Google Maps link or typed numbers ("12.97, 77.59", ".../@12.97,77.59,17z", "?q=12.97,77.59", "!3d12.97!4d77.59")
@@ -871,6 +894,213 @@
       const a = e.target.closest('[data-addloc]'); if (a) { const b = bikes.find(x => String(x.bike_id) === a.dataset.addloc); if (b) openLocForm(b); return; }
       if (e.target.closest('#noLocBtn')) openNoLoc();
     });
+    // ---------- Log this call (after calling a rider) and Update bike status (what happened to the bike) ----------
+    const CALL_OUT = [['not_answered', '📵', 'Not answered'], ['switched_off', '📴', 'Switched off / busy'], ['wrong_number', '❌', 'Wrong number'],
+      ['call_back', '🔁', 'Call back later'], ['will_pay', '💰', 'Will pay / renew'], ['paid', '✅', 'Already paid'], ['will_return', '🏢', 'Will return the bike'],
+      ['pick_up', '📍', 'Come pick it up'], ['police', '🚓', 'Bike with police'], ['stolen', '🚨', 'Says stolen / lost'],
+      ['someone_else', '👤', 'Bike with someone else'], ['refused', '🙅', 'Refused / abusive']];
+    const UPD_OUT = [['renewed', '💰', 'Rent paid / renewed'], ['moved_hub', '🚚', 'Recovered → moved to hub'], ['found_hub', '🏢', 'Found at hub'],
+      ['police', '🚓', 'At police station'], ['not_recovered', '⛔', "Tried, couldn't recover"]];
+    const LBL = Object.fromEntries([...CALL_OUT, ...UPD_OUT].map(([k, , t]) => [k, t]));
+    const bikeById = (id) => bikes.find(x => String(x.bike_id) === String(id));
+    const pills = (id, list, multi) => `<div class="pills" id="${id}"${multi ? ' data-multi' : ''}>${list.map(([v, t]) => `<button type="button" class="pill" data-v="${esc(v)}">${esc(t)}</button>`).join('')}</div>`;
+    const pick = (id) => { const el = $(id); return el ? (el.hasAttribute('data-multi') ? [...el.querySelectorAll('.pill.on')].map(x => x.dataset.v) : (el.querySelector('.pill.on')?.dataset.v || '')) : ''; };
+    const val = (id) => ($(id)?.value || '').trim();
+    function hubOptions(b) {   // the bike's city first, nearest hub on top, then "Other hub"
+      const n = nearestHub(b)?.h?.name, list = HUBS.filter(h => !b.city_name || h.city === b.city_name).map(h => h.name);
+      const all = [...new Set([n, ...list].filter(Boolean))];
+      return '<option value="">Choose hub</option>' + all.map(h => `<option>${esc(h)}</option>`).join('') + '<option value="other">Other hub (write in note)</option>';
+    }
+    function wireForm(root, outId, onPick) {   // single / multi choice pills, and show the questions for the chosen answer
+      root.querySelectorAll('.pills').forEach(g => g.addEventListener('click', (e) => { const p = e.target.closest('.pill'); if (!p) return;
+        if (g.hasAttribute('data-multi')) p.classList.toggle('on'); else { const was = p.classList.contains('on'); g.querySelectorAll('.pill').forEach(x => x.classList.remove('on')); if (!was) p.classList.add('on'); }
+        g.dispatchEvent(new Event('change')); }));
+      root.querySelectorAll(`#${outId} .opt`).forEach(o => o.addEventListener('click', () => {
+        root.querySelectorAll(`#${outId} .opt`).forEach(x => x.classList.toggle('on', x === o)); const v = o.dataset.v;
+        root.querySelectorAll('[data-show]').forEach(d => d.classList.toggle('hidden', !d.dataset.show.split(' ').includes(v)));
+        onPick && onPick(v);
+      }));
+    }
+    const fail = (id, t) => { $(id).textContent = t; $(id).className = 'got bad'; };
+    const whereAmI = () => new Promise((ok) => { if (!navigator.geolocation) return ok(null);
+      navigator.geolocation.getCurrentPosition((p) => ok([p.coords.latitude, p.coords.longitude]), () => ok(null), { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }); });
+
+    // remember which bike was called; when the agent comes back to the app, ask "Log this call"
+    document.addEventListener('click', (e) => { const a = e.target.closest('a[data-callbike]'); if (a && a.getAttribute('href') !== '#') {
+      const b = bikeById(a.dataset.callbike); store.set('ra-call', JSON.stringify({ id: a.dataset.callbike, reg: b?.reg_number || '', name: b?.rider_name || '', city: b?.city_name || '', t: Date.now() })); } }, true);
+    function pendingCall() {
+      let c = null; try { c = JSON.parse(store.get('ra-call') || 'null'); } catch (e) {}
+      if (!c || !me) return; const gone = Date.now() - c.t;
+      if (gone < 3000) return;   // still dialling
+      store.set('ra-call', ''); if (gone > 3 * 3600e3) return;
+      const b = bikeById(c.id) || { bike_id: c.id, reg_number: c.reg, rider_name: c.name, city_name: c.city };
+      if (!$('clForm')) openCallLog(b, gone);
+    }
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(pendingCall, 400); });
+    window.addEventListener('focus', () => setTimeout(pendingCall, 400));
+    document.addEventListener('click', (e) => {
+      const u = e.target.closest('[data-update]'); if (u) { const b = bikeById(u.dataset.update); if (b) openUpdate(b); return; }
+      const c = e.target.closest('[data-logcall]'); if (c) { const b = bikeById(c.dataset.logcall); if (b) openCallLog(b); }
+    });
+
+    function openCallLog(b, gone) {
+      const ended = gone ? ` · call ended ${gone < 90e3 ? 'just now' : Math.round(gone / 60e3) + ' min ago'}` : '';
+      showSheet(`<div class="grab"></div><h2>Log this call</h2><div class="who">${esc(b.reg_number)}${b.rider_name ? ' · ' + esc(b.rider_name) : ''}${ended}</div>
+        <form class="lf uf" id="clForm">
+          <div class="opts" id="clOut">${CALL_OUT.map(([k, i, t]) => `<button type="button" class="opt" data-v="${k}"><span>${i}</span>${esc(t)}</button>`).join('')}</div>
+          <div data-show="will_pay call_back" class="hidden"><label for="clWhen">When? (date and time)</label><input id="clWhen" type="datetime-local"></div>
+          <div data-show="will_pay" class="hidden"><label for="clAmt">Amount promised (₹) <i>optional</i></label><input id="clAmt" inputmode="numeric"></div>
+          <div data-show="will_return" class="hidden"><label for="clHub">Which hub?</label><select id="clHub">${hubOptions(b)}</select>
+            <label for="clDay">Which day?</label><input id="clDay" type="date"></div>
+          <div data-show="pick_up someone_else" class="hidden"><label for="clLoc">Where is the bike? (address / landmark)</label><input id="clLoc" placeholder="e.g. 2nd Main, BTM, near the bakery">
+            <label for="clCon">Contact there <i>optional</i></label><input id="clCon" placeholder="Name / phone"></div>
+          <div data-show="police stolen" class="hidden"><label for="clPs">Police station / where reported</label><input id="clPs" placeholder="e.g. Madiwala PS">
+            <label>FIR filed?</label>${pills('clFir', [['yes', 'Yes'], ['no', 'No'], ['not sure', 'Not sure']])}</div>
+          <label for="clNote">Note <i>optional</i></label><input id="clNote" placeholder="What did the customer say?">
+          <div class="got" id="clErr"></div>
+          <button class="save" type="submit" id="clSave">Save call</button>
+        </form>
+        <button class="close-sheet" type="button" id="closeSheet">Skip – didn't call</button>`);
+      wireForm($('sheet'), 'clOut');
+      $('clForm').onsubmit = async (e) => {
+        e.preventDefault(); const out = $('sheet').querySelector('#clOut .opt.on')?.dataset.v;
+        if (!out) return fail('clErr', 'Tap what happened on the call.');
+        if (out === 'will_return' && !val('clHub')) return fail('clErr', 'Choose the hub.');
+        if ((out === 'pick_up' || out === 'someone_else') && !val('clLoc')) return fail('clErr', 'Write where the bike is.');
+        const w = val('clWhen');
+        $('clSave').disabled = true; $('clSave').textContent = 'Saving…';
+        const { error } = await db.rpc('log_bike_call', { p: { bike_id: b.bike_id, reg_number: b.reg_number, outcome: out,
+          promise_at: w ? new Date(w).toISOString() : '', amount: val('clAmt').replace(/\D/g, ''), return_hub: val('clHub'), return_on: val('clDay'),
+          bike_location: val('clLoc'), contact: val('clCon'), police_station: val('clPs'), fir: pick('clFir'), note: val('clNote') } });
+        if (error) { $('clSave').disabled = false; $('clSave').textContent = 'Save call'; return fail('clErr', error.message || 'Could not save. Try again.'); }
+        const next = { paid: 'renewed', police: 'police' }[out];
+        flash(`Call saved · ${LBL[out]}`);
+        if (next && bikeById(b.bike_id)) openUpdate(b, next); else closeSheet();
+      };
+    }
+
+    // photos: shrunk on the phone (max 1280 px, JPEG) and uploaded to the private 'bike-updates' folder
+    function shrink(file) {
+      return new Promise((ok, no) => { const img = new Image(), u = URL.createObjectURL(file);
+        img.onload = () => { const k = Math.min(1, 1280 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+          c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(u); c.toBlob((bl) => bl ? ok(bl) : no(new Error('photo')), 'image/jpeg', 0.72); };
+        img.onerror = () => { URL.revokeObjectURL(u); no(new Error('Could not read the photo.')); }; img.src = u; });
+    }
+    function openUpdate(b, preset) {
+      let shots = [];
+      showSheet(`<div class="grab"></div><h2>Update bike status</h2><div class="who">${esc(b.reg_number)}${b.rider_name ? ' · ' + esc(b.rider_name) : ''} · ${esc(cityLabel(b.city_name))}</div>
+        <form class="lf uf" id="upForm">
+          <div class="step" style="margin-top:4px">What happened?</div>
+          <div class="opts" id="upOut">${UPD_OUT.map(([k, i, t], n) => `<button type="button" class="opt${n === 4 ? ' wide' : ''}" data-v="${k}"><span>${i}</span>${esc(t)}</button>`).join('')}</div>
+
+          <div data-show="renewed" class="hidden">
+            <label for="upAmt">Amount paid (₹) <i>optional</i></label><input id="upAmt" inputmode="numeric" placeholder="e.g. 1850">
+            <label>Paid how?</label>${pills('upPaidHow', [['app', 'In customer app'], ['upi', 'UPI to company'], ['cash', 'Cash to agent']])}
+            <label>Bike stays with the customer?</label>${pills('upStays', [['yes', 'Yes'], ['no', 'No – brought to hub']])}</div>
+
+          <div data-show="moved_hub" class="hidden">
+            <label>Where was the bike?</label>${pills('upWhere', [['handed_over', 'With customer – handed over'], ['parked', 'Found parked / abandoned'], ['home_office', "Customer's home / office"], ['other', 'Other']])}
+            <label>Moved by</label>${pills('upBy', [['own', 'Own vehicle'], ['porter', 'Porter'], ['customer', 'Customer dropped it'], ['agent_rode', 'Agent rode it']])}
+            <div id="upOwn" class="hidden"><label for="upVeh">Our vehicle number</label><input id="upVeh" placeholder="e.g. KA05 MN 4421" autocapitalize="characters"></div>
+            <div id="upPorter" class="hidden"><div class="row2"><div><label for="upPAmt">Porter amount (₹)</label><input id="upPAmt" inputmode="numeric"></div>
+              <div><label for="upPOrd">Porter order ID <i>optional</i></label><input id="upPOrd"></div></div></div></div>
+
+          <div data-show="moved_hub found_hub" class="hidden"><label for="upHub" id="upHubL">Dropped at hub</label><select id="upHub">${hubOptions(b)}</select></div>
+          <div data-show="moved_hub" class="hidden"><label>Reached the hub?</label>${pills('upReached', [['true', 'Yes, at hub now'], ['false', 'On the way']])}</div>
+          <div data-show="found_hub" class="hidden"><label>How did it get there? <i>if known</i></label>${pills('upHow', [['customer', 'Customer dropped it'], ['team', 'Another team moved it'], ['unknown', "Don't know"]])}</div>
+
+          <div data-show="police" class="hidden">
+            <label for="upPs">Police station name</label><input id="upPs" placeholder="e.g. HSR Layout PS">
+            <label for="upArea">Area / city <i>optional</i></label><input id="upArea">
+            <label>Why is it there?</label>${pills('upWhy', [['seized', 'Seized by police'], ['accident', 'Accident'], ['stolen_found', 'Stolen – found by police'], ['abandoned', 'Abandoned – picked up'], ['customer_case', 'Customer arrested / case'], ['traffic', 'Traffic violation'], ['other', 'Other']])}
+            <label>FIR filed?</label>${pills('upFir', [['yes', 'Yes'], ['no', 'No'], ['not sure', 'Not sure']])}
+            <div id="upFirBox" class="hidden"><div class="row2"><div><label for="upFirNo">FIR number</label><input id="upFirNo"></div><div><label for="upFirDt">FIR date</label><input id="upFirDt" type="date"></div></div></div>
+            <label for="upOff">Officer name and phone <i>optional</i></label><input id="upOff" placeholder="e.g. SI Ramesh, 98xxxxxxxx">
+            <label>Can we take the bike back?</label>${pills('upRel', [['released', 'Released – collected'], ['pending', 'Release pending'], ['documents', 'Needs documents'], ['court', 'Needs court order']])}
+            <label for="upDocs">Documents / next step <i>optional</i></label><input id="upDocs" placeholder="e.g. RC copy + authorisation letter"></div>
+
+          <div data-show="not_recovered" class="hidden">
+            <label>Why?</label>${pills('upFail', [['not_reachable', 'Customer not reachable'], ['refused', 'Customer refused'], ['not_there', 'Bike not at location'], ['wrong_address', 'Wrong address'], ['promised', 'Promised to pay'], ['unsafe', 'Unsafe / hostile'], ['other', 'Other']])}
+            <label for="upFollow">Follow up on <i>optional</i></label><input id="upFollow" type="date"></div>
+
+          <div data-show="moved_hub found_hub police" class="hidden sec">
+            <div class="step">Bike condition</div>
+            ${pills('upCond', [['good', 'Good, running'], ['minor_damage', 'Minor damage'], ['major_damage', 'Major damage'], ['not_running', 'Not running']])}
+            <label>Missing items <i>tap all that apply</i></label>${pills('upMiss', [['battery', 'Battery'], ['charger', 'Charger'], ['keys', 'Keys'], ['helmet', 'Helmet'], ['number_plate', 'Number plate'], ['mirrors', 'Mirrors'], ['phone_holder', 'Phone holder'], ['none', 'Nothing missing']], true)}
+            <div class="row2"><div><label for="upBat">Battery % <i>optional</i></label><input id="upBat" inputmode="numeric"></div><div><label for="upOdo">Odometer km <i>optional</i></label><input id="upOdo" inputmode="numeric"></div></div></div>
+
+          <div data-show="renewed moved_hub found_hub police not_recovered" class="hidden sec">
+            <div class="step">Photos and note</div>
+            <div class="photos" id="upPhotos"></div><input id="upFile" type="file" accept="image/*" capture="environment" class="hidden">
+            <label for="upNote">Note <i>optional</i></label><textarea id="upNote" rows="2" placeholder="Anything else the team should know"></textarea>
+            <div class="auto">Saved with your name, the time and your location.</div></div>
+          <div class="got" id="upErr"></div>
+          <button class="save" type="submit" id="upSave">Save</button>
+        </form>
+        <button class="close-sheet" type="button" id="closeSheet">Cancel</button>`);
+      wireForm($('sheet'), 'upOut', (v) => { $('upHubL').textContent = v === 'found_hub' ? 'Which hub?' : 'Dropped at hub'; });
+      $('upBy').addEventListener('change', () => { const m = pick('upBy'); $('upOwn').classList.toggle('hidden', m !== 'own'); $('upPorter').classList.toggle('hidden', m !== 'porter'); });
+      $('upFir').addEventListener('change', () => $('upFirBox').classList.toggle('hidden', pick('upFir') !== 'yes'));
+      $('upMiss').addEventListener('click', (e) => { const p = e.target.closest('.pill'); if (!p) return;   // "Nothing missing" clears the others and back
+        $('upMiss').querySelectorAll('.pill').forEach(x => { if (p.dataset.v === 'none' ? x !== p : x.dataset.v === 'none') x.classList.remove('on'); }); });
+      const drawShots = () => { $('upPhotos').innerHTML = shots.map((s, i) => `<div class="ph"><img src="${s.url}" alt=""><button type="button" data-rm="${i}" aria-label="Remove photo">✕</button></div>`).join('')
+        + (shots.length < 3 ? '<button type="button" class="ph" id="upAdd" aria-label="Add photo">📷</button>' : '');
+        $('upAdd') && ($('upAdd').onclick = () => $('upFile').click()); };
+      $('upPhotos').onclick = (e) => { const r = e.target.closest('[data-rm]'); if (r) { URL.revokeObjectURL(shots[+r.dataset.rm].url); shots.splice(+r.dataset.rm, 1); drawShots(); } };
+      $('upFile').onchange = async () => { const f = $('upFile').files[0]; $('upFile').value = ''; if (!f) return;
+        try { const bl = await shrink(f); shots.push({ blob: bl, url: URL.createObjectURL(bl) }); drawShots(); } catch (e) { fail('upErr', e.message); } };
+      drawShots();
+      if (preset) $('sheet').querySelector(`#upOut .opt[data-v="${preset}"]`)?.click();
+
+      $('upForm').onsubmit = async (e) => {
+        e.preventDefault(); const out = $('sheet').querySelector('#upOut .opt.on')?.dataset.v, by = pick('upBy');
+        if (!out) return fail('upErr', 'Tap what happened.');
+        if (out === 'moved_hub' && !by) return fail('upErr', 'Choose how the bike was moved.');
+        if (out === 'moved_hub' && by === 'porter' && !val('upPAmt')) return fail('upErr', 'Enter the Porter amount.');
+        if ((out === 'moved_hub' || out === 'found_hub') && !val('upHub')) return fail('upErr', 'Choose the hub.');
+        if (out === 'police' && !val('upPs')) return fail('upErr', 'Enter the police station.');
+        if (out === 'not_recovered' && !pick('upFail')) return fail('upErr', "Tap why the bike couldn't be recovered.");
+        const btn = $('upSave'); btn.disabled = true; btn.textContent = shots.length ? 'Uploading photos…' : 'Saving…';
+        const photos = [];
+        try { for (const [i, s] of shots.entries()) { const path = `${me.id}/${b.bike_id || 'bike'}-${Date.now()}-${i}.jpg`;
+          const { error } = await db.storage.from('bike-updates').upload(path, s.blob, { contentType: 'image/jpeg' }); if (error) throw error; photos.push(path); } }
+        catch (err) { btn.disabled = false; btn.textContent = 'Save'; return fail('upErr', 'Photo upload failed: ' + (err.message || 'check the internet') + '. Try again.'); }
+        btn.textContent = 'Saving…';
+        const pt = await whereAmI(), num = (id) => val(id).replace(/\D/g, '');
+        const details = {
+          renewed: { paid_how: pick('upPaidHow'), stays_with_customer: pick('upStays'), amount: num('upAmt') },
+          moved_hub: { where_found: pick('upWhere') },
+          found_hub: { how: pick('upHow') },
+          police: { police_station: val('upPs'), area: val('upArea'), reason: pick('upWhy'), fir: pick('upFir'), fir_no: val('upFirNo'), fir_date: val('upFirDt'),
+            officer: val('upOff'), release: pick('upRel'), next_step: val('upDocs') },
+          not_recovered: { reason: pick('upFail'), follow_up: val('upFollow') },
+        }[out];
+        Object.keys(details).forEach(k => { if (!details[k]) delete details[k]; });
+        const withCond = ['moved_hub', 'found_hub', 'police'].includes(out);
+        const { error } = await db.rpc('log_bike_update', { p: { bike_id: b.bike_id, reg_number: b.reg_number, outcome: out,
+          moved_by: out === 'moved_hub' ? by : '', vehicle_no: by === 'own' ? val('upVeh') : '', porter_amount: by === 'porter' ? num('upPAmt') : '', porter_order: by === 'porter' ? val('upPOrd') : '',
+          drop_hub: out === 'moved_hub' || out === 'found_hub' ? val('upHub') : '', reached_hub: out === 'moved_hub' && pick('upReached') ? pick('upReached') : null,
+          details, condition: withCond ? pick('upCond') : '', missing: withCond ? pick('upMiss').filter(x => x !== 'none') : [],
+          battery_pct: withCond ? num('upBat') : '', odometer_km: withCond ? num('upOdo') : '', photos, lat: pt ? pt[0] : '', lng: pt ? pt[1] : '', note: val('upNote') } });
+        if (error) { btn.disabled = false; btn.textContent = 'Save'; return fail('upErr', error.message || 'Could not save. Try again.'); }
+        shots.forEach(s => URL.revokeObjectURL(s.url));
+        flash(`Saved · ${b.reg_number} · ${LBL[out]}`); closeSheet();
+      };
+    }
+    // the bike card shows the latest call and update for this bike
+    async function lastLog(b) {
+      const el = $('lastLog'); if (!el || !b.bike_id) return;
+      const [c, u] = await Promise.all([
+        db.from('bike_calls').select('at, agent_name, outcome, promise_at, note').eq('bike_id', b.bike_id).order('at', { ascending: false }).limit(1),
+        db.from('bike_updates').select('at, agent_name, outcome, drop_hub, moved_by, note').eq('bike_id', b.bike_id).order('at', { ascending: false }).limit(1)]);
+      if ($('lastLog') !== el) return;
+      const when = (t) => new Date(t).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+      const line = (r, extra) => `${esc(LBL[r.outcome] || r.outcome)}${extra ? ' · ' + esc(extra) : ''} · ${esc(firstName(r.agent_name) || '')} · ${when(r.at)}${r.note ? `<br><i>“${esc(r.note)}”</i>` : ''}`;
+      const cr = c.data?.[0], ur = u.data?.[0];
+      el.innerHTML = (ur ? `<div class="lastlog"><b>Last update</b>${line(ur, ur.drop_hub)}</div>` : '') +
+        (cr ? `<div class="lastlog"><b>Last call</b>${line(cr, cr.promise_at ? 'by ' + when(cr.promise_at) : '')}</div>` : '');
+    }
     function openSheet(b) {
       const p = tel(b), dir = b.lat != null ? `https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}` : '';
       const rows = [['Rider', b.rider_name], ['Rider phone', p ? '+91 ' + p : ''], ['City', cityLabel(b.city_name)], ['Days overdue', days(b)],
@@ -878,13 +1108,15 @@
         ['Marked for recovery on', b.marked_for_recovery_since], ['Booking ended', b.booking_end_time], ['Police case', b.police_case]];
       $('sheet').innerHTML = `<div class="grab"></div><h2>${esc(b.reg_number)}</h2><div class="who">${esc(b.rider_name || '')}${b.age_days != null ? ' · ' + esc(days(b)) + ' overdue' : ''}</div>
         <div class="acts">
-          <a class="call ${p ? '' : 'off'}" href="${p ? 'tel:+91' + p : '#'}">${ICON.call}Call</a>
+          <a class="call ${p ? '' : 'off'}" href="${p ? 'tel:+91' + p : '#'}" data-callbike="${b.bike_id}">${ICON.call}Call</a>
           <a class="${p ? '' : 'off'}" href="${p ? 'sms:+91' + p : '#'}">${ICON.sms}SMS</a>
           <a class="${p ? '' : 'off'}" href="${p ? 'https://wa.me/91' + p : '#'}" target="_blank" rel="noopener">${ICON.wa}WhatsApp</a>
           <a class="go ${dir ? '' : 'off'}" href="${dir || '#'}" target="_blank" rel="noopener">${ICON.go}Navigate</a>
         </div>
         ${(() => { const n = nearestHub(b); return n ? `<div class="hubline"><div class="t">Nearest hub: <b>${esc(n.h.name)}</b><small>about ${kmText(n.km)} away (straight line)</small></div>
           <a href="${hubDir(n.h, b)}" target="_blank" rel="noopener">Route to hub</a></div>` : ''; })()}
+        <div class="ubtns"><button type="button" class="ub main" data-update="${b.bike_id}">Update bike status</button><button type="button" class="ub" data-logcall="${b.bike_id}">Log a call</button></div>
+        <div id="lastLog"></div>
         ${locBox(b)}
         ${assignedBox(b)}
         ${referrals(b)}
@@ -894,6 +1126,7 @@
       $('sheet').classList.remove('hidden'); $('sheetBg').classList.remove('hidden'); $('sheet').scrollTop = 0;
       $('closeSheet').onclick = closeSheet;
       history.pushState({ sheet: 1 }, '');
+      lastLog(b);
     }
     function closeSheet(fromBack) {
       if ($('sheet').classList.contains('hidden')) return;
