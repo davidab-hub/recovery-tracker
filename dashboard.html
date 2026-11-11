@@ -385,13 +385,13 @@
       </div>
       <div class="panel">
         <h3>Recovered bikes moved to hub, per day</h3>
-        <p class="note">By transport · from the recovery sheet</p>
+        <p class="note">By transport · from the recovery sheet (to 26 Oct) and the Agent App</p>
         <div class="counts" id="hubCounts"></div>
         <div class="chart"><canvas id="hubChart"></canvas></div>
       </div>
       <div class="panel" style="grid-column:1/-1">
         <h3>Transport cost, own truck vs Porter</h3>
-        <p class="note">Total ₹ spent per day on moving bikes to the hub · from the recovery sheet</p>
+        <p class="note">Total ₹ spent per day on moving bikes to the hub · from the recovery sheet (to 26 Oct) and the Agent App (Porter amount; own vehicle has no ₹ in the app)</p>
         <div class="counts" id="costCounts"></div>
         <div class="chart"><canvas id="costChart"></canvas></div>
       </div>
@@ -438,6 +438,28 @@
       </div>
     </section>
     <section class="panel" style="margin-top:16px">
+      <h3>Agent App: calls and bike updates</h3>
+      <p class="note">What the team logs in the Agent App after each call ("Log this call") and when something happens to a bike ("Update bike status") · for the period, city and hub chosen above</p>
+      <div class="counts" id="appCounts"></div>
+      <h3 style="margin-top:14px">Day by day</h3>
+      <div class="table-wrap" style="max-height:360px;overflow:auto"><table id="tApp"><thead><tr><th>Day</th><th class="num">Calls</th><th class="num">Answered</th><th class="num">Promised to pay</th>
+        <th class="num">Rent paid</th><th class="num">Moved to hub</th><th class="num">· own vehicle</th><th class="num">· Porter</th><th class="num">· customer drop</th><th class="num">· agent rode</th>
+        <th class="num">Porter ₹</th><th class="num">Found at hub</th><th class="num">Police</th><th class="num">Couldn't recover</th></tr></thead><tbody></tbody></table></div>
+      <h3 style="margin-top:14px">By agent</h3>
+      <div class="table-wrap" style="max-height:320px;overflow:auto"><table id="tAppAgents"><thead><tr><th>Agent</th><th class="num">Calls</th><th class="num">Answered</th><th class="num">Promised to pay</th>
+        <th class="num">Bike updates</th><th class="num">Moved to hub</th><th class="num">Police</th><th class="num">Couldn't recover</th></tr></thead><tbody></tbody></table></div>
+      <h3 style="margin-top:14px">Call list <span class="note" id="callListN" style="font-weight:500"></span></h3>
+      <div class="dl-row" style="border-top:0;padding-top:0;margin-top:4px">
+        <select id="callAgent" aria-label="Agent"><option value="">All agents</option></select>
+        <select id="callOutF" aria-label="Call result"><option value="">All results</option></select>
+        <button class="btn btn-dl" type="button" id="dlCalls"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Download calls</button>
+      </div>
+      <div class="table-wrap" style="max-height:420px;overflow:auto;margin-top:8px"><table id="tCalls"><thead><tr><th>Time</th><th>Agent</th><th>Bike</th><th>City / hub</th><th>Result</th><th>Details</th><th>Note</th></tr></thead><tbody></tbody></table></div>
+      <h3 style="margin-top:14px">Follow-ups <span class="note" id="appFollowN" style="font-weight:500"></span></h3>
+      <p class="note">Latest promise per bike: will pay, call back, will return, come pick it up · overdue first · hidden once the bike has a newer update</p>
+      <div class="table-wrap" style="max-height:320px;overflow:auto"><table id="tAppFollow"><thead><tr><th>Due</th><th>Bike</th><th>What</th><th>Details</th><th>Agent</th><th>Logged</th></tr></thead><tbody></tbody></table></div>
+    </section>
+    <section class="panel" style="margin-top:16px">
       <h3>Hub table</h3>
       <p class="note">From Metabase (bike's home hub) · only Own truck and Porter come from the recovery sheet</p>
       <div class="table-wrap">
@@ -467,7 +489,7 @@
     const num = (n) => Number(n).toLocaleString('en-IN');
     const rs = (n) => '₹' + (n >= 1e5 ? (n / 1e5).toFixed(2) + ' L' : num(Math.round(n)));
     const fmtDay = (d) => new Date(d + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-    let DATA = [], POLICE = [], LAST = '', FIRST = '', FLEET = [], FDAY = [], FAG = [], FLEET_AT = null, SHEET_LAST = '', FLOW = [], FLOW_START = '', FLOW_CLOSE = [], FLOW_TODAY = '';
+    let APP_CALLS = [], APP_UPD = [], DATA = [], POLICE = [], LAST = '', FIRST = '', FLEET = [], FDAY = [], FAG = [], FLEET_AT = null, SHEET_LAST = '', FLOW = [], FLOW_START = '', FLOW_CLOSE = [], FLOW_TODAY = '';
     const hubKey = (s) => String(s || '').toLowerCase().replace(/[^a-z]/g, '').replace('yeshwanthpur', 'yeswanthpur');
     const AGE_ORDER = ['0-1 days', '1-2 days', '2-3 days', '3-4 days', '4-5 days', '5-10 days', 'Above 10 days'];
     const ageSort = (a, b) => { const i = AGE_ORDER.indexOf(a), j = AGE_ORDER.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j) || a.localeCompare(b); };
@@ -532,6 +554,8 @@
         data: days.map(d => Math.round(rsum(hub.filter(r => r.d === d && r.m === m)))) })) },
         options: { scales: axes(true), plugins: { tooltip: { callbacks: { label: (x) => `${x.dataset.label}: ${inr(x.raw)}`, footer: (it) => 'Total: ' + inr(it.reduce((s, x) => s + x.raw, 0)) } } } } });
       draw('hubChart', { type: 'bar', data: { labels, datasets: MODES.map(m => ({ label: m === 'Van' ? 'Own truck' : m, backgroundColor: MC[m], data: days.map(d => hub.filter(r => r.d === d && r.m === m).length) })) }, options: { scales: axes(true) } });
+
+      appPanel(from, to, c, h);
 
       // ---- Hub table: Metabase (bikes, MFR, age, recovered) + sheet (own truck / Porter) ----
       const hubs = new Map(), hub0 = (name) => ({ name, cities: new Map(), old: 0, van: 0, por: 0, rec: 0, tot: 0, mfr: 0, age: 0 });
@@ -711,6 +735,76 @@
 
     // ---- Police-case bikes (Metabase police_case_type) ----
     const polList = () => { const c = $('cityFilter').value, h = $('hubFilter').value; return POLICE.filter(r => (!c || r.city === c) && (!h || hubKey(r.hub) === hubKey(h))); };
+    // ---- Agent App: calls and bike updates ----
+    function istDay(t) { return new Date(Date.parse(t) + 5.5 * 3600e3).toISOString().slice(0, 10); }
+    function appPanel(from, to, c, h) {
+      const ok = (r) => (!c || r.city === c) && (!h || hubKey(r.hub) === hubKey(h) || hubKey(r.drop_hub) === hubKey(h));
+      const C = APP_CALLS.filter(ok).filter(r => { const d = istDay(r.at); return d >= from && d <= to; });
+      callList(C);
+      const U = APP_UPD.filter(ok).filter(r => { const d = istDay(r.at); return d >= from && d <= to; });
+      const NA = ['not_answered', 'switched_off', 'wrong_number'], ans = (a) => a.filter(r => !NA.includes(r.outcome)).length;
+      const cnt = (a, o, m) => a.filter(r => r.outcome === o && (!m || r.moved_by === m)).length;
+      const porter = (a) => a.filter(r => r.outcome === 'moved_hub' && r.moved_by === 'porter').reduce((s, r) => s + (Number(r.porter_amount) || 0), 0);
+      const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
+      chips('appCounts', [{ t: 'Calls logged', n: C.length }, { t: 'Answered', n: ans(C), color: '#16a34a' }, { t: 'Promised to pay', n: cnt(C, 'will_pay'), color: '#f59e0b' },
+        { t: 'Bike updates', n: U.length }, { t: 'Moved to hub', n: cnt(U, 'moved_hub'), color: B1 }, { t: 'Police station', n: cnt(U, 'police'), color: RED }]);
+      const days = [...new Set([...C, ...U].map(r => istDay(r.at)))].sort().reverse();
+      const on = (a, d) => a.filter(r => istDay(r.at) === d), z = (n) => n ? num(n) : '<span style="color:var(--text-3,#9ca3af)">0</span>';
+      $('tApp').tBodies[0].innerHTML = days.map(d => { const c1 = on(C, d), u1 = on(U, d);
+        return `<tr><td>${fmtDay(d)}</td><td class="num">${z(c1.length)}</td><td class="num">${z(ans(c1))}</td><td class="num">${z(cnt(c1, 'will_pay'))}</td><td class="num">${z(cnt(u1, 'renewed'))}</td>
+          <td class="num" style="font-weight:700">${z(cnt(u1, 'moved_hub'))}</td><td class="num">${z(cnt(u1, 'moved_hub', 'own'))}</td><td class="num">${z(cnt(u1, 'moved_hub', 'porter'))}</td><td class="num">${z(cnt(u1, 'moved_hub', 'customer'))}</td><td class="num">${z(cnt(u1, 'moved_hub', 'agent_rode'))}</td>
+          <td class="num">${porter(u1) ? inr(porter(u1)) : z(0)}</td><td class="num">${z(cnt(u1, 'found_hub'))}</td><td class="num">${z(cnt(u1, 'police'))}</td><td class="num">${z(cnt(u1, 'not_recovered'))}</td></tr>`; }).join('')
+        || '<tr><td colspan="14">Nothing logged in the Agent App for this period yet.</td></tr>';
+      const ag = new Map(), A = (n) => { n = n || 'Unknown'; if (!ag.has(n)) ag.set(n, { n, c: [], u: [] }); return ag.get(n); };
+      C.forEach(r => A(r.agent_name).c.push(r)); U.forEach(r => A(r.agent_name).u.push(r));
+      $('tAppAgents').tBodies[0].innerHTML = [...ag.values()].sort((p, q) => (q.c.length + q.u.length) - (p.c.length + p.u.length)).map(x => `<tr><td><strong>${esc(x.n)}</strong></td>
+        <td class="num">${z(x.c.length)}</td><td class="num">${z(ans(x.c))}</td><td class="num">${z(cnt(x.c, 'will_pay'))}</td><td class="num">${z(x.u.length)}</td><td class="num">${z(cnt(x.u, 'moved_hub'))}</td>
+        <td class="num">${z(cnt(x.u, 'police'))}</td><td class="num">${z(cnt(x.u, 'not_recovered'))}</td></tr>`).join('') || '<tr><td colspan="8">No one has logged anything for this period yet.</td></tr>';
+      // follow-ups: the latest promise per bike (any date), unless the bike got an update after it
+      const lastUpd = new Map(); APP_UPD.forEach(r => { if (!lastUpd.has(r.bike_id) || r.at > lastUpd.get(r.bike_id)) lastUpd.set(r.bike_id, r.at); });
+      const FU = { will_pay: 'Will pay', call_back: 'Call back', will_return: 'Will return the bike', pick_up: 'Pick up the bike' }, latest = new Map();
+      APP_CALLS.filter(ok).forEach(r => { const k = r.bike_id || r.reg_number; if (!latest.has(k) || r.at > latest.get(k).at) latest.set(k, r); });
+      const now = Date.now(), due = (r) => r.promise_at || (r.return_on ? r.return_on + 'T18:00:00+05:30' : r.at);
+      const F = [...latest.values()].filter(r => FU[r.outcome] && !(lastUpd.get(r.bike_id) > r.at)).sort((p, q) => due(p).localeCompare(due(q)));
+      const when = (t) => new Date(t).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+      $('appFollowN').textContent = F.length ? `${F.length} open · ${F.filter(r => Date.parse(due(r)) < now).length} overdue` : '';
+      $('tAppFollow').tBodies[0].innerHTML = F.map(r => { const late = Date.parse(due(r)) < now;
+        const det = [r.amount ? inr(r.amount) : '', r.return_hub || '', r.bike_location || '', r.note ? '“' + r.note + '”' : ''].filter(Boolean).join(' · ');
+        return `<tr><td style="${late ? 'color:var(--red);font-weight:700' : ''}">${r.promise_at || r.return_on ? when(due(r)) : 'asap'}${late ? ' · overdue' : ''}</td><td><strong>${esc(r.reg_number)}</strong></td>
+          <td>${esc(FU[r.outcome])}</td><td style="white-space:normal;min-width:180px">${esc(det)}</td><td>${esc(r.agent_name || '')}</td><td>${when(r.at)}</td></tr>`; }).join('')
+        || '<tr><td colspan="6">No open follow-ups.</td></tr>';
+    }
+    // ---- Call list: every call logged in the Agent App, newest first, by agent ----
+    const CALL_LBL = { not_answered: 'Not answered', switched_off: 'Switched off / busy', wrong_number: 'Wrong number', call_back: 'Call back later', will_pay: 'Will pay / renew',
+      paid: 'Already paid', will_return: 'Will return the bike', pick_up: 'Come pick it up', police: 'Bike with police', stolen: 'Says stolen / lost', someone_else: 'Bike with someone else', refused: 'Refused / abusive' };
+    let CALL_ROWS = [];
+    function callDetails(r) {
+      const when = (t) => new Date(t).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+      return [r.promise_at ? 'by ' + when(r.promise_at) : '', r.amount ? '₹' + Math.round(r.amount).toLocaleString('en-IN') : '', r.return_hub ? 'to ' + r.return_hub : '',
+        r.return_on ? 'on ' + fmtDay(r.return_on) : '', r.bike_location || '', r.contact ? 'contact ' + r.contact : '', r.police_station || '', r.fir ? 'FIR: ' + r.fir : ''].filter(Boolean).join(' · ');
+    }
+    function callList(C) {
+      const keep = (id, opts) => { const el = $(id), v = el.value; el.innerHTML = el.options[0].outerHTML + opts.map(([k, t]) => `<option value="${esc(k)}">${esc(t)}</option>`).join(''); el.value = opts.some(([k]) => k === v) ? v : ''; };
+      const names = [...new Set(C.map(r => r.agent_name || 'Unknown'))].sort();
+      keep('callAgent', names.map(n => [n, `${n} (${C.filter(r => (r.agent_name || 'Unknown') === n).length})`]));
+      keep('callOutF', Object.entries(CALL_LBL).filter(([k]) => C.some(r => r.outcome === k)));
+      const a = $('callAgent').value, o = $('callOutF').value;
+      CALL_ROWS = C.filter(r => (!a || (r.agent_name || 'Unknown') === a) && (!o || r.outcome === o)).sort((p, q) => q.at.localeCompare(p.at));
+      const NA = ['not_answered', 'switched_off', 'wrong_number'];
+      $('callListN').textContent = CALL_ROWS.length ? `${num(CALL_ROWS.length)} calls · ${num(CALL_ROWS.filter(r => !NA.includes(r.outcome)).length)} answered` : '';
+      const tm = (t) => new Date(t).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+      $('tCalls').tBodies[0].innerHTML = CALL_ROWS.slice(0, 500).map(r => `<tr><td>${tm(r.at)}</td><td>${esc(r.agent_name || '')}</td><td><strong>${esc(r.reg_number)}</strong></td>
+        <td>${esc([r.city, r.hub].filter(Boolean).join(' · '))}</td><td style="${NA.includes(r.outcome) ? 'color:var(--text-2)' : 'font-weight:600'}">${esc(CALL_LBL[r.outcome] || r.outcome)}</td>
+        <td style="white-space:normal;min-width:160px">${esc(callDetails(r))}</td><td style="white-space:normal;min-width:160px">${esc(r.note || '')}</td></tr>`).join('')
+        + (CALL_ROWS.length > 500 ? `<tr><td colspan="7">Showing the latest 500 · download for all ${num(CALL_ROWS.length)}</td></tr>` : '')
+        || '<tr><td colspan="7">No calls logged for this period.</td></tr>';
+    }
+    $('callAgent').onchange = $('callOutF').onchange = () => render();
+    $('dlCalls').onclick = () => {
+      const t = (x) => new Date(x).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+      saveCsv(`agent-calls_${($('callAgent').value || 'all-agents').replace(/\s+/g, '-')}.csv`, [['Time (India)', 'Agent', 'Bike', 'City', 'Hub', 'Result', 'Promised by', 'Amount promised', 'Return hub', 'Return on', 'Bike location', 'Contact', 'Police station', 'FIR', 'Note'],
+        ...CALL_ROWS.map(r => [t(r.at), r.agent_name, r.reg_number, r.city, r.hub, CALL_LBL[r.outcome] || r.outcome, r.promise_at ? t(r.promise_at) : '', r.amount ?? '', r.return_hub, r.return_on, r.bike_location, r.contact, r.police_station, r.fir, r.note])]);
+    };
     function police() {
       const P = polList(), cnt = (s) => P.filter(r => r.police_case_type === s).length;
       $('kPolice').textContent = num(cnt('Police Station')); $('kPoliceSub').textContent = `held at a police station · live ${FLEET_AT ? new Date(FLEET_AT).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : ''}`;
@@ -766,8 +860,14 @@
         // Inflow / outflow counted by us (every 30-min refresh compared with the one before)
         const flowP = db.rpc('mfr_flow', { p_from: since, p_to: '2100-01-01' }).then(r => r.error ? [] : (r.data || [])).catch(() => []);
         const closeP = pageAll(() => db.from('mfr_flow_daily').select('day, city, hub, model, mfr').gte('day', since).order('day')).catch(() => []);
+        // Agent App: calls and bike updates (only the recovery team / managers can read them)
+        const callsP = pageAll(() => db.from('bike_calls').select('at, agent_name, bike_id, reg_number, city, hub, outcome, promise_at, amount, return_hub, return_on, bike_location, contact, police_station, fir, note').gte('at', since).order('at')).catch(() => []);
+        const updP = pageAll(() => db.from('bike_updates').select('at, agent_name, bike_id, reg_number, city, hub, outcome, moved_by, porter_amount, drop_hub, details').gte('at', since).order('at')).catch(() => []);
         const cases = await casesP;
         DATA = cases.map(r => ({ d: r.case_date, c: r.city || '', o: r.outcome || '', m: r.moved_by === 'Own truck' ? 'Van' : (r.moved_by || ''), amt: Number(r.amount) || 0, l: r.drop_loc || '' }));
+        APP_CALLS = await callsP; APP_UPD = await updP;
+        const MB = { own: 'Van', agent_rode: 'Van', porter: 'Porter', customer: 'Customer drop' };
+        APP_UPD.filter(r => r.outcome === 'moved_hub').forEach(r => DATA.push({ d: istDay(r.at), c: r.city || '', o: 'Moved to Hub', m: MB[r.moved_by] || '', amt: Number(r.porter_amount) || 0, l: r.drop_hub || r.hub || '', app: 1 }));
         const fl = await fleetP;
         if (fl.err) { console.warn('metabase', fl.err); $('loadErr').textContent = 'Could not load the Metabase data: ' + fl.err.message; }
         else {
@@ -776,7 +876,7 @@
         }
         FLOW = await flowP; FLOW_CLOSE = await closeP; FLOW_START = FLOW.reduce((m, r) => !m || r.day < m ? r.day : m, '');
         FLOW_TODAY = new Date(Date.now() + 5.5 * 3600e3 - 7 * 3600e3).toISOString().slice(0, 10);   // inflow/outflow days run 7 am to 7 am
-        SHEET_LAST = DATA.reduce((m, r) => r.d > m ? r.d : m, '');
+        SHEET_LAST = DATA.filter(r => !r.app).reduce((m, r) => r.d > m ? r.d : m, '');
         TODAY = new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
         FIRST = [FDAY.length ? FDAY[0].day : TODAY, DATA.reduce((m, r) => r.d < m ? r.d : m, '9999')].sort()[0];
         LAST = TODAY; loadedAt = Date.now();
