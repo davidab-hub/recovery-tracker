@@ -220,6 +220,11 @@
     .uf .ph { width: 74px; height: 74px; border: 2px dashed #cbd5e1; border-radius: 12px; display: grid; place-items: center; color: var(--muted); font-size: 26px; background: #fff; overflow: hidden; position: relative; }
     .uf .ph img { width: 100%; height: 100%; object-fit: cover; }
     .uf .ph button { position: absolute; top: 2px; right: 2px; border: 0; border-radius: 50%; width: 22px; height: 22px; background: rgba(0,0,0,.6); color: #fff; font-size: 13px; line-height: 22px; padding: 0; }
+    .wa-done { text-align: center; padding: 6px 0 4px; }
+    .wa-done .tick { width: 56px; height: 56px; border-radius: 50%; background: var(--ok); color: #fff; font-size: 30px; display: grid; place-items: center; margin: 4px auto 8px; }
+    .wa-msg { white-space: pre-wrap; text-align: left; background: #e7fbe9; border: 1px solid #c6efcb; border-radius: 12px; padding: 10px 12px; font-size: 13.5px; line-height: 1.45; margin: 12px 0; }
+    .wa-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; box-sizing: border-box; border-radius: 12px; background: #25d366; color: #fff; padding: 15px; font-weight: 800; font-size: 16px; text-decoration: none; }
+    .wa-btn svg { width: 22px; height: 22px; }
     .uf .auto { color: var(--muted); font-size: 12.5px; margin-top: 10px; line-height: 1.45; }
     #sheetBg { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1000; }
     #sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001; background: #fff; border-radius: 18px 18px 0 0; max-height: 88%; overflow-y: auto;
@@ -943,6 +948,39 @@
       const c = e.target.closest('[data-logcall]'); if (c) { const b = bikeById(c.dataset.logcall); if (b) openCallLog(b); }
     });
 
+    // after saving: the message is ready for the WhatsApp group (WhatsApp opens, pick the group, tap Send)
+    const myName = () => me?.user_metadata?.name || '';
+    const stamp = () => new Date().toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+    const rupees = (n) => n ? '₹' + Number(n).toLocaleString('en-IN') : '';
+    function shareSheet(title, text) {
+      showSheet(`<div class="grab"></div><div class="wa-done"><div class="tick">✓</div><h2>${esc(title)}</h2>
+        <div class="who">Send it to the team's WhatsApp group</div></div>
+        <div class="wa-msg">${esc(text)}</div>
+        <a class="wa-btn" id="waGo" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">${ICON.wa}Send to WhatsApp group</a>
+        <button class="close-sheet" type="button" id="closeSheet">Done</button>`);
+      $('waGo').onclick = () => setTimeout(closeSheet, 600);
+    }
+    function callText(b, out, f) {
+      const line2 = [f.promise_at ? 'by ' + new Date(f.promise_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '', rupees(f.amount),
+        f.return_hub ? 'to ' + f.return_hub + ' hub' : '', f.return_on ? 'on ' + new Date(f.return_on + 'T00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '',
+        f.bike_location, f.contact ? 'contact ' + f.contact : '', f.police_station, f.fir ? 'FIR: ' + f.fir : ''].filter(Boolean).join(' · ');
+      return `📞 ${b.reg_number}${b.rider_name ? ' (' + b.rider_name + ')' : ''}\n${LBL[out]}${line2 ? '\n' + line2 : ''}${f.note ? '\nNote: ' + f.note : ''}\n– ${myName()}, ${stamp()}`;
+    }
+    const ICON_OUT = { renewed: '💰', moved_hub: '🚚', found_hub: '🏢', police: '🚓', not_recovered: '⛔' };
+    function updText(b, out, f) {
+      const d = f.details || {}, L = [];
+      if (out === 'moved_hub') { L.push(`Hub: ${f.drop_hub}${f.reached_hub === 'false' ? ' (on the way)' : f.reached_hub === 'true' ? ' (at hub now)' : ''}`);
+        L.push('Moved by: ' + ({ own: 'Own vehicle' + (f.vehicle_no ? ' ' + f.vehicle_no : ''), porter: 'Porter ' + rupees(f.porter_amount), customer: 'Customer dropped it', agent_rode: 'Agent rode it' }[f.moved_by] || '')); }
+      if (out === 'found_hub') L.push('Hub: ' + f.drop_hub);
+      if (out === 'renewed') L.push([rupees(d.amount), d.paid_how ? { app: 'paid in app', upi: 'UPI to company', cash: 'cash to agent' }[d.paid_how] : '', d.stays_with_customer === 'yes' ? 'bike stays with customer' : d.stays_with_customer === 'no' ? 'bike brought to hub' : ''].filter(Boolean).join(' · '));
+      if (out === 'police') { L.push('Police station: ' + d.police_station + (d.area ? ', ' + d.area : ''));
+        L.push([d.reason ? String(d.reason).replace(/_/g, ' ') : '', d.fir ? 'FIR: ' + d.fir + (d.fir_no ? ' (' + d.fir_no + ')' : '') : '', d.release ? String(d.release).replace(/_/g, ' ') : ''].filter(Boolean).join(' · ')); }
+      if (out === 'not_recovered') L.push(['Reason: ' + String(d.reason || '').replace(/_/g, ' '), d.follow_up ? 'follow up ' + d.follow_up : ''].filter(Boolean).join(' · '));
+      if (f.condition || (f.missing || []).length) L.push([f.condition ? 'Condition: ' + f.condition.replace(/_/g, ' ') : '', (f.missing || []).length ? 'Missing: ' + f.missing.map(x => x.replace(/_/g, ' ')).join(', ') : ''].filter(Boolean).join(' · '));
+      if (f.note) L.push('Note: ' + f.note);
+      if (f.lat) L.push(`Location: https://maps.google.com/?q=${Number(f.lat).toFixed(5)},${Number(f.lng).toFixed(5)}`);
+      return `${ICON_OUT[out]} ${b.reg_number} – ${LBL[out]}\n${L.filter(Boolean).join('\n')}\n– ${myName()}, ${stamp()}${b.city_name ? ' · ' + cityLabel(b.city_name) : ''}`;
+    }
     function openCallLog(b, gone) {
       const ended = gone ? ` · call ended ${gone < 90e3 ? 'just now' : Math.round(gone / 60e3) + ' min ago'}` : '';
       showSheet(`<div class="grab"></div><h2>Log this call</h2><div class="who">${esc(b.reg_number)}${b.rider_name ? ' · ' + esc(b.rider_name) : ''}${ended}</div>
@@ -969,13 +1007,13 @@
         if ((out === 'pick_up' || out === 'someone_else') && !val('clLoc')) return fail('clErr', 'Write where the bike is.');
         const w = val('clWhen');
         $('clSave').disabled = true; $('clSave').textContent = 'Saving…';
-        const { error } = await db.rpc('log_bike_call', { p: { bike_id: b.bike_id, reg_number: b.reg_number, outcome: out,
+        const f = { bike_id: b.bike_id, reg_number: b.reg_number, outcome: out,
           promise_at: w ? new Date(w).toISOString() : '', amount: val('clAmt').replace(/\D/g, ''), return_hub: val('clHub'), return_on: val('clDay'),
-          bike_location: val('clLoc'), contact: val('clCon'), police_station: val('clPs'), fir: pick('clFir'), note: val('clNote') } });
+          bike_location: val('clLoc'), contact: val('clCon'), police_station: val('clPs'), fir: pick('clFir'), note: val('clNote') };
+        const { error } = await db.rpc('log_bike_call', { p: f });
         if (error) { $('clSave').disabled = false; $('clSave').textContent = 'Save call'; return fail('clErr', error.message || 'Could not save. Try again.'); }
         const next = { paid: 'renewed', police: 'police' }[out];
-        flash(`Call saved · ${LBL[out]}`);
-        if (next && bikeById(b.bike_id)) openUpdate(b, next); else closeSheet();
+        if (next && bikeById(b.bike_id)) { flash(`Call saved · ${LBL[out]}`); openUpdate(b, next); } else shareSheet('Call saved', callText(b, out, f));
       };
     }
 
@@ -1078,14 +1116,15 @@
         }[out];
         Object.keys(details).forEach(k => { if (!details[k]) delete details[k]; });
         const withCond = ['moved_hub', 'found_hub', 'police'].includes(out);
-        const { error } = await db.rpc('log_bike_update', { p: { bike_id: b.bike_id, reg_number: b.reg_number, outcome: out,
+        const f = { bike_id: b.bike_id, reg_number: b.reg_number, outcome: out,
           moved_by: out === 'moved_hub' ? by : '', vehicle_no: by === 'own' ? val('upVeh') : '', porter_amount: by === 'porter' ? num('upPAmt') : '', porter_order: by === 'porter' ? val('upPOrd') : '',
           drop_hub: out === 'moved_hub' || out === 'found_hub' ? val('upHub') : '', reached_hub: out === 'moved_hub' && pick('upReached') ? pick('upReached') : null,
           details, condition: withCond ? pick('upCond') : '', missing: withCond ? pick('upMiss').filter(x => x !== 'none') : [],
-          battery_pct: withCond ? num('upBat') : '', odometer_km: withCond ? num('upOdo') : '', photos, lat: pt ? pt[0] : '', lng: pt ? pt[1] : '', note: val('upNote') } });
+          battery_pct: withCond ? num('upBat') : '', odometer_km: withCond ? num('upOdo') : '', photos, lat: pt ? pt[0] : '', lng: pt ? pt[1] : '', note: val('upNote') };
+        const { error } = await db.rpc('log_bike_update', { p: f });
         if (error) { btn.disabled = false; btn.textContent = 'Save'; return fail('upErr', error.message || 'Could not save. Try again.'); }
         shots.forEach(s => URL.revokeObjectURL(s.url));
-        flash(`Saved · ${b.reg_number} · ${LBL[out]}`); closeSheet();
+        shareSheet('Saved', updText(b, out, f));
       };
     }
     // the bike card shows the latest call and update for this bike
