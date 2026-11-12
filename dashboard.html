@@ -168,6 +168,11 @@
     .section-head select { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: var(--input); color: var(--text); }
     .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 10px; }
     @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .bar select { min-width: 0; flex: 1 1 120px; } }
+    .mb-alert { display: flex; align-items: center; gap: 12px; background: #fdecec; border: 1.5px solid var(--red); color: #7f1d1d; border-radius: 10px; padding: 10px 14px; margin: 14px 0 0; font-size: 13.5px; }
+    .mb-alert b { font-size: 14.5px; } .mb-alert .x { margin-left: auto; }
+    .mb-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+    .mb-add input { padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--input); color: var(--text); text-transform: uppercase; width: 150px; }
+    tr.mb-new td { background: #fff4f4; }
     .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; min-width: 0; }
     .panel h3 { margin: 0 0 2px; font-size: 13.5px; font-weight: 600; }
     .panel .note { margin: 0 0 6px; font-size: 11px; color: var(--muted); }
@@ -359,6 +364,18 @@
       <div class="card"><div class="label">Moved by Porter <span class="sheet">SHEET</span></div><div class="value c-dark" id="kPorter">–</div><div class="sub" id="kPorterSub"></div></div>
       <div class="card"><div class="label">Police Station Bikes <span class="live">LIVE</span></div><div class="value c-red" id="kPolice">–</div><div class="sub" id="kPoliceSub"></div></div>
       <div class="card"><div class="label">FIR Registered Bikes <span class="live">LIVE</span></div><div class="value c-red" id="kFir">–</div><div class="sub" id="kFirSub"></div></div>
+    </section>
+
+    <div class="mb-alert hidden" id="mbAlert"></div>
+    <section class="panel" style="margin-top:16px" id="mbPanel">
+      <h3>Missing bikes <span class="note" id="mbCount" style="font-weight:500"></span></h3>
+      <p class="note">Watched every fleet refresh (every 30 min, hourly at night). When a bike's location shows up or moves 150 m or more, the recovery team gets an email and an alert here. Metabase sends no ping time, so "Location changed" is when our check noticed it.</p>
+      <div class="mb-add"><input id="mbReg" placeholder="Bike number" aria-label="Bike number to add"><button class="btn btn-dl" type="button" id="mbAddBtn">Add to list</button>
+        <button class="btn btn-dl" type="button" id="mbNotify">Turn on alerts on this computer</button><span class="note" id="mbMsg" style="margin:0"></span></div>
+      <h3 style="margin-top:10px">Latest alerts</h3>
+      <div class="table-wrap" style="max-height:260px;overflow:auto"><table id="tMbPings"><thead><tr><th>Seen at</th><th>Bike</th><th>What</th><th>Location</th><th>Hub</th><th>Rider</th></tr></thead><tbody></tbody></table></div>
+      <h3 style="margin-top:14px">Watch list</h3>
+      <div class="table-wrap" style="max-height:380px;overflow:auto"><table id="tMb"><thead><tr><th>Bike</th><th>Hub</th><th>Last location</th><th>Location changed</th><th>Last checked</th><th>Alerts</th><th></th></tr></thead><tbody></tbody></table></div>
     </section>
 
     <div class="section-head">
@@ -805,6 +822,43 @@
       saveCsv(`agent-calls_${($('callAgent').value || 'all-agents').replace(/\s+/g, '-')}.csv`, [['Time (India)', 'Agent', 'Bike', 'City', 'Hub', 'Result', 'Promised by', 'Amount promised', 'Return hub', 'Return on', 'Bike location', 'Contact', 'Police station', 'FIR', 'Note'],
         ...CALL_ROWS.map(r => [t(r.at), r.agent_name, r.reg_number, r.city, r.hub, CALL_LBL[r.outcome] || r.outcome, r.promise_at ? t(r.promise_at) : '', r.amount ?? '', r.return_hub, r.return_on, r.bike_location, r.contact, r.police_station, r.fir, r.note])]);
     };
+    // ---- Missing bikes: watch list + alerts (location appeared / moved) ----
+    let MB = [], MBP = [], MB_SEEN = null;
+    const mbWhen = (t) => t ? new Date(t).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '–';
+    const mbMap = (la, lg) => la == null ? '<span class="note" style="margin:0">no location</span>' : `<a href="https://maps.google.com/?q=${la},${lg}" target="_blank" rel="noopener">${Number(la).toFixed(5)}, ${Number(lg).toFixed(5)}</a>`;
+    async function loadMissing() {
+      const [w, p] = await Promise.all([db.from('missing_bikes').select('*').eq('active', true).order('reg_number'),
+        db.from('missing_bike_pings').select('*').order('at', { ascending: false }).limit(200)]);
+      if (w.error) { $('mbPanel').classList.add('hidden'); return; }
+      MB = w.data || []; MBP = p.data || [];
+      $('mbCount').textContent = `${MB.length} bikes · ${MB.filter(r => r.last_lat != null).length} with a location`;
+      const n = new Map(); MBP.forEach(r => n.set(r.reg_number, (n.get(r.reg_number) || 0) + 1));
+      const day = Date.now() - 864e5;
+      $('tMbPings').tBodies[0].innerHTML = MBP.slice(0, 50).map(r => `<tr class="${Date.parse(r.at) > day ? 'mb-new' : ''}"><td>${mbWhen(r.at)}</td><td><strong>${esc(r.reg_number)}</strong></td>
+        <td>${r.kind === 'first_location' ? 'Location showed up' : 'Moved ' + (r.moved_m >= 1000 ? (r.moved_m / 1000).toFixed(1) + ' km' : r.moved_m + ' m')}</td><td>${mbMap(r.lat, r.lng)}</td>
+        <td>${esc(r.hub || '')}</td><td>${esc(r.rider_name || '')}${r.rider_phone ? ' · <a href="tel:+91' + esc(r.rider_phone) + '">' + esc(r.rider_phone) + '</a>' : ''}</td></tr>`).join('')
+        || '<tr><td colspan="6">No alerts yet. The first one comes when a watched bike\'s location shows up or moves.</td></tr>';
+      $('tMb').tBodies[0].innerHTML = MB.sort((a, b) => (b.loc_changed_at || '').localeCompare(a.loc_changed_at || '') || a.reg_number.localeCompare(b.reg_number)).map(r => `<tr><td><strong>${esc(r.reg_number)}</strong>${r.note ? '<br><span class="note" style="margin:0">' + esc(r.note) + '</span>' : ''}</td>
+        <td>${esc(r.hub || '')}</td><td>${mbMap(r.last_lat, r.last_lng)}</td><td>${r.loc_changed_at ? mbWhen(r.loc_changed_at) : '<span class="note" style="margin:0">not since watching</span>'}</td>
+        <td>${mbWhen(r.checked_at)}</td><td class="num">${n.get(r.reg_number) || 0}</td><td><button class="btn btn-dl" type="button" data-mbrm="${esc(r.reg_number)}">Remove</button></td></tr>`).join('')
+        || '<tr><td colspan="7">No bikes on the list.</td></tr>';
+      const recent = MBP.filter(r => Date.parse(r.at) > day);
+      $('mbAlert').classList.toggle('hidden', !recent.length);
+      if (recent.length) $('mbAlert').innerHTML = `<span style="font-size:22px">🚨</span><div><b>${recent.length} missing-bike alert${recent.length > 1 ? 's' : ''} in the last 24 hours</b><br>${recent.slice(0, 4).map(r => esc(r.reg_number)).join(', ')}${recent.length > 4 ? '…' : ''}</div><a class="x btn btn-dl" href="#mbPanel">See</a>`;
+      // notify about alerts that came in while the page is open
+      if (MB_SEEN && 'Notification' in window && Notification.permission === 'granted') MBP.filter(r => r.at > MB_SEEN).forEach(r => {
+        try { new Notification('🚨 Missing bike ' + (r.kind === 'first_location' ? 'pinged: ' : 'moved: ') + r.reg_number, { body: [r.hub, r.rider_name, r.lat.toFixed(5) + ', ' + r.lng.toFixed(5)].filter(Boolean).join(' · '), tag: 'mb' + r.id }); } catch (e) {}
+      });
+      MB_SEEN = MBP[0]?.at || MB_SEEN || new Date(0).toISOString();
+    }
+    $('mbAddBtn').onclick = async () => { const v = $('mbReg').value.trim(); if (!v) return;
+      const { error } = await db.rpc('set_missing_bike', { p_reg: v, p_active: true }); $('mbMsg').textContent = error ? error.message : 'Added. It is checked at the next refresh.'; if (!error) { $('mbReg').value = ''; loadMissing(); } };
+    $('tMb').addEventListener('click', async (e) => { const b = e.target.closest('[data-mbrm]'); if (!b || !confirm('Take ' + b.dataset.mbrm + ' off the missing list?')) return;
+      const { error } = await db.rpc('set_missing_bike', { p_reg: b.dataset.mbrm, p_active: false }); $('mbMsg').textContent = error ? error.message : b.dataset.mbrm + ' removed from the list.'; loadMissing(); });
+    const mbNote = () => { $('mbNotify').textContent = !('Notification' in window) ? 'Alerts not supported in this browser' : Notification.permission === 'granted' ? 'Alerts on for this computer ✓' : 'Turn on alerts on this computer'; };
+    $('mbNotify').onclick = async () => { if ('Notification' in window && Notification.permission !== 'granted') await Notification.requestPermission(); mbNote(); };
+    mbNote();
+    setInterval(() => { if (!$('dash').classList.contains('hidden')) loadMissing().catch(() => {}); }, 2 * 60 * 1000);
     function police() {
       const P = polList(), cnt = (s) => P.filter(r => r.police_case_type === s).length;
       $('kPolice').textContent = num(cnt('Police Station')); $('kPoliceSub').textContent = `held at a police station · live ${FLEET_AT ? new Date(FLEET_AT).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : ''}`;
@@ -881,7 +935,7 @@
         FIRST = [FDAY.length ? FDAY[0].day : TODAY, DATA.reduce((m, r) => r.d < m ? r.d : m, '9999')].sort()[0];
         LAST = TODAY; loadedAt = Date.now();
         ['fromDate', 'toDate'].forEach(id => { $(id).min = FIRST; $(id).max = TODAY; });
-        fillCities(); fillHubs(); fillModels(); render(); police();
+        fillCities(); fillHubs(); fillModels(); render(); police(); loadMissing().catch(() => {});
         $('dash').classList.remove('hidden');
         if (!FLEET.length && !$('loadErr').textContent) $('loadErr').textContent = 'No Metabase data yet — the 30-minute refresh has not run.';
       } catch (e) { $('loadErr').textContent = 'Could not load data: ' + e.message; }
