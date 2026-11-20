@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#e3262b">
+  <title>0–1 Day Calls · Bounce Recovery</title>
+  <link rel="icon" href="logo.png">
+  <link rel="manifest" href="agent.webmanifest">
+  <style>
+    :root { --brand: #e3262b; --brand-dark: #b91c21; --bg: #f4f5f7; --card: #fff; --text: #111827; --muted: #6b7280; --border: #e5e7eb;
+      --renew: #1d67bc; --submit: #7c3aed; --recover: #d93025; --noreach: #6b7280; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif; font-size: 15px; }
+    button, select, textarea { font-family: inherit; }
+    .hidden { display: none !important; }
+    header { position: sticky; top: 0; z-index: 5; background: var(--brand); color: #fff; padding: 10px 12px; padding-top: calc(10px + env(safe-area-inset-top, 0px));
+      display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+    header img { width: 34px; height: 34px; border-radius: 50%; background: #fff; object-fit: cover; flex: none; }
+    header .ttl { flex: 1; min-width: 0; }
+    header .ttl b { display: block; font-size: 17px; }
+    header .ttl small { display: block; font-size: 11.5px; opacity: .9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hbtn { width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(255,255,255,.15); color: #fff; display: grid; place-items: center; flex: none; text-decoration: none; }
+    .hbtn svg { width: 20px; height: 20px; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 10px 12px 40px; display: grid; gap: 10px; }
+    .alertbar { display: flex; gap: 10px; align-items: center; background: #fff7e6; border: 1px solid #f9c134; border-radius: 12px; padding: 10px 12px; }
+    .alertbar p { margin: 0; flex: 1; font-size: 13.5px; line-height: 1.35; } .alertbar p b { display: block; font-size: 14.5px; }
+    .alertbar button { border: 0; border-radius: 10px; background: var(--brand); color: #fff; font-weight: 700; padding: 10px 12px; font-size: 14px; white-space: nowrap; }
+    .alertbar.on { background: #eef4fb; border-color: #c9dbf0; } .alertbar.on button { background: #fff; color: var(--text); border: 1px solid var(--border); }
+    .chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 0; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip { flex: none; border: 1.5px solid var(--border); background: #fff; color: var(--text); border-radius: 999px; padding: 7px 13px; font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+    .chip i { font-style: normal; font-weight: 700; color: var(--muted); margin-left: 4px; font-size: 12.5px; }
+    .chip.on { background: var(--brand); border-color: var(--brand); color: #fff; } .chip.on i { color: #fff; opacity: .9; }
+    .sum { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: grid; gap: 8px; }
+    .sum .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    .sum .top b { font-size: 22px; font-variant-numeric: tabular-nums; } .sum .top span { color: var(--muted); font-size: 13px; }
+    .bar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: #eceef1; }
+    .bar i { display: block; height: 100%; }
+    .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12.5px; color: var(--muted); }
+    .legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; background: var(--c); }
+    .card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 12px; display: grid; gap: 8px; }
+    .card.done { border-left: 4px solid var(--c, var(--border)); }
+    .row1 { display: flex; align-items: flex-start; gap: 10px; }
+    .row1 .id { flex: 1; min-width: 0; }
+    .row1 .id b { font-size: 16.5px; letter-spacing: .3px; display: block; }
+    .row1 .id small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+    .call { flex: none; display: flex; align-items: center; gap: 6px; text-decoration: none; background: var(--brand); color: #fff; font-weight: 700; border-radius: 999px; padding: 9px 14px; font-size: 14px; }
+    .call svg { width: 17px; height: 17px; }
+    .call.off { background: #d1d5db; pointer-events: none; }
+    .rider { font-size: 14px; } .rider span { color: var(--muted); }
+    .facts { display: flex; flex-wrap: wrap; gap: 6px; }
+    .facts span { background: #f4f5f7; border-radius: 8px; padding: 3px 8px; font-size: 12.5px; color: #374151; }
+    .facts span.hot { background: #fde8e8; color: #9b1c1c; font-weight: 600; }
+    .outs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    @media (min-width: 560px) { .outs { grid-template-columns: repeat(4, 1fr); } }
+    .outs button { border: 1.5px solid var(--border); background: #fff; border-radius: 10px; padding: 9px 4px; font-size: 13px; font-weight: 600; color: var(--text); }
+    .outs button.sel { background: var(--c); border-color: var(--c); color: #fff; }
+    .who { font-size: 12px; color: var(--muted); }
+    .note { display: flex; gap: 6px; } .note input { flex: 1; min-width: 0; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 10px; font-size: 14px; }
+    .note button { border: 0; border-radius: 10px; background: #111827; color: #fff; padding: 0 12px; font-weight: 600; }
+    .empty, .msg { text-align: center; color: var(--muted); padding: 30px 12px; background: #fff; border-radius: 14px; border: 1px dashed var(--border); }
+    .msg a { color: var(--brand); font-weight: 700; }
+    .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: #111827; color: #fff; padding: 10px 16px; border-radius: 999px; font-size: 14px; z-index: 20; }
+    .daysel { border: 1.5px solid var(--border); border-radius: 999px; padding: 6px 10px; background: #fff; font-weight: 600; font-size: 13px; }
+    .pv { background: #fbd977; color: #3d2c00; text-align: center; font-size: 12.5px; font-weight: 600; padding: 6px; }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="hbtn" href="agent.html" aria-label="Back to the app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <img src="logo.png" alt="" onerror="this.style.display='none'">
+    <div class="ttl"><b>0–1 day calls</b><small id="sub">Loading…</small></div>
+    <button class="hbtn" id="reload" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
+  </header>
+  <div class="pv hidden" id="pv">Preview with today's real bikes – rider numbers hidden. Nothing here is saved.</div>
+  <div class="wrap">
+    <div class="alertbar hidden" id="alertbar"><p id="alertTxt"></p><button id="alertBtn"></button></div>
+    <div class="chips" id="cities"></div>
+    <div class="sum" id="sum"></div>
+    <div class="chips" id="outF"></div>
+    <div id="list" style="display:grid;gap:10px"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
+    const VAPID_PUBLIC = 'BATB1nfJoCkblMdluqhWaB25VlUIS0T_fBAbzzSNMaqvISTa5YK9L8nCQmfpOwhmp4EH0KoYpyqRRRMUAYC5res';
+    const PREVIEW = window.PREVIEW_DATA || null;
+    const db = PREVIEW ? null : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const OUT = [
+      { k: 'renew', label: 'Will renew', c: 'var(--renew)' },
+      { k: 'submit', label: 'Will submit bike', c: 'var(--submit)' },
+      { k: 'recover', label: 'Need to recover', c: 'var(--recover)' },
+      { k: 'noreach', label: 'Not reachable', c: 'var(--noreach)' }];
+    const outOf = (k) => OUT.find(o => o.k === k);
+    const CITY_LABEL = { NCR: 'Delhi' };
+    const cityLabel = (c) => CITY_LABEL[c] || c || 'Unknown';
+    const fmtT = (s) => s ? new Date(s).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '';
+    const hoursSince = (s) => s ? Math.max(0, Math.round((Date.now() - new Date(s)) / 36e5)) : null;
+    let rows = [], meta = {}, city = 'All', outF = 'all', me = null;
+
+    function toast(t) { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.append(d); setTimeout(() => d.remove(), 2200); }
+
+    async function load() {
+      $('reload').disabled = true;
+      try {
+        if (PREVIEW) { rows = PREVIEW.rows; meta = PREVIEW.meta; me = PREVIEW.me; }
+        else {
+          const { data: s } = await db.auth.getSession();
+          if (!s.session) { $('list').innerHTML = '<div class="msg">Please sign in first.<br><br><a href="agent.html">Open the Recovery app and sign in</a></div>'; $('sub').textContent = ''; return; }
+          const { data, error } = await db.rpc('followup_list', { p_day: null });
+          if (error) throw error;
+          rows = data.rows || []; meta = data.meta || {}; me = data.me || {};
+        }
+        if (me.city && !me.team) city = me.city;
+        $('sub').textContent = meta.list_at ? `List of ${fmtT(meta.list_at)} · ${rows.length} bikes` : 'No list yet – it is made every day at 5:30 PM';
+        draw(); alertBar();
+      } catch (e) { $('list').innerHTML = `<div class="msg">Could not load the list: ${esc(e.message || e)}</div>`; }
+      finally { $('reload').disabled = false; }
+    }
+
+    function draw() {
+      const cities = [...new Set(rows.map(r => r.city))].sort((a, b) => rows.filter(r => r.city === b).length - rows.filter(r => r.city === a).length);
+      $('cities').classList.toggle('hidden', !me.team || cities.length < 2);
+      $('cities').innerHTML = ['All', ...cities].map(c => `<button class="chip ${city === c ? 'on' : ''}" data-city="${esc(c)}">${c === 'All' ? 'All cities' : esc(cityLabel(c))}<i>${c === 'All' ? rows.length : rows.filter(r => r.city === c).length}</i></button>`).join('');
+      const inC = rows.filter(r => city === 'All' || r.city === city);
+      const done = inC.filter(r => r.outcome);
+      const cnt = (k) => inC.filter(r => r.outcome === k).length;
+      $('sum').innerHTML = `<div class="top"><b>${done.length} of ${inC.length} called</b><span>${city === 'All' ? 'All cities' : esc(cityLabel(city))}</span></div>
+        <div class="bar">${OUT.map(o => `<i style="width:${inC.length ? 100 * cnt(o.k) / inC.length : 0}%;background:${o.c}"></i>`).join('')}</div>
+        <div class="legend">${OUT.map(o => `<span style="--c:${o.c}">${o.label} ${cnt(o.k)}</span>`).join('')}<span style="--c:#d1d5db">To call ${inC.length - done.length}</span></div>`;
+      const F = [{ k: 'all', l: 'All' }, { k: 'todo', l: 'To call' }, ...OUT.map(o => ({ k: o.k, l: o.label }))];
+      $('outF').innerHTML = F.map(f => `<button class="chip ${outF === f.k ? 'on' : ''}" data-out="${f.k}">${f.l}<i>${f.k === 'all' ? inC.length : f.k === 'todo' ? inC.length - done.length : cnt(f.k)}</i></button>`).join('');
+      const list = inC.filter(r => outF === 'all' || (outF === 'todo' ? !r.outcome : r.outcome === outF))
+        .sort((a, b) => (!!a.outcome - !!b.outcome) || new Date(a.mfr_since) - new Date(b.mfr_since));
+      $('list').innerHTML = list.length ? list.map(card).join('') : `<div class="empty">${rows.length ? 'No bikes here.' : 'No bikes in the 0–1 day list.'}</div>`;
+    }
+
+    function card(r) {
+      const o = outOf(r.outcome), h = hoursSince(r.mfr_since), ph = (r.rider_phone || '').replace(/\D/g, '').slice(-10);
+      const facts = [h !== null ? `<span class="${h >= 18 ? 'hot' : ''}">In MFR ${h} h</span>` : '', r.plan_expired_at ? `<span>Plan ended ${esc(fmtT(r.plan_expired_at))}</span>` : '',
+        r.booking_amount ? `<span>Rent ₹${Math.round(r.booking_amount).toLocaleString('en-IN')}</span>` : '', r.plan_type ? `<span>${esc(r.plan_type)}</span>` : ''].join('');
+      return `<div class="card ${o ? 'done' : ''}" style="${o ? '--c:' + o.c : ''}" data-bike="${r.bike_id}">
+        <div class="row1"><div class="id"><b>${esc(r.reg_number)}</b><small>${esc(r.model || '')} · ${esc(r.hub || '')}${me.team ? ' · ' + esc(cityLabel(r.city)) : ''}</small></div>
+          <a class="call ${ph ? '' : 'off'}" href="${ph ? 'tel:+91' + ph : '#'}" data-call="${r.bike_id}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>Call</a></div>
+        <div class="rider">${esc(r.rider_name || 'Rider name not known')} <span>· ${ph ? (PREVIEW ? ph.slice(0, 2) + 'xxxxxx' + ph.slice(-2) : ph) : 'no number'}</span></div>
+        <div class="facts">${facts}</div>
+        <div class="outs">${OUT.map(x => `<button style="--c:${x.c}" class="${r.outcome === x.k ? 'sel' : ''}" data-set="${x.k}">${x.label}</button>`).join('')}</div>
+        ${r.outcome ? `<div class="who">${esc(o.label)} · ${esc(r.called_by_name || '')} · ${esc(fmtT(r.called_at))}${r.note ? ' · “' + esc(r.note) + '”' : ''}</div>` : ''}
+        <form class="note" data-note="${r.bike_id}"><input name="n" placeholder="Note (e.g. will pay tomorrow 11 am)" value="${esc(r.note || '')}"><button>Save</button></form>
+      </div>`;
+    }
+
+    async function setOutcome(bike, outcome, note) {
+      const r = rows.find(x => String(x.bike_id) === String(bike)); if (!r) return;
+      if (PREVIEW) { Object.assign(r, { outcome, note: note ?? r.note, called_by_name: me.name, called_at: new Date().toISOString() }); draw(); toast('Saved (preview only)'); return; }
+      const { data, error } = await db.rpc('followup_set', { p_day: meta.list_day, p_bike: r.bike_id, p_outcome: outcome, p_note: note ?? r.note ?? null });
+      if (error) { toast('Not saved: ' + error.message); return; }
+      Object.assign(r, data); draw(); toast('Saved');
+    }
+
+    document.addEventListener('click', (e) => {
+      const c = e.target.closest('[data-city]'); if (c) { city = c.dataset.city; draw(); return; }
+      const f = e.target.closest('[data-out]'); if (f) { outF = f.dataset.out; draw(); return; }
+      const s = e.target.closest('[data-set]'); if (s) { const card = s.closest('[data-bike]'); const r = rows.find(x => String(x.bike_id) === card.dataset.bike);
+        setOutcome(card.dataset.bike, r && r.outcome === s.dataset.set ? null : s.dataset.set); return; }
+    });
+    document.addEventListener('submit', (e) => { const f = e.target.closest('[data-note]'); if (!f) return; e.preventDefault();
+      const r = rows.find(x => String(x.bike_id) === f.dataset.note); setOutcome(f.dataset.note, r?.outcome || null, f.n.value.trim() || null); });
+    $('reload').onclick = load;
+
+    // ---------- Alerts with sound (push notifications) ----------
+    const b64 = (s) => { const p = '='.repeat((4 - s.length % 4) % 4); const r = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...r].map(ch => ch.charCodeAt(0))); };
+    async function alertBar() {
+      const bar = $('alertbar');
+      if (PREVIEW) { bar.classList.remove('hidden'); $('alertTxt').innerHTML = '<b>Get the 5:30 PM call list with sound</b>Tap once to allow notifications on this phone.'; $('alertBtn').textContent = 'Turn on alerts'; $('alertBtn').onclick = () => toast('Preview: alerts are turned on in the real app'); return; }
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) { bar.classList.remove('hidden'); $('alertTxt').innerHTML = '<b>Alerts don’t work in this browser</b>Open this page in Chrome on the phone.'; $('alertBtn').classList.add('hidden'); return; }
+      const reg = await navigator.serviceWorker.register('agent-sw.js');
+      const sub = await reg.pushManager.getSubscription();
+      const on = Notification.permission === 'granted' && sub;
+      bar.classList.remove('hidden'); bar.classList.toggle('on', !!on);
+      if (Notification.permission === 'denied') { $('alertTxt').innerHTML = '<b>Alerts are blocked on this phone</b>Chrome → ⋮ → Settings → Site settings → Notifications → allow this site.'; $('alertBtn').classList.add('hidden'); return; }
+      $('alertTxt').innerHTML = on ? '<b>Alerts are on</b>You’ll get the 0–1 day list at 5:30 PM with a sound.' : '<b>Get the 5:30 PM call list with sound</b>Tap once to allow notifications on this phone.';
+      $('alertBtn').textContent = on ? 'Send test' : 'Turn on alerts';
+      $('alertBtn').onclick = on ? testAlert : turnOn;
+      if (on) saveSub(sub);   // keep the server copy fresh
+    }
+    async function saveSub(sub) { const j = sub.toJSON(); await db.rpc('push_save', { p: { endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, ua: navigator.userAgent.slice(0, 200) } }); }
+    async function turnOn() {
+      try {
+        const perm = await Notification.requestPermission(); if (perm !== 'granted') { alertBar(); return; }
+        const reg = await navigator.serviceWorker.ready;
+        const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(VAPID_PUBLIC) });
+        await saveSub(sub); toast('Alerts turned on'); alertBar(); testAlert();
+      } catch (e) { toast('Could not turn on alerts: ' + (e.message || e)); }
+    }
+    async function testAlert() {
+      const { error } = await db.functions.invoke('followup-push', { body: { action: 'test' } });
+      toast(error ? 'Test failed: ' + error.message : 'Test alert sent – you should hear it now');
+    }
+    // A beep when an alert arrives while this page is open
+    navigator.serviceWorker?.addEventListener('message', (e) => { if (e.data?.type === 'followup') { try { const a = new AudioContext(), o = a.createOscillator(), g = a.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(a.destination); g.gain.setValueAtTime(.25, a.currentTime); o.start(); o.stop(a.currentTime + .6); } catch (x) {} load(); } });
+    if (PREVIEW) $('pv').classList.remove('hidden');
+    load();
+  </script>
+</body>
+</html>
