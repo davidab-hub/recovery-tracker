@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#e3262b">
-  <title>0–1 Day Calls · Bounce Recovery</title>
+  <title>Evening Calls · Bounce Recovery</title>
   <link rel="icon" href="logo.png">
   <link rel="manifest" href="agent.webmanifest">
   <style>
@@ -70,7 +70,7 @@
   <header>
     <a class="hbtn" href="agent.html" aria-label="Back to the app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></a>
     <img src="logo.png" alt="" onerror="this.style.display='none'">
-    <div class="ttl"><b>0–1 day calls</b><small id="sub">Loading…</small></div>
+    <div class="ttl"><b>Evening calls</b><small id="sub">Loading…</small></div>
     <button class="hbtn" id="reload" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
   </header>
   <div class="pv hidden" id="pv">Preview with today's real bikes – rider numbers hidden. Nothing here is saved.</div>
@@ -117,7 +117,7 @@
           rows = data.rows || []; meta = data.meta || {}; me = data.me || {};
         }
         if (me.city && !me.team) city = me.city;
-        $('sub').textContent = meta.list_at ? `List of ${fmtT(meta.list_at)} · ${rows.length} bikes` : 'No list yet – it is made every day at 5:30 PM';
+        $('sub').textContent = meta.list_at ? `0–1 day bikes · list of ${fmtT(meta.list_at)} · ${rows.length} bikes` : 'No list yet – it is made every day at 5:30 PM';
         draw(); alertBar();
       } catch (e) { $('list').innerHTML = `<div class="msg">Could not load the list: ${esc(e.message || e)}</div>`; }
       finally { $('reload').disabled = false; }
