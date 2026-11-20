@@ -332,11 +332,11 @@
       <label for="hubFilter">Hub</label>
       <select id="hubFilter"><option value="">All Hubs</option></select>
       <label for="periodFilter">Period</label>
-      <select id="periodFilter">
-        <option value="1">Latest day</option>
+      <select id="periodFilter" autocomplete="off">
+        <option value="1" selected>Today</option>
         <option value="7">Last 7 days</option>
         <option value="15">Last 15 days</option>
-        <option value="30" selected>Last 30 days</option>
+        <option value="30">Last 30 days</option>
         <option value="custom">Pick dates…</option>
       </select>
       <span class="range hidden" id="rangeBox">
@@ -917,7 +917,7 @@
       render();
     };
     ['fromDate', 'toDate'].forEach(id => $(id).addEventListener('change', render));
-    $('clearBtn').onclick = () => { $('cityFilter').value = ''; $('modelFilter').value = ''; fillHubs(); $('hubFilter').value = ''; $('periodFilter').value = '30'; $('rangeBox').classList.add('hidden'); $('fromDate').value = ''; $('toDate').value = ''; render(); police(); };
+    $('clearBtn').onclick = () => { $('cityFilter').value = ''; $('modelFilter').value = ''; fillHubs(); $('hubFilter').value = ''; $('periodFilter').value = '1'; $('rangeBox').classList.add('hidden'); $('fromDate').value = ''; $('toDate').value = ''; render(); police(); };
     $('menuBtn').onclick = () => $('side').classList.toggle('open');
 
     // ---- Load from Supabase (Recovery team + admins only; the database checks the role) ----
@@ -945,7 +945,7 @@
         // Inflow / outflow counted by us (every 30-min refresh compared with the one before)
         const flowP = db.rpc('mfr_flow', { p_from: since, p_to: '2100-01-01' }).then(r => r.error ? [] : (r.data || [])).catch(() => []);
         // Day (7 am–7 pm, Metabase) and night (7 pm–7 am, our count) figures per 7 am–7 am day
-        const shiftP = db.rpc('flow_shifts', { p_from: since, p_to: '2100-01-01' }).then(r => r.error ? [] : (r.data || [])).catch(() => []);
+        const shiftP = pageAll(() => db.rpc('flow_shifts', { p_from: since, p_to: '2100-01-01' }).order('day').order('city').order('hub').order('shift')).catch(() => []);
         const closeP = pageAll(() => db.from('mfr_flow_daily').select('day, city, hub, model, mfr').gte('day', since).order('day')).catch(() => []);
         // Agent App: calls and bike updates (only the recovery team / managers can read them)
         const callsP = pageAll(() => db.from('bike_calls').select('at, agent_name, bike_id, reg_number, city, hub, outcome, promise_at, amount, return_hub, return_on, bike_location, contact, police_station, fir, note').gte('at', since).order('at')).catch(() => []);
