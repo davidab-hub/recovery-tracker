@@ -62,6 +62,8 @@
     .chip.ag { padding: 6px 11px; font-size: 13px; }
     .note { display: flex; gap: 6px; } .note input { flex: 1; min-width: 0; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 10px; font-size: 14px; }
     .note button { border: 0; border-radius: 10px; background: #111827; color: #fff; padding: 0 12px; font-weight: 600; }
+    .note button.dirty { background: var(--brand); }
+    .pend { font-size: 12px; color: #b45309; font-weight: 600; }
     .empty, .msg { text-align: center; color: var(--muted); padding: 30px 12px; background: #fff; border-radius: 14px; border: 1px dashed var(--border); }
     .msg a { color: var(--brand); font-weight: 700; }
     .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: #111827; color: #fff; padding: 10px 16px; border-radius: 999px; font-size: 14px; z-index: 20; }
@@ -105,7 +107,8 @@
     const cityLabel = (c) => CITY_LABEL[c] || c || 'Unknown';
     const fmtT = (s) => s ? new Date(s).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '';
     const hoursSince = (s) => s ? Math.max(0, Math.round((Date.now() - new Date(s)) / 36e5)) : null;
-    let rows = [], meta = {}, city = 'All', outF = 'all', me = null, agent = 'All';
+    let rows = [], meta = {}, city = 'All', outF = 'all', me = null, agent = 'All', pending = {};   // results picked but not saved yet
+    const selOf = (r) => (r.bike_id in pending) ? pending[r.bike_id] : r.outcome;
     const agentOf = (r) => r.agent_name || 'No agent';
 
     function toast(t) { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.append(d); setTimeout(() => d.remove(), 2200); }
@@ -163,18 +166,19 @@
         <div class="rider">${esc(r.rider_name || 'Rider name not known')} <span>· ${ph ? (PREVIEW ? ph.slice(0, 2) + 'xxxxxx' + ph.slice(-2) : ph) : 'no number'}</span></div>
         ${me.team ? (r.agent_name ? `<div class="owner">Calling: <b>${esc(r.agent_name)}</b>${r.zone_name ? ' · ' + esc(r.zone_name) : ''}</div>` : `<div class="owner none">Calling: any ${esc(cityLabel(r.city))} agent${r.zone_name ? ' · ' + esc(r.zone_name) : ''}</div>`) : ''}
         <div class="facts">${facts}</div>
-        <div class="outs">${OUT.map(x => `<button style="--c:${x.c}" class="${r.outcome === x.k ? 'sel' : ''}" data-set="${x.k}">${x.label}</button>`).join('')}</div>
+        <div class="outs">${OUT.map(x => `<button style="--c:${x.c}" class="${selOf(r) === x.k ? 'sel' : ''}" data-set="${x.k}">${x.label}</button>`).join('')}</div>
         ${r.outcome ? `<div class="who">${esc(o.label)} · ${esc(r.called_by_name || '')} · ${esc(fmtT(r.called_at))}${r.note ? ' · “' + esc(r.note) + '”' : ''}</div>` : ''}
-        <form class="note" data-note="${r.bike_id}"><input name="n" placeholder="Note (e.g. will pay tomorrow 11 am)" value="${esc(r.note || '')}"><button>Save</button></form>
+        <form class="note" data-note="${r.bike_id}"><input name="n" placeholder="Note (e.g. will pay tomorrow 11 am)" value="${esc(r.note || '')}"><button class="${(r.bike_id in pending) ? 'dirty' : ''}">Save</button></form>
+        <div class="pend ${(r.bike_id in pending) ? '' : 'hidden'}">Not saved yet – tap Save</div>
       </div>`;
     }
 
     async function setOutcome(bike, outcome, note) {
       const r = rows.find(x => String(x.bike_id) === String(bike)); if (!r) return;
-      if (PREVIEW) { Object.assign(r, { outcome, note: note ?? r.note, called_by_name: me.name, called_at: new Date().toISOString() }); draw(); toast('Saved (preview only)'); return; }
+      if (PREVIEW) { delete pending[r.bike_id]; Object.assign(r, { outcome, note: note ?? r.note, called_by_name: me.name, called_at: new Date().toISOString() }); draw(); toast('Saved (preview only)'); return; }
       const { data, error } = await db.rpc('followup_set', { p_day: meta.list_day, p_bike: r.bike_id, p_outcome: outcome, p_note: note ?? r.note ?? null });
       if (error) { toast('Not saved: ' + error.message); return; }
-      Object.assign(r, data); draw(); toast('Saved');
+      delete pending[r.bike_id]; Object.assign(r, data); draw(); toast('Saved');
     }
 
     document.addEventListener('click', (e) => {
@@ -182,10 +186,15 @@
       const ag = e.target.closest('[data-agent]'); if (ag) { agent = ag.dataset.agent; draw(); return; }
       const f = e.target.closest('[data-out]'); if (f) { outF = f.dataset.out; draw(); return; }
       const s = e.target.closest('[data-set]'); if (s) { const card = s.closest('[data-bike]'); const r = rows.find(x => String(x.bike_id) === card.dataset.bike);
-        setOutcome(card.dataset.bike, r && r.outcome === s.dataset.set ? null : s.dataset.set); return; }
+        if (!r) return;   // picking a result only marks it; nothing is saved until Save is tapped
+        const nv = selOf(r) === s.dataset.set ? null : s.dataset.set;
+        if (nv === (r.outcome || null)) delete pending[r.bike_id]; else pending[r.bike_id] = nv;
+        const dirty = r.bike_id in pending, sel = selOf(r);
+        card.querySelectorAll('[data-set]').forEach(b => b.classList.toggle('sel', b.dataset.set === sel));
+        card.querySelector('.note button').classList.toggle('dirty', dirty); card.querySelector('.pend').classList.toggle('hidden', !dirty); return; }
     });
     document.addEventListener('submit', (e) => { const f = e.target.closest('[data-note]'); if (!f) return; e.preventDefault();
-      const r = rows.find(x => String(x.bike_id) === f.dataset.note); setOutcome(f.dataset.note, r?.outcome || null, f.n.value.trim() || null); });
+      const r = rows.find(x => String(x.bike_id) === f.dataset.note); setOutcome(f.dataset.note, r && (r.bike_id in pending) ? pending[r.bike_id] : (r?.outcome || null), f.n.value.trim() || null); });
     $('reload').onclick = load;
 
     // ---------- Alerts with sound (push notifications) ----------
