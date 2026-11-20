@@ -185,8 +185,9 @@
       bar.classList.remove('hidden'); bar.classList.toggle('on', !!on);
       if (Notification.permission === 'denied') { $('alertTxt').innerHTML = '<b>Alerts are blocked on this phone</b>Chrome → ⋮ → Settings → Site settings → Notifications → allow this site.'; $('alertBtn').classList.add('hidden'); return; }
       $('alertTxt').innerHTML = on ? '<b>Alerts are on</b>You’ll get the 0–1 day list at 5:30 PM with a sound.' : '<b>Get the 5:30 PM call list with sound</b>Tap once to allow notifications on this phone.';
-      $('alertBtn').textContent = on ? 'Send test' : 'Turn on alerts';
-      $('alertBtn').onclick = on ? testAlert : turnOn;
+      $('alertBtn').textContent = 'Turn on alerts';
+      $('alertBtn').onclick = turnOn;
+      $('alertBtn').classList.toggle('hidden', !!on);
       if (on) saveSub(sub);   // keep the server copy fresh
     }
     async function saveSub(sub) { const j = sub.toJSON(); await db.rpc('push_save', { p: { endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, ua: navigator.userAgent.slice(0, 200) } }); }
@@ -195,12 +196,8 @@
         const perm = await Notification.requestPermission(); if (perm !== 'granted') { alertBar(); return; }
         const reg = await navigator.serviceWorker.ready;
         const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(VAPID_PUBLIC) });
-        await saveSub(sub); toast('Alerts turned on'); alertBar(); testAlert();
+        await saveSub(sub); toast('Alerts turned on'); alertBar();
       } catch (e) { toast('Could not turn on alerts: ' + (e.message || e)); }
-    }
-    async function testAlert() {
-      const { error } = await db.functions.invoke('followup-push', { body: { action: 'test' } });
-      toast(error ? 'Test failed: ' + error.message : 'Test alert sent – you should hear it now');
     }
     // A beep when an alert arrives while this page is open
     navigator.serviceWorker?.addEventListener('message', (e) => { if (e.data?.type === 'followup') { try { const a = new AudioContext(), o = a.createOscillator(), g = a.createGain();
