@@ -1,0 +1,1162 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QC Dashboard</title>
+  <script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ===== Recovery Dashboard · new look (Nov 2026) ===== */
+    html.embed .side, html.embed .tabs-top { display: none !important; }
+    html.embed main { padding-top: 8px !important; }
+    :root {
+      --brand: #e3262b; --navy: #0b1b33; --navy-2: #13294b; --navy-3: #1d3a66; --side-text: #9fb2d0;
+      --page: #f3f6fb; --card: #ffffff; --text: #0f172a; --text-2: #475569; --muted: #64748b; --border: #e3e9f2; --soft: #f1f5fb; --hover: #eaf1fc;
+      --input: #ffffff; --ring: #93c5fd; --label: #334155;
+      --blue: #2563eb; --teal: #6250d6; --amber: #eda100; --red: #6250d6; --violet: #7c3aed; --green: #2a78d6; --orange: #eda100; --dark: #0f172a;
+      --radius: 16px; --shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.12);
+    }
+    html[data-theme="dark"] {
+      --page: #0a1222; --card: #111c31; --text: #e8eef8; --text-2: #b3c0d6; --muted: #8495b3; --border: #1f2d47; --soft: #16233b; --hover: #1a2a47;
+      --input: #0d172b; --ring: #3b6fd1; --label: #d4def0; --shadow: 0 10px 30px -14px rgba(0,0,0,.6);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--page); color: var(--text); -webkit-font-smoothing: antialiased; }
+    .hidden { display: none !important; }
+    .num, td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    /* ---- sidebar (top bar on phones) ---- */
+    .app { display: flex; min-height: 100vh; }
+    .side { width: 232px; flex-shrink: 0; background: linear-gradient(180deg, var(--navy), #08142a); color: #fff; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; transition: width .2s; z-index: 30; }
+    .side button.collapse { display: block; width: 100%; background: none; border: none; border-bottom: 1px solid rgba(255,255,255,.06); cursor: pointer; text-align: right; padding: 10px 14px; color: var(--side-text); font: inherit; font-size: 15px; }
+    .side button.collapse:hover { color: #fff; }
+    .brandrow { display: flex; align-items: center; gap: 10px; padding: 14px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .logo { width: 38px; height: 38px; border-radius: 12px; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; overflow: hidden; flex-shrink: 0; box-shadow: 0 6px 16px -6px rgba(0,0,0,.5); }
+    .logo img { width: 100%; height: 100%; object-fit: cover; }
+    .brandname { font-size: 14.5px; font-weight: 800; letter-spacing: -.01em; color: #fff; }
+    .brandname span { color: #fff; opacity: .7; font-weight: 600; }
+    .navsec { padding: 14px 0 6px 18px; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; color: #5f7397; }
+    .nav a { display: flex; align-items: center; gap: 10px; margin: 2px 10px; padding: 9px 12px; color: var(--side-text); text-decoration: none; font-size: 13.5px; border-radius: 10px; }
+    .nav a:hover { background: rgba(255,255,255,.06); color: #fff; }
+    .nav a.active { background: linear-gradient(90deg, rgba(59,130,246,.35), rgba(59,130,246,.08)); color: #fff; font-weight: 700; box-shadow: inset 3px 0 0 #60a5fa; }
+    .nav svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .side .foot { margin-top: auto; border-top: 1px solid rgba(255,255,255,.06); padding: 12px 14px; font-size: 12px; color: var(--side-text); }
+    .side .foot .live { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--side-text); background: none; padding: 0; }
+    .side .foot .live i { width: 8px; height: 8px; border-radius: 50%; background: #60a5fa; box-shadow: 0 0 0 4px rgba(96,165,250,.2); display: inline-block; }
+    .contact-side { font-size: 11.5px; line-height: 1.5; color: var(--side-text); padding: 0 0 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,.06); word-break: break-all; }
+    .contact-side a { color: #cbd7ea; text-decoration: none; }
+    .adminlink { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin: 0 -4px 10px; border-radius: 10px; color: var(--side-text); text-decoration: none; font-size: 13px; font-weight: 600; }
+    .adminlink svg { width: 15px; height: 15px; }
+    .adminlink:hover, .adminlink.active { background: rgba(255,255,255,.08); color: #fff; }
+    .authbox { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .authbox .who { color: #d6e0f0; word-break: break-all; }
+    .authbox button { width: 100%; padding: 7px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12); color: #cfe0ff; font-size: 12.5px; font-weight: 600; border-radius: 10px; cursor: pointer; font-family: inherit; }
+    .menu-btn { display: none; }
+    @media (min-width: 901px) {
+      html.side-min .side { width: 68px; }
+      html.side-min .side button.collapse { text-align: center; }
+      html.side-min .brandrow { justify-content: center; padding: 12px 0; }
+      html.side-min .brandname, html.side-min .navsec, html.side-min #authBox, html.side-min .side .foot .live, html.side-min .contact-side { display: none; }
+      html.side-min .nav a, html.side-min .adminlink { font-size: 0; justify-content: center; padding: 10px 0; gap: 0; }
+      html.side-min .nav a svg, html.side-min .adminlink svg { width: 18px; height: 18px; }
+    }
+    @media (max-width: 900px) {
+      .app { flex-direction: column; }
+      .side { width: 100%; height: auto; position: sticky; top: 0; }
+      .side button.collapse, .side .foot, .navsec { display: none; }
+      .side .nav { display: none; padding-bottom: 8px; }
+      .side.open .nav, .side.open .foot { display: block; }
+      .brandrow { justify-content: space-between; padding: 10px 16px; }
+      .menu-btn { display: inline-block; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: #fff; border-radius: 10px; padding: 6px 10px; font-size: 18px; }
+    }
+
+    /* ---- page ---- */
+    .content { flex: 1; min-width: 0; }
+    main { max-width: 1560px; margin: 0 auto; padding: 8px 28px 40px; }
+    @media (max-width: 900px) { main { padding: 6px 14px 32px; } }
+    .tabs-top { display: flex; gap: 6px; margin: 10px 0 6px; }
+    .tabs-top a { padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--text-2); text-decoration: none; border-radius: 999px; }
+    .tabs-top a.active { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+    .page-title { margin: 6px 0 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+    .page-sub { margin: 4px 0 14px; color: var(--muted); font-size: 13px; }
+    .err { color: #4c3bc2; }
+
+    /* ---- hero header ---- */
+    .hero { position: relative; overflow: hidden; border-radius: 22px; padding: 22px 24px; margin: 10px 0 14px; color: #fff;
+      background: radial-gradient(1200px 300px at 85% -40%, rgba(96,165,250,.45), transparent 60%), radial-gradient(600px 240px at 0% 120%, rgba(98,80,214,.35), transparent 60%), linear-gradient(120deg, #0b1b33, #13305c); box-shadow: 0 20px 40px -24px rgba(11,27,51,.8); }
+    .hero h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+    .hero p { margin: 4px 0 0; color: #b9c9e4; font-size: 13px; }
+    .hero .hrow { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .hero .hact { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .hero .synced { color: #cfe0ff; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); padding: 6px 12px; border-radius: 999px; font-size: 12px; max-width: 520px; }
+    .hero .btn-sync { background: #fff !important; color: var(--navy) !important; }
+    .hero .tbtn { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.16); }
+    .hero .glance { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 18px; }
+    .hero .glance div b { display: block; font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+    .hero .glance div span { font-size: 12px; color: #b9c9e4; }
+    .synced { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+    .synced i { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; display: inline-block; flex-shrink: 0; }
+    .synced.ok i { background: #60a5fa; box-shadow: 0 0 0 4px rgba(96,165,250,.25); } .synced.err i { background: var(--red); }
+
+    /* ---- filter bar ---- */
+    .bar { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 12px; box-shadow: var(--shadow); }
+    @media (max-width: 900px) { .bar { position: static; } }
+    .bar label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .bar select, .section-head select, .dl-row select { padding: 8px 30px 8px 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 13px; font-weight: 600; background: var(--input) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; color: var(--text); -webkit-appearance: none; appearance: none; font-family: inherit; min-width: 130px; cursor: pointer; }
+    .bar select:hover { border-color: var(--ring); }
+    .bar .spacer { flex: 1; }
+    .bar .range { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+    .bar .range input { padding: 7px 8px; border: 1px solid var(--border); border-radius: 10px; font-size: 12.5px; background: var(--input); color: var(--text); font-family: inherit; }
+    .seg { display: inline-flex; background: var(--soft); border: 1px solid var(--border); border-radius: 12px; padding: 3px; gap: 2px; overflow-x: auto; max-width: 100%; }
+    .seg button { border: 0; background: transparent; color: var(--text-2); font: 600 12.5px inherit; font-family: inherit; padding: 6px 12px; border-radius: 9px; cursor: pointer; white-space: nowrap; }
+    .seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 2px 8px -2px rgba(15,23,42,.12); }
+    .seg { scrollbar-width: none; } .seg::-webkit-scrollbar { display: none; }
+    #periodFilter { display: none; }
+    .fchip { display: inline-flex; align-items: center; gap: 6px; background: #e8f0fe; color: #1d4ed8; border-radius: 999px; padding: 4px 6px 4px 10px; font-size: 12px; font-weight: 700; }
+    .fchip button { border: 0; background: rgba(29,78,216,.12); color: inherit; width: 18px; height: 18px; border-radius: 50%; cursor: pointer; line-height: 1; font-size: 12px; }
+    @media (max-width: 600px) { .bar select { min-width: 0; flex: 1 1 130px; } .bar label { display: none; } }
+
+    /* ---- buttons ---- */
+    .btn { border: none; border-radius: 12px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; transition: transform .1s, box-shadow .15s; }
+    .btn:active { transform: translateY(1px); }
+    .btn-clear { background: var(--soft); color: var(--text-2); border: 1px solid var(--border); }
+    .btn-sync { background: var(--navy); color: #fff; }
+    .btn-light { background: var(--input); border: 1px solid var(--border); color: var(--text); }
+    .btn-dl { background: var(--soft); color: var(--text); border: 1px solid var(--border); }
+    .btn-dl:hover { border-color: var(--ring); background: var(--hover); }
+    .btn-dl svg { width: 14px; height: 14px; }
+    .dl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+    .dl-row .note { margin: 0; }
+
+    /* ---- section tabs ---- */
+    .stabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 4px 0 14px; padding: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); }
+    .stabs::-webkit-scrollbar { display: none; }
+    .stabs button { flex: none; border: 0; background: transparent; color: var(--text-2); font: 650 13px inherit; font-family: inherit; padding: 9px 14px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+    .stabs button:hover { background: var(--soft); color: var(--text); }
+    .stabs button.on { background: var(--navy); color: #fff; }
+    .stabs button i { font-style: normal; font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: rgba(98,80,214,.12); color: var(--red); }
+    .stabs button.on i { background: rgba(255,255,255,.18); color: #fff; }
+    [hidden] { display: none !important; }
+
+    /* ---- KPI cards ---- */
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+    .card { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px 12px; min-height: 118px; box-shadow: var(--shadow); overflow: hidden;
+      transition: transform .15s, box-shadow .15s, border-color .15s; --k: var(--blue); }
+    .card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--k); opacity: .9; }
+    .card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--k) 40%, var(--border)); box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--k) 60%, transparent); }
+    .card .label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; display: flex; align-items: center; gap: 6px; }
+    .card .value { font-size: 30px; font-weight: 800; margin-top: 6px; line-height: 1.05; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; }
+    .card .sub { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+    .card .sparkbox { position: relative; height: 34px; margin-top: 8px; }
+    .card canvas.spark { display: block; }
+    .card.k-red { --k: #e87ba4; } .card.k-orange { --k: #e87ba4; } .card.k-sky { --k: #38bdf8; } .card.k-blue { --k: #2563eb; } .card.k-teal { --k: #6250d6; } .card.k-amber { --k: #eda100; } .card.k-violet { --k: #7c3aed; } .card.k-slate { --k: #475569; } .card.k-green { --k: #2a78d6; } .card.k-pink { --k: #e87ba4; }
+    .c-red, .c-blue, .c-green, .c-orange, .c-dark { color: var(--text); }
+    .live, .sheet { font-size: 9px; font-weight: 800; letter-spacing: .06em; border-radius: 6px; padding: 2px 6px; }
+    .live { color: #1d4ed8; background: rgba(42,120,214,.12); } .sheet { color: #64748b; background: var(--soft); }
+    .card.na { background: repeating-linear-gradient(135deg, var(--card), var(--card) 8px, var(--soft) 8px, var(--soft) 16px); }
+    .card.na .value { color: #cbd5e1; } .card.na .sub { font-style: italic; }
+    .na-box { height: 230px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #94a3b8; font-style: italic; border: 1.5px dashed #cbd5e1; border-radius: 12px; }
+    .na-col { color: #cbd5e1 !important; }
+    @media (max-width: 600px) { .cards { grid-template-columns: 1fr 1fr; gap: 10px; } .card { min-height: 0; padding: 12px 12px 10px; } .card .value { font-size: 24px; } .card .label { font-size: 10px; letter-spacing: .04em; flex-wrap: wrap; } .hero { padding: 18px; } .hero .glance { gap: 14px 20px; } .hero .glance div b { font-size: 24px; } }
+    .kgroup { font-size: 11px; font-weight: 800; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; margin: 18px 2px 8px; }
+
+    /* ---- overview ---- */
+    .ovgrid { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-top: 12px; }
+    .ovgrid .wide { grid-column: 1 / -1; }
+    @media (max-width: 1000px) { .ovgrid { grid-template-columns: 1fr; } }
+    .insights { display: grid; gap: 8px; }
+    .insight { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: var(--soft); font-size: 13px; line-height: 1.45; }
+    .insight b { font-weight: 800; }
+    .insight .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; background: var(--blue); }
+    .insight.warn .dot { background: var(--amber); } .insight.bad .dot { background: var(--red); } .insight.good .dot { background: var(--blue); }
+    .linkbtn { border: 0; background: none; color: var(--blue); font: 700 12px inherit; font-family: inherit; cursor: pointer; padding: 0; }
+
+    /* ---- panels, charts, tables ---- */
+    .section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 2px 10px; }
+    .section-head h2 { margin: 0; font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 12px; }
+    @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; min-width: 0; box-shadow: var(--shadow); }
+    .panel + .panel, section.panel { margin-top: 12px; }
+    .grid2 > .panel { margin-top: 0; }
+    .panel h3 { margin: 0 0 2px; font-size: 15px; font-weight: 750; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .panel .note { margin: 2px 0 10px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+    .chart { position: relative; height: 260px; }
+    .chart.tall { height: 440px; }
+    .counts { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+    .count { background: var(--soft); border: 1px solid transparent; border-radius: 12px; padding: 8px 12px; min-width: 86px; }
+    .count .n { font-size: 19px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+    .count .t { font-size: 11.5px; color: var(--muted); margin-top: 3px; display: flex; align-items: center; gap: 6px; }
+    .count .t i { width: 8px; height: 8px; border-radius: 3px; display: inline-block; }
+    button.count { text-align: left; font-family: inherit; color: inherit; cursor: pointer; }
+    button.count:hover, button.count:focus-visible { border-color: var(--ring); background: var(--hover); outline: none; }
+    .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+    .pill { border: 1.5px solid var(--blue); background: var(--blue); color: #fff; border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; }
+    .pill i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; border: 1.5px solid #fff; }
+    .pill.off { background: var(--input); color: var(--text-2); border-color: var(--border); }
+    .table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: 12px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+    th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { position: sticky; top: 0; z-index: 1; font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; background: var(--soft); font-weight: 800; }
+    th[data-k] { cursor: pointer; } th[data-k]:hover { color: var(--text); }
+    tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--soft) 45%, transparent); }
+    tbody tr:hover td { background: var(--hover); }
+    tr:last-child td { border-bottom: none; }
+    .tsearch { width: 100%; max-width: 320px; padding: 8px 12px 8px 34px; border: 1px solid var(--border); border-radius: 12px; margin: 0 0 8px; background: var(--input) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.4'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 12px center; color: var(--text); font: 13px inherit; font-family: inherit; }
+    #pSearch { padding-left: 34px !important; border-radius: 12px !important; background: var(--input) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.4'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 12px center !important; }
+    .bad { color: var(--red); font-weight: 700; }
+    .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; background: var(--soft); color: var(--text-2); }
+    .tag-bad { background: rgba(98,80,214,.12); color: #4c3bc2; } .tag-fir { background: rgba(59,47,158,.12); color: #3b2f9e; } .tag-wait { background: rgba(217,119,6,.14); color: #a15c00; }
+    html[data-theme="dark"] .tag-bad { color: #c4b5fd; } html[data-theme="dark"] .tag-wait { color: #fcd34d; }
+
+    /* ---- missing bikes ---- */
+    .mb-alert { display: flex; align-items: center; gap: 12px; background: linear-gradient(90deg, rgba(98,80,214,.12), rgba(98,80,214,.04)); border: 1px solid rgba(98,80,214,.35); color: #3b2f9e; border-radius: var(--radius); padding: 12px 16px; margin: 0 0 12px; font-size: 13.5px; }
+    html[data-theme="dark"] .mb-alert { color: #ddd6fe; }
+    .mb-alert b { font-size: 14.5px; } .mb-alert .x { margin-left: auto; }
+    .mb-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 12px; }
+    .mb-add input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 13px; background: var(--input); color: var(--text); text-transform: uppercase; width: 170px; font-family: inherit; }
+    tr.mb-new td { background: rgba(98,80,214,.07) !important; }
+
+    /* ---- sign in, dialog, misc ---- */
+    .login { max-width: 440px; margin: 20px 0; }
+    .login label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; font-weight: 600; }
+    .login input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
+    .login button { margin-top: 14px; width: 100%; padding: 11px; justify-content: center; background: var(--navy); color: #fff; }
+    .login .err { font-size: 13px; min-height: 1em; margin: 8px 0 0; }
+    .contact { margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: var(--soft); font-size: 12.5px; line-height: 1.6; color: var(--text-2); }
+    .contact a { color: var(--blue); font-weight: 600; text-decoration: none; }
+    dialog#detail { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 18px; padding: 0; width: min(900px, 94vw); max-height: 86vh; }
+    dialog#detail::backdrop { background: rgba(2,6,23,.5); }
+    body.noacc main > *:not(#noAccess):not(.tabs-top) { display: none !important; }
+    .panel.flash { box-shadow: 0 0 0 3px var(--ring); transition: box-shadow .3s; }
+    @media (prefers-reduced-motion: reduce) { .card, .btn { transition: none; } }
+@media (max-width: 600px) { .seg { display: flex; width: 100%; overflow: visible; } .seg button { flex: 1 1 0; min-width: 0; padding: 6px 2px; font-size: 12px; white-space: nowrap; } .stabs { flex-wrap: wrap; overflow: visible; gap: 6px; } .stabs > * { flex: 0 0 auto; } }
+    /* ===== QC Dashboard extras (same look as the Recovery Dashboard) ===== */
+    :root { --s1: #2a78d6; --s2: #6250d6; --s3: #e87ba4; --s4: #eda100; --s5: #38bdf8; --s6: #475569; --s7: #6250d6;
+      --grid: #e8edf5; --axis: #cbd5e1; --tip: #0b1b33; --tip-text: #ffffff; }
+    html[data-theme="dark"] { --grid: rgba(255,255,255,.07); --axis: #2f3a58; --tip: #0b1b33; --tip-text: #ffffff; }
+    .card { cursor: pointer; }
+    .card:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+    .card .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .card .ico { width: 30px; height: 30px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      color: var(--k); background: color-mix(in srgb, var(--k) 14%, transparent); }
+    .card .ico svg { width: 16px; height: 16px; }
+    .card .vrow { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .card .value.small { font-size: 17px; line-height: 1.25; letter-spacing: -.01em; }
+    .card .delta { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
+    .delta.good { color: #1d4ed8; background: rgba(42,120,214,.12); } .delta.bad { color: #b4417a; background: rgba(232,123,164,.16); }
+    .delta.flat { color: var(--muted); background: var(--soft); }
+    html[data-theme="dark"] .delta.good { color: #93c5fd; } html[data-theme="dark"] .delta.bad { color: #f9a8c9; }
+    .card canvas.spark { display: block; width: 100%; height: 30px; margin-top: 6px; }
+    .card .meter { height: 6px; border-radius: 999px; background: var(--soft); margin-top: 10px; overflow: hidden; display: flex; gap: 2px; }
+    .card .meter span { display: block; height: 100%; }
+    .cards .card .more { font-size: 11px; color: var(--blue); margin-top: 4px; opacity: 0; transition: opacity .15s; }
+    .cards .card:hover .more, .cards .card:focus-visible .more { opacity: 1; }
+    @media (hover: none) { .cards .card .more { display: none; } }
+    .dhead { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+    .dhead h2 { margin: 0; font-size: 16px; flex: 1; }
+    .dhead .big { font-size: 22px; font-weight: 800; }
+    .dbody { padding: 0 18px 16px; max-height: 64vh; overflow: auto; }
+    .dbody p { color: var(--muted); font-size: 13px; }
+    td.wrap { white-space: normal; min-width: 220px; }
+    td.parts { white-space: normal; min-width: 180px; max-width: 320px; line-height: 1.35; }
+    td.parts b { color: #b4417a; }
+    html[data-theme="dark"] td.parts b { color: #f9a8c9; }
+    .gap { display: inline-block; min-width: 26px; text-align: center; border-radius: 6px; padding: 1px 6px; font-weight: 700; background: var(--soft); }
+    .gap.hot { background: rgba(232,123,164,.18); color: #b4417a; }
+    tr.click { cursor: pointer; }
+    td.bad { color: #b4417a; }
+    html[data-theme="dark"] td.bad { color: #f9a8c9; }
+    .titlerow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .newqc-btn { text-decoration: none; padding: 8px 14px; }
+    .hero .newqc { background: #fff; color: var(--navy); text-decoration: none; }
+    .period-note { background: var(--soft); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: var(--text-2); }
+    body:has(#dash:not(.hidden)) .titlerow, body:has(#dash:not(.hidden)) #pageSub { display: none; }
+    .grid2 + section.panel { margin-top: 12px; }
+    .cards[data-tab] { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+    @media (max-width: 600px) { .cards[data-tab] { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+ <div class="app">
+  <aside class="side" id="side">
+    <button class="collapse" id="sideToggle" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">«</button>
+    <div class="brandrow">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="logo"><img src="logo.png" alt="Bounce" onerror="this.parentNode.textContent = 'BOUNCE DAILY'"></div>
+        <div class="brandname">Bounce <span>Recovery Info</span></div>
+      </div>
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu">☰</button>
+    </div>
+    <nav class="nav">
+      <div class="navsec">ANALYTICS</div>
+      <a href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Recovery Dashboard</a>
+      <a href="qc.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>QC Dashboard</a>
+      <a href="qc-new.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v3h6V3M12 10v6M9 13h6"/></svg>QC App</a>
+      <a href="tracker.html" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Recovery Tracker</a>
+          <a href="agent.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>Recovery App</a>
+          <a href="areas.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Agents &amp; areas</a>
+    </nav>
+    <div class="foot">
+      <div class="contact-side">Need help? Contact admin<br><a href="tel:+919180260780">+91 91802 60780</a><br><a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a></div>
+      <a href="admin.html" class="adminlink hidden" id="adminLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/><path d="M19 3l2 2-2 2"/></svg>Admin · Users</a>
+      <div id="authBox" class="authbox"></div>
+      <div class="live"><i></i>Live · Supabase</div>
+    </div>
+  </aside>
+
+  <div class="content">
+  <main>
+    <nav class="tabs-top">
+      <a href="dashboard.html">Recovery Dashboard</a>
+      <a href="qc.html" class="active">QC Dashboard</a>
+    </nav>
+    <div class="titlerow"><h1 class="page-title">QC Dashboard</h1><a class="btn btn-sync newqc-btn" href="qc-new.html">+ New QC</a></div>
+    <p class="page-sub" id="pageSub">Vehicle QC checks — approved, rejected and the mistakes behind them</p>
+
+    <!-- Sign-in (real data is only shown to signed-in users) -->
+    <section class="panel login" id="loginBox">
+      <h3>Sign in to see QC data</h3>
+      <p class="note">This page uses real QC data, so it is only visible after signing in. Use the same login as the Recovery app.</p>
+      <form id="loginForm">
+        <label for="email">Email or phone number</label><input id="email" type="text" inputmode="email" autocomplete="username" required>
+        <label for="password">Password or 6-digit PIN</label><input id="password" type="password" autocomplete="current-password" required>
+        <button class="btn btn-clear" type="submit">Sign in</button>
+        <p class="err" id="loginErr"></p>
+      </form>
+      <div class="contact"><strong>Need access or help?</strong> Contact the admin, David Abraham:<br>
+        <a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a> · <a href="tel:+919180260780">+91 91802 60780</a> · <a href="https://wa.me/919180260780" target="_blank" rel="noopener">WhatsApp</a></div>
+    </section>
+
+    <div id="dash" class="hidden">
+    <section class="hero">
+      <div class="hrow"><div><h1>QC overview</h1><p><span id="gWhen">Last 30 days</span> · <span id="gSub">Vehicle QC checks</span></p></div>
+        <div class="hact"><a class="btn newqc" href="qc-new.html">+ New QC</a><button class="btn tbtn" type="button" id="themeBtn">☾ Dark</button></div></div>
+      <div class="glance">
+        <div><b id="gTotal">–</b><span>QCs</span></div><div><b id="gAppr">–</b><span>Approved</span></div><div><b id="gRej">–</b><span>Rejected</span></div>
+        <div><b id="gPct">–</b><span>Rejection %</span></div><div><b id="gHold">–</b><span>On hold</span></div>
+      </div>
+    </section>
+    <section class="bar">
+      <label for="cityFilter">City</label>
+      <select id="cityFilter"><option value="">All Cities</option></select>
+      <label for="hubFilter">Hub</label>
+      <select id="hubFilter"><option value="">All Hubs</option></select>
+      <label>Period</label><span class="seg" id="periodSeg" role="group" aria-label="Period"></span>
+      <select id="periodFilter">
+        <option value="today">Today</option>
+        <option value="7">Last 7 days</option>
+        <option value="15">Last 15 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="custom">Pick dates…</option>
+      </select>
+      <span class="range hidden" id="rangeBox">
+        <input type="date" id="fromDate" aria-label="From date"><span>to</span><input type="date" id="toDate" aria-label="To date">
+      </span>
+      <span id="fchips" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span><span class="spacer"></span>
+      <button class="btn btn-clear" id="clearBtn" type="button">Clear</button>
+      <button class="btn btn-sync" id="syncBtn" type="button">↻ Sync</button>
+      <span class="synced" id="synced"><i></i><span>Loading…</span></span>
+    </section>
+
+    <nav class="stabs" id="stabs" aria-label="Dashboard sections"></nav>
+    <p class="period-note hidden" id="periodNote"></p>
+    <section class="cards" data-tab="overview">
+      <div class="card k-blue"><div class="label">Total QCs</div><div class="value" id="kTotal">–</div><div class="sub" id="kTotalSub"></div></div>
+      <div class="card k-green"><div class="label">Approved</div><div class="value" id="kAppr">–</div><div class="sub" id="kApprSub"></div></div>
+      <div class="card k-pink"><div class="label">Rejected</div><div class="value" id="kRej">–</div><div class="sub" id="kRejSub"></div></div>
+      <div class="card k-pink"><div class="label">Rejection %</div><div class="value" id="kPct">–</div><div class="sub">rejected ÷ total QCs</div></div>
+      <div class="card k-violet"><div class="label">On Hold</div><div class="value" id="kHold">–</div><div class="sub">waiting for a decision</div></div>
+      <div class="card k-slate"><div class="label">Technicians</div><div class="value" id="kTech">–</div><div class="sub" id="kTechSub"></div></div>
+      <div class="card k-amber"><div class="label">Mistakes Found</div><div class="value" id="kMis">–</div><div class="sub" id="kMisSub"></div></div>
+      <div class="card k-amber"><div class="label">Top Mistake</div><div class="value small" id="kTop">–</div><div class="sub" id="kTopSub"></div></div>
+    </section>
+
+    <section class="ovgrid" data-tab="overview">
+      <div class="panel"><h3>QCs per day · last 14 days</h3><p class="note">Approved, rejected and on hold · follows City and Hub</p><div class="chart"><canvas id="ovTrend"></canvas></div></div>
+      <div class="panel"><h3>What stands out</h3><p class="note">Worked out from the numbers on this page</p><div class="insights" id="ovInsights"></div></div>
+      <div class="panel"><h3>Rejection % by hub</h3><p class="note">Tap a hub to filter the whole dashboard</p><div class="chart" id="ovHubBox"><canvas id="ovHub"></canvas></div></div>
+      <div class="panel"><h3>Top mistakes</h3><p class="note">Rejected / hold QCs with each problem · tap a bar for the list</p><div class="chart"><canvas id="ovMis"></canvas></div></div>
+    </section>
+    <section class="grid2">
+      <div class="panel" data-tab="daily">
+        <h3>QCs per day</h3>
+        <p class="note">Approved, rejected and on hold · total on each bar</p>
+        <div class="counts" id="dayCounts"></div>
+        <div class="chart"><canvas id="dayChart" aria-label="Stacked bar chart of QCs per day by result"></canvas></div>
+      </div>
+      <div class="panel" data-tab="hubs">
+        <h3>Rejection % by hub</h3>
+        <p class="note">Rejected ÷ total QCs at each hub</p>
+        <div class="counts" id="hubCounts"></div>
+        <div class="chart"><canvas id="hubChart" aria-label="Bar chart of rejection percent by hub"></canvas></div>
+      </div>
+      <div class="panel" data-tab="mistakes">
+        <h3>Top mistakes</h3>
+        <p class="note">Number of rejected / hold QCs with each problem · click a bar for the list</p>
+        <div class="counts" id="misCounts"></div>
+        <div class="chart" id="misBox"><canvas id="misChart" aria-label="Bar chart of the most common QC mistakes"></canvas></div>
+      </div>
+      <div class="panel" data-tab="daily">
+        <h3>QC results</h3>
+        <p class="note">Share of all QCs in the period</p>
+        <div class="counts" id="resCounts"></div>
+        <div class="chart"><canvas id="resChart" aria-label="Donut chart of QC results"></canvas></div>
+      </div>
+    </section>
+    <section class="panel" style="margin-top:10px" data-tab="techs">
+      <h3>Technicians: approved vs rejected</h3>
+      <p class="note">Most QCs first · click a bar to see that technician's QCs</p>
+      <div class="chart" id="techBox"><canvas id="techChart" aria-label="Stacked bar chart of QCs per technician"></canvas></div>
+    </section>
+    <section class="panel" style="margin-top:10px" data-tab="techs">
+      <h3>Technician table</h3>
+      <p class="note">Click a row to see that technician's QCs · highest rejection % first (min. 5 QCs)</p>
+      <div class="counts" id="techCounts"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Technician</th><th>Hub</th><th class="num">QCs</th><th class="num">Approved</th><th class="num">Rejected</th>
+            <th class="num">Rejection %</th><th class="num">Mistakes</th><th>#1 mistake</th><th>#2 mistake</th><th>#3 mistake</th></tr></thead>
+          <tbody id="techRows"></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="panel" style="margin-top:10px" data-tab="repeat">
+      <h3>Back in service within 7 days</h3>
+      <p class="note">Bikes that got a new job card less than 7 days after the last one · same hub and dates as above · <b style="color:#b4417a">⚠ pink</b> = a part from the last visit was replaced again</p>
+      <div class="counts" id="repCounts"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Bike</th><th>Hub</th><th class="num">Days</th><th>Last service</th><th>Parts then</th><th>This service</th><th>Parts now</th></tr></thead>
+          <tbody id="repRows"></tbody>
+        </table>
+      </div>
+    </section>
+    </div>
+  </main>
+  </div>
+ </div>
+
+  <dialog id="detail">
+    <div class="dhead">
+      <h2 id="dTitle"></h2>
+      <span class="big" id="dCount"></span>
+      <button class="btn btn-light" id="dXlsx" type="button">⬇ Download Excel</button>
+      <button class="btn btn-sync" id="dClose" type="button">Close</button>
+    </div>
+    <div class="dbody">
+      <p id="dNote"></p>
+      <input id="dSearch" type="search" placeholder="Search vehicle, technician, mistake…"
+             style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:10px;background:var(--input);color:var(--text)">
+      <p id="dShown" style="margin:0 0 6px"></p>
+      <div class="table-wrap"><table><thead id="dHead"></thead><tbody id="dRows"></tbody></table></div>
+    </div>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const $ = (id) => document.getElementById(id);
+    const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const count = (arr, fn) => arr.reduce((n, x) => n + (fn(x) ? 1 : 0), 0);
+    const num = (n) => Number(n).toLocaleString('en-IN');
+    const pct = (a, b) => b ? (100 * a / b).toFixed(1) + '%' : '–';
+    // QC day = calendar day in IST
+    const istDay = (iso) => new Date(new Date(iso).getTime() + 5.5 * 3600e3).toISOString().slice(0, 10);
+    const fmtDay = (d) => new Date(d + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    const fmtTime = (iso) => new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
+    const daysBetween = (a, b) => { const out = []; for (let t = Date.parse(a); t <= Date.parse(b); t += 864e5) out.push(new Date(t).toISOString().slice(0, 10)); return out; };
+
+    const C = {};
+    function readColours() {
+      ['s1','s2','s3','s4','s5','s6','s7','grid','axis','muted','card','label','tip','tip-text','text','border','red']
+        .forEach(k => C[k.replace('-', '_')] = css('--' + k));
+      Chart.defaults.color = C.muted;
+      Object.assign(Chart.defaults.plugins.tooltip, { backgroundColor: C.tip, titleColor: C.tip_text, bodyColor: C.tip_text, borderColor: C.border });
+    }
+    Chart.defaults.font.family = '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+    Chart.defaults.font.size = 11;
+    Object.assign(Chart.defaults.plugins.tooltip, { borderWidth: 1, padding: 10 });
+    readColours();
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.boxWidth = 8;
+    const axes = (stacked = false, horizontal = false, percent = false) => {
+      const v = { beginAtZero: true, stacked, grace: '12%', ticks: { precision: 0, color: C.muted, callback: percent ? (x) => x + '%' : undefined },
+                  grid: { color: C.grid }, border: { display: false } };
+      const c = { stacked, ticks: { color: C.muted, maxRotation: 0, autoSkipPadding: 12, autoSkip: !horizontal }, grid: { display: false }, border: { color: C.axis } };
+      return horizontal ? { x: v, y: c } : { x: c, y: v };
+    };
+    // Prints counts on the charts: 'total' = sum per bar (stacked or single), 'last' = latest value of each line
+    Chart.register({
+      id: 'valueLabels',
+      afterDatasetsDraw(chart, _args, opts) {
+        if (!opts || !opts.mode) return;
+        const { ctx } = chart, horizontal = chart.options.indexAxis === 'y';
+        ctx.save();
+        ctx.font = '600 11px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+        ctx.fillStyle = C.label;
+        const visible = chart.data.datasets.map((_, i) => i).filter(i => chart.isDatasetVisible(i));
+        if (opts.mode === 'last') {
+          // Latest value of each visible line, nudged apart so labels never overlap
+          const items = visible.map(i => {
+            const ds = chart.data.datasets[i], n = ds.data.length - 1, el = chart.getDatasetMeta(i).data[n];
+            return el ? { text: `${ds.label} ${ds.data[n]}`, x: el.x, y: el.y - 6 } : null;
+          }).filter(Boolean).sort((a, b) => a.y - b.y);
+          for (let k = 1; k < items.length; k++) if (items[k].y - items[k - 1].y < 14) items[k].y = items[k - 1].y + 14;
+          ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+          items.forEach(it => ctx.fillText(it.text, it.x - 4, it.y));
+        } else {
+          chart.data.labels.forEach((_, idx) => {
+            let total = 0, edge = null, mid = null;
+            visible.forEach(i => {
+              const v = Number(chart.data.datasets[i].data[idx]) || 0, el = chart.getDatasetMeta(i).data[idx];
+              if (!el) return;
+              total += v;
+              if (horizontal) { edge = edge === null ? el.x : Math.max(edge, el.x); mid = el.y; }
+              else { edge = edge === null ? el.y : Math.min(edge, el.y); mid = el.x; }
+            });
+            if (!total || edge === null) return;
+            if (horizontal) { ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(total + (opts.suffix || ''), edge + 6, mid); }
+            else { ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(total + (opts.suffix || ''), mid, edge - 4); }
+          });
+        }
+        ctx.restore();
+      }
+    });
+
+    const fade = (hex, a = 0.14) => /^#[0-9a-f]{6}$/i.test(hex) ? hex + Math.round(a * 255).toString(16).padStart(2, '0') : hex;
+    // Donut: prints the total in the middle
+    Chart.register({ id: 'centerText', afterDatasetsDraw(chart, _a, opts) {
+      if (!opts || opts.text == null) return;
+      const { ctx, chartArea: a } = chart, x = (a.left + a.right) / 2, y = (a.top + a.bottom) / 2;
+      ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = C.text;
+      ctx.font = '800 22px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif'; ctx.textBaseline = 'bottom'; ctx.fillText(opts.text, x, y + 6);
+      ctx.font = '500 11px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif'; ctx.fillStyle = C.muted; ctx.textBaseline = 'top'; ctx.fillText(opts.sub || '', x, y + 8);
+      ctx.restore(); } });
+    // Tiny line chart inside a KPI card
+    function spark(card, data) {
+      let cv = card.querySelector('canvas.spark');
+      if (!cv) { cv = document.createElement('canvas'); cv.className = 'spark'; card.querySelector('.more').before(cv); }
+      const dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 150, h = 30;
+      cv.width = w * dpr; cv.height = h * dpr;
+      const g = cv.getContext('2d'); g.scale(dpr, dpr); g.clearRect(0, 0, w, h);
+      const max = Math.max(1, ...data), step = w / Math.max(1, data.length - 1);
+      const pts = data.map((v, i) => [i * step, h - 3 - (v / max) * (h - 8)]);
+      const col = document.documentElement.dataset.theme === 'gradient' ? '#ffffff' : getComputedStyle(card).getPropertyValue('--k').trim();
+      const grad = g.createLinearGradient(0, 0, 0, h); grad.addColorStop(0, col + '55'); grad.addColorStop(1, col + '00');
+      g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y));
+      g.lineTo(w, h); g.lineTo(0, h); g.closePath(); g.fillStyle = col.startsWith('#') && col.length === 7 ? grad : 'transparent'; g.fill();
+      g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y));
+      g.strokeStyle = col; g.lineWidth = 1.8; g.lineJoin = 'round'; g.stroke();
+      const [lx, ly] = pts[pts.length - 1]; g.beginPath(); g.arc(lx - 1, ly, 2.5, 0, 7); g.fillStyle = col; g.fill();
+    }
+    function delta(card, todayN, yestN, upIsGood) {
+      const el = card.querySelector('.delta'), d = todayN - yestN;
+      el.textContent = d === 0 ? '= yday' : (d > 0 ? '▲ ' : '▼ ') + Math.abs(d) + ' vs yday';
+      el.className = 'delta ' + (d === 0 ? 'flat' : (d > 0) === upIsGood ? 'good' : 'bad');
+    }
+    function meter(card, parts) {
+      let m = card.querySelector('.meter');
+      if (!m) { m = document.createElement('div'); m.className = 'meter'; card.querySelector('.more').before(m); }
+      const tot = parts.reduce((a, p) => a + p.n, 0) || 1;
+      m.innerHTML = parts.map(p => `<span style="width:${100 * p.n / tot}%;background:${p.c}" title="${esc(p.t)}: ${p.n}"></span>`).join('');
+    }
+
+    const charts = {};
+    const trendHidden = new Set();   // lines the user switched off with the pills
+    function draw(id, config) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart($(id), config); }
+
+
+    // ---- Count strips + details pop-up ----
+    const DETAILS = {};
+    function chips(id, items) {
+      $(id).innerHTML = items.map(it => {
+        const dot = it.color ? `<i style="background:${it.color}"></i>` : '';
+        const inner = `<div class="n">${it.text ?? num(it.n)}</div><div class="t">${dot}${esc(it.t)}</div>`;
+        return it.key ? `<button type="button" class="count" data-key="${esc(it.key)}" title="Show details">${inner}</button>` : `<div class="count">${inner}</div>`;
+      }).join('');
+    }
+    let current = null;
+    function detailTable(d) {
+      if (d.kind === 'qc') return { header: ['QC time', 'Hub', 'Technician', 'QC by', 'Vehicle', 'Result', 'Mistakes', 'Remarks'], numeric: [],
+        rows: d.rows.map(q => [fmtTime(q.qc_at), q.hub, q.technician, q.qc_name || '', q.vehicle_number, q.result,
+                               (misByQc.get(q.id) || []).map(m => m.mistake).join(', '), [q.remarks, q.qc_note ? 'QC note: ' + q.qc_note : ''].filter(Boolean).join(' · ')]) };
+      if (d.kind === 'mistake') return { header: ['QC time', 'Hub', 'Technician', 'Vehicle', 'Mistake', 'What the QC noted'], numeric: [],
+        rows: d.rows.map(m => { const q = qcById.get(m.qc_id) || {}; return [fmtTime(q.qc_at), q.hub, q.technician, q.vehicle_number, m.mistake, m.evidence || '']; }) };
+      return { header: ['Technician', 'Hub', 'QCs', 'Approved', 'Rejected', 'Rejection %', 'Mistakes', '#1 mistake', '#2 mistake', '#3 mistake'], numeric: [2, 3, 4, 6],
+        rows: d.rows.map(t => [t.name, t.hubs, t.n, t.ok, t.rej, pct(t.rej, t.n), t.mis, t.top[0] || '', t.top[1] || '', t.top[2] || '']) };
+    }
+    // Problem photos from the QC app appear as "| photo: <link>" in the noted text: show them as links
+    const linkify = (v) => esc(v).replace(/\|\s*photo:\s*(https?:\/\/[^\s<]+)/g, (m, u) => `· <a href="${u}" target="_blank" rel="noopener">📷 photo</a>`);
+    function showDetailRows() {
+      const q = $('dSearch').value.trim().toLowerCase();
+      const rows = q ? current.rows.filter(r => r.join(' ').toLowerCase().includes(q)) : current.rows;
+      $('dShown').textContent = q ? `${rows.length} of ${current.rows.length} match` : '';
+      $('dRows').innerHTML = rows.slice(0, 500).map(r => '<tr>' + r.map((v, i) =>
+        `<td class="${current.numeric.includes(i) ? 'num' : ''}${current.header[i] === 'Remarks' || current.header[i] === 'What the QC noted' ? ' wrap' : ''}">${linkify(v)}</td>`).join('') + '</tr>').join('')
+        || `<tr><td colspan="${current.header.length}" style="color:var(--muted)">Nothing to show.</td></tr>`;
+      if (rows.length > 500) $('dShown').textContent = `Showing 500 of ${rows.length} · download Excel for all`;
+    }
+    function openDetail(key) {
+      const d = DETAILS[key]; if (!d) return;
+      current = { title: d.title, ...detailTable(d) };
+      $('dTitle').textContent = d.title; $('dCount').textContent = num(d.rows.length); $('dNote').textContent = d.note || '';
+      $('dHead').innerHTML = '<tr>' + current.header.map((h, i) => `<th class="${current.numeric.includes(i) ? 'num' : ''}">${esc(h)}</th>`).join('') + '</tr>';
+      $('dSearch').value = ''; showDetailRows(); $('detail').showModal();
+    }
+    function downloadExcel() {
+      if (!current) return;
+      const q = $('dSearch').value.trim().toLowerCase();
+      const rows = q ? current.rows.filter(r => r.join(' ').toLowerCase().includes(q)) : current.rows;
+      const filters = [$('cityFilter').value, $('hubFilter').value, $('periodFilter').value === 'custom' ? `${$('fromDate').value} to ${$('toDate').value}` : $('periodFilter').selectedOptions[0].text].filter(Boolean).join(' · ');
+      const data = [current.header, ...rows.map(r => r.map((v, i) => current.numeric.includes(i) && v !== '' && !isNaN(Number(v)) ? Number(v) : v))];
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      ws['!cols'] = current.header.map((h, i) => ({ wch: Math.min(50, Math.max(h.length, ...data.slice(1).map(r => String(r[i] ?? '').length)) + 2) }));
+      ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: data.length - 1, c: current.header.length - 1 } }) };
+      const info = XLSX.utils.aoa_to_sheet([['Report', current.title], ['Rows', rows.length], ['Filters', filters], ['Search', q || '—'],
+        ['Downloaded', new Date().toLocaleString('en-IN')], ['Source', 'QC Dashboard (QC form data)']]);
+      info['!cols'] = [{ wch: 12 }, { wch: 50 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, current.title.replace(/[\\/?*[\]:]/g, '').slice(0, 31) || 'Data');
+      XLSX.utils.book_append_sheet(wb, info, 'About');
+      XLSX.writeFile(wb, `${current.title} ${filters}`.replace(/[^\w\-. ]+/g, '').replace(/\s+/g, '_') + '.xlsx');
+    }
+
+    // ---- Data ----
+    // Which city each QC hub belongs to (add new hubs here when other cities start using the QC form)
+    const HUB_CITY = { INDIRAPURAM: 'NCR', OKHLA: 'NCR', GURUGRAM: 'NCR', ROHINI: 'NCR', NOIDA: 'NCR', DWARKA: 'NCR',
+      KORAMANGALA: 'Bangalore', 'HSR LAYOUT': 'Bangalore', INDIRANAGAR: 'Bangalore', WHITEFIELD: 'Bangalore',
+      MADHAPUR: 'Hyderabad', GACHIBOWLI: 'Hyderabad' };
+    let qcs = [], mistakes = [], qcById = new Map(), misByQc = new Map();
+    async function fetchAll(table, cols, order) {
+      const out = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await db.from(table).select(cols).order(order).range(from, from + 999);
+        if (error) throw error;
+        out.push(...data); if (data.length < 1000) return out;
+      }
+    }
+    let loadBusy = false;   // sign-in fires twice when the page opens: fetch the data only once
+    async function load() {
+      if (loadBusy) return; loadBusy = true;
+      try { await loadNow(); } finally { loadBusy = false; }
+    }
+    async function loadNow() {
+      const s = $('synced'); s.className = 'synced'; s.querySelector('span').textContent = 'Syncing…';
+      try {
+        [qcs, mistakes] = await Promise.all([
+          fetchAll('qc_checks', 'id, qc_at, hub, qc_name, technician, vehicle_number, result, remarks, qc_note', 'qc_at'),
+          fetchAll('qc_mistakes', 'id, qc_id, mistake, evidence', 'id')]);
+      } catch (e) { s.className = 'synced err'; s.querySelector('span').textContent = 'Sync failed: ' + e.message; return; }
+      qcs.forEach(q => { q.day = istDay(q.qc_at); q.city = q.city || HUB_CITY[q.hub] || 'Other'; });
+      qcById = new Map(qcs.map(q => [q.id, q]));
+      misByQc = new Map(); mistakes.forEach(m => { (misByQc.get(m.qc_id) || misByQc.set(m.qc_id, []).get(m.qc_id)).push(m); });
+      fillFilters(); render();   // show the QCs right away; the repeat-repairs section fills in when it's ready
+      loadRepeats().catch(() => { repeats = null; }).then(() => render());
+      s.className = 'synced ok'; s.querySelector('span').textContent = 'Synced ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    }
+    // Bikes back in service within 7 days of their last job card (from the job cards, last ~4 months)
+    let repeats = [];
+    async function loadRepeats() {
+      const hubs = [...new Set(qcs.map(q => q.hub))].filter(Boolean);
+      const since = new Date(Date.now() - 125 * 864e5).toISOString(), out = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await db.from('repeat_services')
+          .select('vehicle_number, hub_name, job_card_number, card_time, technician, items, prev_card, prev_time, prev_tech, prev_items')
+          .gte('card_time', since).or(hubs.map(h => `hub_name.ilike."${h}"`).join(',')).order('card_time', { ascending: false }).range(from, from + 999);
+        if (error) throw error;
+        out.push(...data); if (data.length < 1000) break;
+      }
+      repeats = out.map(r => ({ ...r, hub: String(r.hub_name || '').toUpperCase(), day: istDay(r.card_time) }));
+    }
+    const pkey = (n) => String(n || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const samePart = (a, b) => { const x = pkey(a.name), y = pkey(b.name); return (a.code && a.code === b.code) || (x.length > 3 && y.length > 3 && (x === y || x.includes(y) || y.includes(x))); };
+    const isLab = (it) => /labou?r|service|charge/i.test(String(it.type || ''));
+    function renderRepeats(from, to, city, hub) {
+      if (repeats === null) { $('repCounts').innerHTML = ''; $('repRows').innerHTML = '<tr><td colspan="7" style="color:var(--muted)">Not available yet.</td></tr>'; return; }
+      const R = repeats.filter(r => r.day >= from && r.day <= to && (!hub || r.hub === hub) && (!city || (HUB_CITY[r.hub] || 'Other') === city));
+      const dd = (t) => new Date(t).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      let again = 0, sameDay = 0;
+      const rows = R.map(r => {
+        const now = (r.items || []).filter(x => !isLab(x)), then = (r.prev_items || []).filter(x => !isLab(x));
+        const hitNow = now.map(x => then.some(y => samePart(x, y)));
+        if (hitNow.some(Boolean)) again++;
+        const days = (new Date(r.card_time) - new Date(r.prev_time)) / 864e5; if (days < 1) sameDay++;
+        const list = (arr, hits) => arr.map((x, i) => (hits && hits[i] ? `<b>⚠ ${esc(x.name)}</b>` : esc(x.name)) + ((x.qty ?? 1) > 1 ? ' ×' + x.qty : '')).join(', ') || '<span style="color:var(--muted)">labour only</span>';
+        return `<tr><td><strong>${esc(r.vehicle_number)}</strong></td><td>${esc(r.hub)}</td>
+          <td class="num"><span class="gap ${days < 3 ? 'hot' : ''}">${days < 1 ? '0' : Math.floor(days)}</span></td>
+          <td>${dd(r.prev_time)} · ${esc(r.prev_card)}<br><span style="color:var(--muted)">${esc(r.prev_tech || '—')}</span></td>
+          <td class="parts">${list(then, then.map(y => now.some(x => samePart(x, y))))}</td>
+          <td>${dd(r.card_time)} · ${esc(r.job_card_number)}<br><span style="color:var(--muted)">${esc(r.technician || '—')}</span></td>
+          <td class="parts">${list(now, hitNow)}</td></tr>`;
+      });
+      chips('repCounts', [{ n: R.length, t: 'Back within 7 days' }, { n: again, t: 'Same part replaced again', color: C.s3 }, { n: sameDay, t: 'Same day' }]);
+      $('repRows').innerHTML = rows.slice(0, 300).join('') || '<tr><td colspan="7" style="color:var(--muted)">No bikes back in service within 7 days for this filter.</td></tr>';
+    }
+    function fillFilters() {
+      const keep = (sel, values, all) => { const cur = sel.value;
+        sel.innerHTML = `<option value="">${all}</option>` + values.map(v => `<option>${esc(v)}</option>`).join(''); sel.value = values.includes(cur) ? cur : ''; };
+      keep($('cityFilter'), [...new Set(qcs.map(q => q.city))].sort(), 'All Cities');
+      const city = $('cityFilter').value;
+      keep($('hubFilter'), [...new Set(qcs.filter(q => !city || q.city === city).map(q => q.hub))].sort(), 'All Hubs');
+    }
+
+    const RESULTS = ['APPROVED', 'REJECTED', 'HOLD'];
+    const RES_LABEL = { APPROVED: 'Approved', REJECTED: 'Rejected', HOLD: 'On hold' };
+    function render() {
+      if (!qcs.length) return;
+      const allDays = [...new Set(qcs.map(q => q.day))].sort(), lastDay = allDays[allDays.length - 1];
+      // Periods count back from today (IST), like the Recovery Dashboard
+      const today = istDay(new Date().toISOString()), period = $('periodFilter').value;
+      const back = (n) => new Date(Date.parse(today) - n * 864e5).toISOString().slice(0, 10);
+      let from, to = today;
+      if (period === 'custom') {
+        // Your own date range (if "to" is before "from", they're swapped)
+        from = $('fromDate').value || allDays[0]; to = $('toDate').value || today;
+        if (from > to) [from, to] = [to, from];
+      } else from = period === 'today' ? today : back(Number(period) - 1);
+      const yday = back(1);
+      const days = daysBetween(from, to), labels = days.map(fmtDay);
+      const city = $('cityFilter').value, hub = $('hubFilter').value;
+      const base = qcs.filter(q => (!city || q.city === city) && (!hub || q.hub === hub));   // all dates, for trends
+      const Q = base.filter(q => q.day >= from && q.day <= to);
+      const pName = period === 'custom' ? `${fmtDay(from)} – ${fmtDay(to)}` : $('periodFilter').selectedOptions[0].text.toLowerCase();
+      $('periodNote').classList.toggle('hidden', Q.length > 0);
+      $('periodNote').innerHTML = `No QCs for <strong>${esc(pName)}</strong>${city || hub ? ' with these filters' : ''}. The latest QC data is from <strong>${fmtDay(lastDay)}</strong> — load newer QC data into Supabase to see it here.`;
+      const ids = new Set(Q.map(q => q.id));
+      const M = mistakes.filter(m => ids.has(m.qc_id));
+      const RES = { APPROVED: C.s1, REJECTED: C.s3, HOLD: C.s2 };
+      const byRes = (r) => Q.filter(q => q.result === r);
+      const newestFirst = (arr) => [...arr].sort((a, b) => (a.qc_at < b.qc_at ? 1 : -1));
+      const rej = byRes('REJECTED'), ok = byRes('APPROVED'), hold = byRes('HOLD');
+      $('pageSub').textContent = `Vehicle QC checks · ${fmtDay(allDays[0])} – ${fmtDay(lastDay)} ${lastDay.slice(0, 4)} · real data, visible only after sign-in`;
+
+      // Mistake ranking: number of QCs with each mistake
+      const misCount = {}; M.forEach(m => misCount[m.mistake] = (misCount[m.mistake] || 0) + 1);
+      const misList = Object.entries(misCount).sort((a, b) => b[1] - a[1]);
+
+      // Technicians
+      const T = {};
+      Q.forEach(q => { const t = T[q.technician] ||= { name: q.technician, hubs: new Set(), n: 0, ok: 0, rej: 0, hold: 0, mis: 0, by: {} };
+        t.hubs.add(q.hub); t.n++; if (q.result === 'APPROVED') t.ok++; else if (q.result === 'REJECTED') t.rej++; else t.hold++; });
+      M.forEach(m => { const t = T[qcById.get(m.qc_id).technician]; t.mis++; t.by[m.mistake] = (t.by[m.mistake] || 0) + 1; });
+      const techs = Object.values(T).map(t => ({ ...t, hubs: [...t.hubs].sort().join(', '),
+        top: Object.entries(t.by).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${k} (${v})`) }));
+
+      // ---- Cards ----
+      const dayN = (arr, d) => count(arr, q => q.day === d);
+      $('kTotal').textContent = num(Q.length);
+      $('kTotalSub').textContent = `${dayN(base, today)} today · ${dayN(base, yday)} yesterday`;
+      $('kAppr').textContent = num(ok.length); $('kApprSub').textContent = `${pct(ok.length, Q.length)} of QCs`;
+      $('kRej').textContent = num(rej.length); $('kRejSub').textContent = `${count(base, q => q.day === today && q.result === 'REJECTED')} today`;
+      $('kPct').textContent = pct(rej.length, Q.length);
+      $('kHold').textContent = num(hold.length);
+      $('kTech').textContent = num(techs.filter(t => t.name !== 'Not recorded').length);
+      $('kTechSub').textContent = `${count(techs, t => t.n >= 5 && t.rej / t.n > 0.5)} with over 50% rejected`;
+      $('kMis').textContent = num(M.length);
+      $('kMisSub').textContent = `${(M.length / Math.max(1, rej.length + hold.length)).toFixed(1)} per rejected QC`;
+      $('kTop').textContent = misList[0] ? misList[0][0] : '–';
+      $('kTopSub').textContent = misList[0] ? `${misList[0][1]} QCs · ${pct(misList[0][1], rej.length + hold.length)} of rejections` : '';
+      const card = (k) => document.querySelector(`.cards .card[data-key="${k}"]`);
+      // Small trend lines: the period's days (at least the last 14), plus today vs yesterday
+      const trendDays = days.length >= 14 ? days : daysBetween(back(13), today);
+      const of = (r) => r ? base.filter(q => q.result === r) : base;
+      [['total', null, true], ['appr', 'APPROVED', true], ['rej', 'REJECTED', false]].forEach(([k, r, good]) => {
+        const a = of(r); spark(card(k), trendDays.map(d => dayN(a, d))); delta(card(k), dayN(a, today), dayN(a, yday), good);
+      });
+      meter(card('pct'), [{ t: 'Rejected', n: rej.length, c: C.s3 }, { t: 'Hold', n: hold.length, c: C.s2 }, { t: 'Approved', n: ok.length, c: C.s1 }]);
+      meter(card('mis'), misList.slice(0, 5).map(([k, v], i) => ({ t: k, n: v, c: [C.s3, C.s1, C.s2, C.s4, C.s5][i] })));
+
+      // ---- What clicks open ----
+      Object.keys(DETAILS).forEach(k => delete DETAILS[k]);
+      Object.assign(DETAILS, {
+        total: { title: 'All QCs', kind: 'qc', rows: newestFirst(Q) },
+        appr:  { title: 'Approved QCs', kind: 'qc', rows: newestFirst(ok) },
+        rej:   { title: 'Rejected QCs', kind: 'qc', rows: newestFirst(rej) },
+        pct:   { title: 'Rejected QCs', note: `${rej.length} of ${Q.length} QCs were rejected.`, kind: 'qc', rows: newestFirst(rej) },
+        hold:  { title: 'QCs on hold', kind: 'qc', rows: newestFirst(hold) },
+        tech:  { title: 'Technicians', kind: 'tech', rows: [...techs].sort((a, b) => b.n - a.n) },
+        mis:   { title: 'All mistakes found', note: 'One row per mistake. A rejected QC can have several.', kind: 'mistake',
+                 rows: [...M].sort((a, b) => (qcById.get(a.qc_id).qc_at < qcById.get(b.qc_id).qc_at ? 1 : -1)) },
+        top:   misList[0] ? { title: `Mistake: ${misList[0][0]}`, kind: 'mistake', rows: M.filter(m => m.mistake === misList[0][0]) } : { title: 'Top mistake', kind: 'mistake', rows: [] }
+      });
+      misList.forEach(([k]) => DETAILS['m:' + k] = { title: `Mistake: ${k}`, kind: 'mistake', rows: M.filter(m => m.mistake === k) });
+      techs.forEach(t => DETAILS['t:' + t.name] = { title: `QCs by ${t.name}`, note: `${t.hubs} · ${t.n} QCs · ${pct(t.rej, t.n)} rejected`, kind: 'qc',
+        rows: newestFirst(Q.filter(q => q.technician === t.name)) });
+      const hubs = [...new Set(Q.map(q => q.hub))].sort();
+      hubs.forEach(h => DETAILS['h:' + h] = { title: `QCs at ${h}`, kind: 'qc', rows: newestFirst(Q.filter(q => q.hub === h)) });
+
+      // ---- Charts ----
+      draw('dayChart', { type: 'bar',
+        data: { labels, datasets: RESULTS.map(r => ({ label: RES_LABEL[r], data: days.map(d => count(Q, q => q.day === d && q.result === r)),
+          backgroundColor: RES[r], borderColor: C.card, borderWidth: { top: 2 }, borderSkipped: false, maxBarThickness: 22 })) },
+        options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 18 } },
+          plugins: { legend: { position: 'top', align: 'start' }, valueLabels: { mode: 'total' } }, scales: axes(true) } });
+      chips('dayCounts', [{ n: Q.length, t: 'QCs', key: 'total' }, { n: ok.length, t: 'Approved', color: RES.APPROVED, key: 'appr' },
+        { n: rej.length, t: 'Rejected', color: RES.REJECTED, key: 'rej' }, { n: (Q.length / Math.max(1, days.length)).toFixed(1), t: 'Avg per day' }]);
+
+      const hubPct = hubs.map(h => { const a = Q.filter(q => q.hub === h); return a.length ? +(100 * count(a, q => q.result === 'REJECTED') / a.length).toFixed(1) : 0; });
+      draw('hubChart', { type: 'bar',
+        data: { labels: hubs, datasets: [{ label: 'Rejection %', data: hubPct, backgroundColor: hubPct.map(v => v >= 50 ? C.s3 : C.s1), borderRadius: 6, maxBarThickness: 46 }] },
+        options: { maintainAspectRatio: false, layout: { padding: { top: 18 } }, onClick: (e, el) => el[0] && openDetail('h:' + hubs[el[0].index]),
+          plugins: { legend: { display: false }, valueLabels: { mode: 'total', suffix: '%' },
+            tooltip: { callbacks: { label: (c) => `${c.raw}% rejected of ${count(Q, q => q.hub === hubs[c.dataIndex])} QCs` } } },
+          scales: { ...axes(false, false, true), y: { ...axes(false, false, true).y, max: 100 } } } });
+      chips('hubCounts', hubs.map(h => ({ n: count(Q, q => q.hub === h), t: h, key: 'h:' + h })));
+
+      const topM = misList.slice(0, 12);
+      $('misBox').style.height = Math.max(230, topM.length * 26 + 40) + 'px';
+      draw('misChart', { type: 'bar',
+        data: { labels: topM.map(([k]) => k), datasets: [{ label: 'QCs', data: topM.map(([, v]) => v),
+          backgroundColor: topM.map((_, i) => i < 3 ? C.s3 : C.s1), borderRadius: 4, maxBarThickness: 18 }] },
+        options: { indexAxis: 'y', maintainAspectRatio: false, layout: { padding: { right: 28 } }, onClick: (e, el) => el[0] && openDetail('m:' + topM[el[0].index][0]),
+          plugins: { legend: { display: false }, valueLabels: { mode: 'total' } }, scales: axes(false, true) } });
+      chips('misCounts', [{ n: M.length, t: 'Mistakes', key: 'mis' }, { n: misList.length, t: 'Types' },
+        ...topM.slice(0, 2).map(([k, v]) => ({ n: v, t: k.split(' / ')[0], key: 'm:' + k }))]);
+
+      draw('resChart', { type: 'doughnut',
+        data: { labels: RESULTS.map(r => RES_LABEL[r]), datasets: [{ data: RESULTS.map(r => byRes(r).length), backgroundColor: RESULTS.map(r => RES[r]),
+          borderColor: C.card, borderWidth: 2, hoverOffset: 6 }] },
+        options: { maintainAspectRatio: false, cutout: '68%', onClick: (e, el) => el[0] && openDetail(['appr', 'rej', 'hold'][el[0].index]),
+          plugins: { legend: { position: 'right', labels: { padding: 12 } }, centerText: { text: num(Q.length), sub: 'QCs' } } } });
+      chips('resCounts', [{ text: pct(ok.length, Q.length), t: 'Approved', color: RES.APPROVED, key: 'appr' },
+        { text: pct(rej.length, Q.length), t: 'Rejected', color: RES.REJECTED, key: 'rej' }, { text: pct(hold.length, Q.length), t: 'On hold', color: RES.HOLD, key: 'hold' }]);
+
+      const tlist = [...techs].sort((a, b) => b.n - a.n).slice(0, 25);
+      $('techBox').style.height = Math.max(240, tlist.length * 24 + 60) + 'px';
+      draw('techChart', { type: 'bar',
+        data: { labels: tlist.map(t => t.name), datasets: [
+          { label: 'Approved', data: tlist.map(t => t.ok), backgroundColor: RES.APPROVED, borderColor: C.card, borderWidth: { right: 2 }, borderSkipped: false, maxBarThickness: 16 },
+          { label: 'Rejected', data: tlist.map(t => t.rej), backgroundColor: RES.REJECTED, borderColor: C.card, borderWidth: { right: 2 }, borderSkipped: false, maxBarThickness: 16 },
+          { label: 'On hold', data: tlist.map(t => t.hold), backgroundColor: RES.HOLD, borderColor: C.card, borderWidth: { right: 2 }, borderSkipped: false, maxBarThickness: 16 }] },
+        options: { indexAxis: 'y', maintainAspectRatio: false, layout: { padding: { right: 28 } }, interaction: { mode: 'index', intersect: false },
+          onClick: (e, el) => el[0] && openDetail('t:' + tlist[el[0].index].name),
+          plugins: { legend: { position: 'top', align: 'start' }, valueLabels: { mode: 'total' } }, scales: axes(true, true) } });
+
+      const rank = [...techs].sort((a, b) => (b.n >= 5) - (a.n >= 5) || b.rej / b.n - a.rej / a.n || b.n - a.n);
+      $('techRows').innerHTML = rank.map(t => `<tr class="click" data-key="t:${esc(t.name)}"><td><strong>${esc(t.name)}</strong></td><td>${esc(t.hubs)}</td>
+        <td class="num">${t.n}</td><td class="num">${t.ok}</td><td class="num">${t.rej}</td>
+        <td class="num ${t.n >= 5 && t.rej / t.n > 0.5 ? 'bad' : ''}">${pct(t.rej, t.n)}</td><td class="num">${t.mis}</td>
+        <td>${esc(t.top[0] || '')}</td><td>${esc(t.top[1] || '')}</td><td>${esc(t.top[2] || '')}</td></tr>`).join('')
+        || '<tr><td colspan="10" style="color:var(--muted)">No QCs for this filter.</td></tr>';
+      chips('techCounts', [{ n: techs.length, t: 'Technicians', key: 'tech' },
+        { n: count(techs, t => t.n >= 5 && t.rej / t.n > 0.5), t: 'Over 50% rejected' },
+        ...(T['Freelancer'] ? [{ n: T['Freelancer'].n, t: 'Freelancer QCs', key: 't:Freelancer' }] : [])]);
+      renderRepeats(from, to, city, hub);
+    }
+
+    // ---- Sign-in ----
+    async function showFor(session) {
+      const signedIn = !!session;
+      $('loginBox').classList.toggle('hidden', signedIn);
+      $('dash').classList.toggle('hidden', !signedIn);
+      $('authBox').innerHTML = signedIn
+        ? `<span class="who">${esc(session.user.email)}</span><button type="button" id="signOutBtn">Sign Out</button>`
+        : '<span class="who">Not signed in</span>';
+      if (signedIn) $('signOutBtn').onclick = () => db.auth.signOut();
+      const allowed = await applyRoles(session);   // QC team + admins only
+      if (signedIn && !allowed) { $('dash').classList.add('hidden'); qcs = []; mistakes = []; return; }
+      if (signedIn) { if (!qcs.length) load(); listenForChanges(); }
+      else { qcs = []; mistakes = []; }
+    }
+    $('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); $('loginErr').textContent = '';
+      // Phone logins (no email): phone number + 6-digit PIN, same as the phone apps
+      const idv = $('email').value.trim(), digits = idv.replace(/\D/g, ''), pw = $('password').value;
+      const phoneLogin = !idv.includes('@') && digits.length >= 10;
+      const { error } = await db.auth.signInWithPassword(phoneLogin
+        ? { email: digits.slice(-10) + '@agent.bounce.invalid', password: /^\d{6}$/.test(pw.trim()) ? `Bnc!${pw.trim()}#rA` : pw }
+        : { email: idv, password: pw });
+      if (error) $('loginErr').textContent = error.message;
+    });
+    // ---- Roles: who can see which page (the database enforces the same rules) ----
+    const PAGE_ROLES = { 'dashboard.html': ['admin', 'recovery'], 'tracker.html': ['admin', 'recovery'], 'qc.html': ['admin', 'qc'], 'qc-preview.html': ['admin', 'qc'], 'qc-new.html': ['admin', 'qc'], 'admin.html': ['admin'], 'agent.html': ['admin', 'agent', 'recovery', 'mfr'], 'areas.html': ['admin', 'recovery'] };
+    const ROLE_HOME = { manager: 'dashboard.html', qc: 'qc.html', recovery: 'dashboard.html', agent: 'agent.html', mfr: 'agent.html' };
+    let myRoleCache = { uid: null, roles: [] };
+    // Shows only the menu links this person may use. Returns true if they may use THIS page.
+    async function applyRoles(session) {
+      const here = (location.pathname.split('/').pop() || 'dashboard.html');
+      const links = document.querySelectorAll('.side .nav a, .tabs-top a, .newqc-btn');
+      const adminLink = document.getElementById('adminLink');
+      if (!session) { links.forEach(a => a.classList.remove('hidden')); adminLink && adminLink.classList.add('hidden'); showNoAccess(false); return false; }
+      let roles = myRoleCache.roles;
+      if (myRoleCache.uid !== session.user.id) {   // a person can have several roles (QC + Recovery + Police …)
+        let r = await db.rpc('my_roles');
+        if (r.error) { const o = await db.rpc('my_role'); r = { data: o.data ? [o.data] : [] }; }
+        roles = r.data || []; myRoleCache = { uid: session.user.id, roles };
+      }
+      const can = (page) => (PAGE_ROLES[page] || []).some(x => roles.includes(x));
+      links.forEach(a => { a.classList.toggle('hidden', !can(a.getAttribute('href'))); });
+      adminLink && adminLink.classList.toggle('hidden', !roles.includes('admin'));
+      const allowed = can(here), home = roles.map(x => ROLE_HOME[x]).find(Boolean);
+      if (!allowed && home && home !== here) { location.replace(home); return false; }
+      showNoAccess(!allowed, session.user.email);
+      return allowed;
+    }
+    function showNoAccess(on, email) {
+      let box = document.getElementById('noAccess');
+      if (on && !box) {
+        box = document.createElement('section'); box.id = 'noAccess'; box.className = 'panel';
+        box.style.cssText = 'max-width:520px;margin:40px auto;padding:24px;text-align:center';
+        box.innerHTML = `<h3 style="margin:0 0 8px">You don't have access yet</h3>
+          <p style="color:var(--muted);margin:0 0 14px">You're signed in as <b class="na-email"></b>, but your login hasn't been given a role for this page.</p>
+          <p style="margin:0 0 16px">Contact the admin, David Abraham:<br><a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a> · <a href="tel:+919180260780">+91 91802 60780</a></p>
+          <button type="button" class="btn btn-light" id="naSignOut">Sign out</button>`;
+        document.querySelector('main').appendChild(box);
+        box.querySelector('#naSignOut').onclick = () => db.auth.signOut().then(() => location.reload());
+      }
+      if (box) { box.querySelector('.na-email').textContent = email || ''; box.classList.toggle('hidden', !on); }
+      document.body.classList.toggle('noacc', !!on);
+    }
+    async function showAdminLink() {
+      const { data: { session } } = await db.auth.getSession();
+      return applyRoles(session);
+    }
+    db.auth.onAuthStateChange((_ev, session) => setTimeout(() => showFor(session), 0));
+
+    // ---- Controls ----
+    $('cityFilter').addEventListener('change', () => { $('hubFilter').value = ''; fillFilters(); render(); });
+    $('hubFilter').addEventListener('change', render);
+    $('periodFilter').addEventListener('change', () => {
+      const custom = $('periodFilter').value === 'custom';
+      $('rangeBox').classList.toggle('hidden', !custom);
+      if (custom && !$('fromDate').value) {   // start with the last 30 days, then let them change it
+        const t = istDay(new Date().toISOString());
+        $('toDate').value = t; $('fromDate').value = new Date(Date.parse(t) - 29 * 864e5).toISOString().slice(0, 10);
+      }
+      render();
+    });
+    ['fromDate', 'toDate'].forEach(id => $(id).addEventListener('change', render));
+    $('clearBtn').addEventListener('click', () => { $('cityFilter').value = ''; $('hubFilter').value = ''; $('periodFilter').value = '30'; $('rangeBox').classList.add('hidden'); $('fromDate').value = ''; $('toDate').value = ''; fillFilters(); render(); });
+    $('syncBtn').addEventListener('click', load);
+    // Live: when the Google Sheet sync changes anything (new QC, edit, delete), reload within a few seconds
+    let liveCh = null, liveTimer = null;
+    function listenForChanges() {
+      if (liveCh) return;
+      liveCh = db.channel('qc-updates')
+        .on('broadcast', { event: 'changed' }, () => { clearTimeout(liveTimer); liveTimer = setTimeout(() => { if (qcs.length) load(); }, 2000); })
+        .subscribe();
+    }
+    // New QCs arrive from the Google Sheet every ~10 minutes: refresh every 5 minutes while the page is open
+    setInterval(() => { if (qcs.length && document.visibilityState === 'visible') load(); }, 5 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && qcs.length) load(); });
+    $('menuBtn').addEventListener('click', () => $('side').classList.toggle('open'));
+    const CARD_KEYS = ['total', 'appr', 'rej', 'pct', 'hold', 'tech', 'mis', 'top'];
+    const ICONS = [
+      '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>',
+      '<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>',
+      '<circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>',
+      '<path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/>',
+      '<circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/>',
+      '<circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2.5.6 4 2.8 4 6"/>',
+      '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
+      '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>'];
+    document.querySelectorAll('.cards .card').forEach((card, i) => {
+      card.dataset.key = CARD_KEYS[i]; card.tabIndex = 0; card.setAttribute('role', 'button');
+      card.insertAdjacentHTML('beforeend', '<div class="more">View details →</div>');
+      const label = card.querySelector('.label'), value = card.querySelector('.value');
+      const top = document.createElement('div'); top.className = 'top'; label.before(top); top.append(label);
+      top.insertAdjacentHTML('beforeend', `<span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[i]}</svg></span>`);
+      const vrow = document.createElement('div'); vrow.className = 'vrow'; value.before(vrow); vrow.append(value);
+      if (['total', 'appr', 'rej'].includes(CARD_KEYS[i])) vrow.insertAdjacentHTML('beforeend', '<span class="delta flat"></span>');
+    });
+    document.addEventListener('click', (e) => { const el = e.target.closest('.cards .card, button.count, tr.click'); if (el && el.dataset.key) openDetail(el.dataset.key); });
+    document.addEventListener('keydown', (e) => { const el = e.target.closest && e.target.closest('.cards .card');
+      if (el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openDetail(el.dataset.key); } });
+    $('dClose').addEventListener('click', () => $('detail').close());
+    $('dSearch').addEventListener('input', showDetailRows);
+    $('dXlsx').addEventListener('click', downloadExcel);
+  </script>
+
+  <script>
+    // ===== New look: section tabs, period buttons, overview charts, click-to-filter, table search =====
+    (function () {
+      const $ = (id) => document.getElementById(id);
+      const TABS = [['overview', 'Overview'], ['daily', 'QCs per day'], ['hubs', 'Hubs'], ['mistakes', 'Mistakes'], ['techs', 'Technicians'], ['repeat', 'Back in service']];
+      let cur = 'overview'; try { cur = sessionStorage.getItem('qc-tab') || 'overview'; } catch (e) {}
+      if (!TABS.some(t => t[0] === cur)) cur = 'overview';
+      const nav = $('stabs');
+      nav.innerHTML = TABS.map(([k, l]) => `<button type="button" data-go="${k}">${l}<i class="hidden" data-badge="${k}"></i></button>`).join('');
+      function show(k) {
+        cur = k; try { sessionStorage.setItem('qc-tab', k); } catch (e) {}
+        nav.querySelectorAll('[data-go]').forEach(b => b.classList.toggle('on', b.dataset.go === k));
+        document.querySelectorAll('#dash [data-tab]').forEach(el => { el.hidden = !el.dataset.tab.split(' ').includes(k); });
+        window.dispatchEvent(new Event('resize'));   // charts that were hidden size themselves now
+      }
+      nav.addEventListener('click', (e) => { const b = e.target.closest('[data-go]'); if (b) { show(b.dataset.go); nav.scrollIntoView({ block: 'nearest' }); } });
+      document.addEventListener('click', (e) => { const b = e.target.closest('[data-goto]'); if (b) { show(b.dataset.goto); window.scrollTo({ top: nav.offsetTop - 80, behavior: 'smooth' }); } });
+      show(cur);
+
+      // period: buttons instead of a drop-down (the drop-down stays and drives the page)
+      const pf = $('periodFilter'), seg = $('periodSeg');
+      seg.innerHTML = [...pf.options].map(o => `<button type="button" data-p="${o.value}">${o.value === 'custom' ? 'Dates…' : o.text.replace('Last ', '')}</button>`).join('');
+      const markP = () => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.p === pf.value));
+      seg.addEventListener('click', (e) => { const b = e.target.closest('[data-p]'); if (!b) return; pf.value = b.dataset.p; pf.dispatchEvent(new Event('change', { bubbles: true })); markP(); });
+      pf.addEventListener('change', markP); $('clearBtn').addEventListener('click', () => setTimeout(markP)); markP();
+
+      // chips showing the city / hub filter, with a × to clear
+      function fchips() {
+        $('fchips').innerHTML = ['cityFilter', 'hubFilter'].filter(id => $(id).value)
+          .map(id => `<span class="fchip">${esc($(id).value)}<button type="button" data-clr="${id}" aria-label="Clear">×</button></span>`).join('');
+      }
+      $('fchips').addEventListener('click', (e) => { const b = e.target.closest('[data-clr]'); if (!b) return; $(b.dataset.clr).value = ''; $(b.dataset.clr).dispatchEvent(new Event('change', { bubbles: true })); });
+
+      // ---- chart look + click a city / hub on any chart to filter the whole page ----
+      Chart.defaults.font.family = '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+      Chart.defaults.font.size = 11.5;
+      Chart.defaults.elements.bar.borderRadius = 4;
+      Chart.defaults.elements.line.borderWidth = 2; Chart.defaults.elements.line.tension = .35; Chart.defaults.elements.point.radius = 0; Chart.defaults.elements.point.hoverRadius = 5;
+      Object.assign(Chart.defaults.plugins.tooltip, { padding: 10, cornerRadius: 10, titleFont: { weight: '700' }, bodySpacing: 4, boxPadding: 4, usePointStyle: true, borderWidth: 0 });
+      Chart.defaults.plugins.legend.labels.padding = 14;
+      Chart.defaults.animation = { duration: 500, easing: 'easeOutQuart' };
+      const optIn = (id, v) => [...$(id).options].some(o => o.value === v);
+      const pick = (chart, els) => { if (!els || !els.length || chart.config.options.onClick) return null; const lab = chart.data.labels && chart.data.labels[els[0].index];
+        const v = String(lab ?? ''); return optIn('cityFilter', v) ? ['cityFilter', v] : optIn('hubFilter', v) ? ['hubFilter', v] : null; };
+      Chart.defaults.onHover = (e, els, chart) => { chart.canvas.style.cursor = chart.config.options.onClick && els.length ? 'pointer' : pick(chart, els) ? 'pointer' : 'default'; };
+      Chart.defaults.onClick = (e, els, chart) => { const p = pick(chart, chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false)); if (!p) return;
+        if (p[0] === 'cityFilter') $('hubFilter').value = '';
+        $(p[0]).value = p[1]; $(p[0]).dispatchEvent(new Event('change', { bubbles: true })); };
+
+      // ---- after every redraw: hero numbers, overview charts, insights, tab badges ----
+      const BLUE = '#2a78d6', PINK = '#e87ba4', VIOLET = '#6250d6';
+      const ov = {}; const odraw = (id, cfg) => { if (ov[id]) ov[id].destroy(); ov[id] = new Chart($(id), cfg); };
+      const today = () => istDay(new Date().toISOString()), back = (n) => new Date(Date.parse(today()) - n * 864e5).toISOString().slice(0, 10);
+      function period() {   // same dates as the page's render()
+        const p = $('periodFilter').value; let from, to = today();
+        if (p === 'custom') { from = $('fromDate').value || (qcs[0] ? qcs[0].day : to); to = $('toDate').value || to; if (from > to) [from, to] = [to, from]; }
+        else from = p === 'today' ? to : back(Number(p) - 1);
+        return { from, to, n: daysBetween(from, to).length };
+      }
+      function overview() {
+        if (!qcs.length) return;
+        const city = $('cityFilter').value, hub = $('hubFilter').value;
+        const base = qcs.filter(q => (!city || q.city === city) && (!hub || q.hub === hub));
+        const { from, to, n } = period(), Q = base.filter(q => q.day >= from && q.day <= to);
+        const pFrom = new Date(Date.parse(from) - n * 864e5).toISOString().slice(0, 10), pTo = new Date(Date.parse(from) - 864e5).toISOString().slice(0, 10);
+        const P = base.filter(q => q.day >= pFrom && q.day <= pTo);
+        const rejOf = (a) => a.filter(q => q.result === 'REJECTED').length, rp = (a) => a.length ? 100 * rejOf(a) / a.length : null;
+        // hero numbers
+        const t = (id) => $(id).textContent;
+        $('gTotal').textContent = t('kTotal'); $('gAppr').textContent = t('kAppr'); $('gRej').textContent = t('kRej'); $('gPct').textContent = t('kPct'); $('gHold').textContent = t('kHold');
+        $('gWhen').textContent = $('periodFilter').value === 'custom' ? `${fmtDay(from)} – ${fmtDay(to)}` : $('periodFilter').selectedOptions[0].text;
+        $('gSub').textContent = $('pageSub').textContent.replace(/ · real data.*$/, '');
+        // last 14 days: approved / rejected / on hold per day
+        const d14 = daysBetween(back(13), today());
+        const per = (r) => d14.map(d => base.filter(q => q.day === d && q.result === r).length);
+        odraw('ovTrend', { type: 'bar', data: { labels: d14.map(fmtDay), datasets: [
+          { label: 'Approved', data: per('APPROVED'), backgroundColor: BLUE }, { label: 'Rejected', data: per('REJECTED'), backgroundColor: PINK },
+          { label: 'On hold', data: per('HOLD'), backgroundColor: VIOLET }] },
+          options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom' },
+            tooltip: { callbacks: { footer: (it) => { const tot = it.reduce((s, x) => s + x.raw, 0), rj = (it.find(x => x.dataset.label === 'Rejected') || {}).raw || 0;
+              return tot ? `${tot} QCs · ${(100 * rj / tot).toFixed(0)}% rejected` : ''; } } } }, scales: axes(true) } });
+        // rejection % by hub (click a bar to filter)
+        const H = new Map(); base.filter(q => q.day >= from && q.day <= to && (!hub || true)).forEach(q => { const x = H.get(q.hub) || { n: 0, r: 0 }; x.n++; if (q.result === 'REJECTED') x.r++; H.set(q.hub, x); });
+        const hs = [...H].filter(([h, x]) => h && x.n).map(([h, x]) => [h, +(100 * x.r / x.n).toFixed(1), x.n]).sort((a, b) => b[1] - a[1]);
+        $('ovHubBox').style.height = Math.max(200, hs.length * 30 + 40) + 'px';
+        odraw('ovHub', { type: 'bar', data: { labels: hs.map(x => x[0]), datasets: [{ label: 'Rejection %', data: hs.map(x => x[1]),
+          backgroundColor: hs.map(x => (!hub || x[0] === hub) ? (x[1] >= 50 ? PINK : BLUE) : '#cbd9f3'), maxBarThickness: 18 }] },
+          options: { indexAxis: 'y', maintainAspectRatio: false, layout: { padding: { right: 34 } },
+            plugins: { legend: { display: false }, valueLabels: { mode: 'total', suffix: '%' }, tooltip: { callbacks: { label: (c) => `${c.raw}% rejected of ${hs[c.dataIndex][2]} QCs` } } },
+            scales: { ...axes(false, true, true), x: { ...axes(false, true, true).x, max: 100 } } } });
+        // top mistakes (click a bar for the list)
+        const ids = new Set(Q.map(q => q.id)), mc = new Map(); mistakes.forEach(m => { if (ids.has(m.qc_id)) mc.set(m.mistake, (mc.get(m.mistake) || 0) + 1); });
+        const ms = [...mc].sort((a, b) => b[1] - a[1]).slice(0, 6);
+        odraw('ovMis', { type: 'bar', data: { labels: ms.map(x => { const w = x[0].split(/\s*\/\s*|\s+/), out = ['']; w.forEach(t => { if ((out[out.length - 1] + ' ' + t).trim().length > 18 && out[out.length - 1]) out.push(t); else out[out.length - 1] = (out[out.length - 1] + ' ' + t).trim(); }); return out.slice(0, 2); }), datasets: [{ label: 'QCs', data: ms.map(x => x[1]),
+          backgroundColor: ms.map((_, i) => i < 3 ? PINK : BLUE), maxBarThickness: 18 }] },
+          options: { indexAxis: 'y', maintainAspectRatio: false, layout: { padding: { right: 28 } }, onClick: (e, el) => el[0] && openDetail('m:' + ms[el[0].index][0]),
+            plugins: { legend: { display: false }, valueLabels: { mode: 'total' }, tooltip: { callbacks: { title: (it) => ms[it[0].dataIndex][0] } } }, scales: axes(false, true) } });
+        // insights in plain words
+        const ins = [], nf = (x) => Number(x).toLocaleString('en-IN'), r0 = rp(Q), r1 = rp(P);
+        if (r0 != null) ins.push([r1 != null && r0 > r1 + 2 ? 'bad' : 'good', `<b>${r0.toFixed(1)}%</b> of ${nf(Q.length)} QCs rejected` +
+          (r1 != null ? ` — ${Math.abs(r0 - r1) < 0.5 ? 'about the same as' : r0 > r1 ? `up from <b>${r1.toFixed(1)}%</b> in` : `down from <b>${r1.toFixed(1)}%</b> in`} the ${n} days before.` : '.'), 'daily']);
+        const worst = hs.filter(x => x[2] >= 10)[0]; if (worst) ins.push([worst[1] >= 50 ? 'bad' : 'warn', `Highest rejection: <b>${esc(worst[0])}</b> — ${worst[1]}% of ${worst[2]} QCs.`, 'hubs']);
+        const rejHold = Q.filter(q => q.result !== 'APPROVED').length;
+        if (ms[0] && rejHold) ins.push(['warn', `Most common mistake: <b>${esc(ms[0][0])}</b> — in ${nf(ms[0][1])} of ${nf(rejHold)} rejected / hold QCs (${Math.round(100 * ms[0][1] / rejHold)}%).`, 'mistakes']);
+        const T = new Map(); Q.forEach(q => { const x = T.get(q.technician) || { n: 0, r: 0 }; x.n++; if (q.result === 'REJECTED') x.r++; T.set(q.technician, x); });
+        const badT = [...T].filter(([k, x]) => k && k !== 'Not recorded' && x.n >= 5 && x.r / x.n > .5);
+        if (badT.length) ins.push(['bad', `<b>${badT.length}</b> technician${badT.length > 1 ? 's have' : ' has'} more than half of their QCs rejected (min. 5 QCs).`, 'techs']);
+        const rc = $('repCounts').querySelectorAll('.count .n'); if (rc.length > 1 && Number(rc[1].textContent.replace(/\D/g, ''))) ins.push(['warn', `<b>${rc[0].textContent}</b> bikes came back within 7 days · <b>${rc[1].textContent}</b> had the same part replaced again.`, 'repeat']);
+        $('ovInsights').innerHTML = ins.map(([k, h, go]) => `<div class="insight ${k}"><span class="dot"></span><div>${h} <button class="linkbtn" type="button" data-goto="${go}">View →</button></div></div>`).join('')
+          || '<p class="note">Nothing stands out for this filter.</p>';
+        // badges on the tabs
+        const badge = (k, v) => { const b = document.querySelector(`[data-badge="${k}"]`); if (b) { b.textContent = v || ''; b.classList.toggle('hidden', !v); } };
+        badge('techs', badT.length); badge('repeat', rc.length > 1 ? Number(rc[1].textContent.replace(/\D/g, '')) : 0);
+        fchips();
+      }
+      // search box above the long tables
+      function tableSearch(tbodyId, ph) {
+        const tb = $(tbodyId); if (!tb || tb.dataset.s) return; tb.dataset.s = 1;
+        const i = document.createElement('input'); i.type = 'search'; i.className = 'tsearch'; i.placeholder = ph;
+        tb.closest('.table-wrap').before(i);
+        const run = () => { const q = i.value.trim().toLowerCase(); [...tb.rows].forEach(r => { r.hidden = !!q && !r.textContent.toLowerCase().includes(q); }); };
+        i.addEventListener('input', run); new MutationObserver(run).observe(tb, { childList: true });
+      }
+      tableSearch('techRows', 'Search technician or hub…'); tableSearch('repRows', 'Search bike, hub or part…');
+
+      const orig = window.render;
+      window.render = function () { const r = orig.apply(this, arguments); try { overview(); } catch (e) { console.warn('overview', e); } return r; };
+
+      // light / dark switch (remembered on this browser; same setting as the Recovery Dashboard)
+      const thm = $('themeBtn'); let dark = false; try { dark = localStorage.getItem('rt-theme') === 'dark'; } catch (e) {}
+      const applyT = (redraw) => { document.documentElement.dataset.theme = dark ? 'dark' : 'light'; thm.textContent = dark ? '☀ Light' : '☾ Dark';
+        readColours(); if (redraw && qcs.length) render(); };
+      thm.addEventListener('click', () => { dark = !dark; try { localStorage.setItem('rt-theme', dark ? 'dark' : 'light'); } catch (e) {} applyT(true); }); applyT(false);
+    })();
+  </script>
+  <script>
+    // Sidebar collapse button («): remembers your choice on this browser
+    (function () {
+      const KEY = 'rt-side-min', btn = document.getElementById('sideToggle');
+      let min = false; try { min = localStorage.getItem(KEY) === '1'; } catch (e) {}
+      const apply = () => {
+        document.documentElement.classList.toggle('side-min', min);
+        btn.textContent = min ? '»' : '«';
+        btn.title = min ? 'Expand sidebar' : 'Collapse sidebar'; btn.setAttribute('aria-label', btn.title);
+      };
+      document.querySelectorAll('.side .nav a, .side .adminlink').forEach(a => a.title = a.textContent.trim());
+      apply();
+      btn.addEventListener('click', () => {
+        min = !min; apply();
+        try { localStorage.setItem(KEY, min ? '1' : '0'); } catch (e) {}
+        setTimeout(() => { if (typeof map !== 'undefined' && map.invalidateSize) map.invalidateSize(); window.dispatchEvent(new Event('resize')); }, 250);
+      });
+    })();
+  </script>
+  <script>
+    // Auto-update: when a new version of this page is published, everyone who has it open moves to it by itself
+    // (only when they are not in the middle of something: 20 s without a tap/typing, nothing open; unfinished QCs are saved anyway)
+    (function () {
+      try { const u = new URL(location.href); if (u.searchParams.has('_v')) { u.searchParams.delete('_v'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } } catch (e) {}
+      const page = location.pathname, hash = (t) => { let h = 0; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return h; };
+      const get = () => fetch(page + '?_v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : null).catch(() => null);
+      let base = null, lastAct = Date.now(), pending = false;
+      ['pointerdown', 'keydown', 'input', 'touchstart'].forEach(ev => addEventListener(ev, () => { lastAct = Date.now(); }, { capture: true, passive: true }));
+      get().then(t => { if (t) base = hash(t); });
+      const busy = () => { const s = document.getElementById('sheet'), a = document.activeElement;
+        return Date.now() - lastAct < 20000 || document.visibilityState !== 'visible' || (s && !s.classList.contains('hidden')) || (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); };
+      function apply() {
+        if (busy()) { setTimeout(apply, 5000); return; }
+        try { if (Date.now() - Number(sessionStorage.getItem('autoUpd') || 0) < 120000) return; sessionStorage.setItem('autoUpd', String(Date.now())); } catch (e) {}
+        const t = document.createElement('div'); t.textContent = '⟳ Updating to the latest version…';
+        t.style.cssText = 'position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:999px;font:600 13.5px system-ui,sans-serif;z-index:99999;box-shadow:0 6px 20px rgba(0,0,0,.3)';
+        document.body.appendChild(t);
+        setTimeout(() => { const u = new URL(location.href); u.searchParams.set('_v', Date.now()); location.replace(u.toString()); }, 1200);
+      }
+      async function check() {
+        if (pending) return; const t = await get(); if (!t) return;
+        if (base === null) { base = hash(t); return; }
+        if (hash(t) !== base) { pending = true; apply(); }
+      }
+      setInterval(check, 120000);
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+    })();
+  </script>
+</body>
+</html>
