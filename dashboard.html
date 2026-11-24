@@ -294,7 +294,7 @@
         <div class="hact"><button class="btn tbtn" type="button" id="themeBtn">☾ Dark</button></div></div>
       <div class="glance">
         <div><b id="gStart">–</b><span>MFR at start of day</span></div><div><b id="gIn">–</b><span>Inflow</span></div><div><b id="gOut">–</b><span>Outflow</span></div><div><b id="gEnd">–</b><span id="gEndL">MFR now</span></div>
-        <div><b id="gAct">–</b><span>Moved to active</span></div><div><b id="gRec">–</b><span>Recovered</span></div><div><b id="gHub">–</b><span>To hub</span></div><div><b id="gReal" style="color:#ff9cc2">–</b><span>Real recovery cases</span></div>
+        <div><b id="gAct">–</b><span>Moved to active</span></div><div><b id="gRec">–</b><span>Recovered</span></div><div><b id="gHub">–</b><span>To hub</span></div><div><b id="gReal" style="color:#ff9cc2">–</b><span>Real recovery cases (new)</span></div><div><b id="gClr" style="color:#7fe0b0">–</b><span>Cleared by team (recovered + to hub)</span></div>
       </div>
       <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18);font-size:12px;color:#b9c9e4" id="gHourT">Hour by hour</div><div style="height:150px"><canvas id="gHour"></canvas></div>
     </section>
@@ -1141,7 +1141,7 @@
         $('gWhen').textContent = `${today ? 'Today' : 'Yesterday'}, ${fmtDay(day)} (12 am – 12 am)${today ? ' · so far, ' + at : ''} · counted every 30 minutes${$('modelFilter').value ? ' · all models' : ''}`;
         $('gStart').textContent = nf(v.mfr_start); $('gIn').textContent = nf(v.ins); $('gOut').textContent = nf(v.outs); $('gEnd').textContent = nf(v.mfr_end);
         $('gEndL').textContent = today ? 'MFR now' : 'MFR at end of day';
-        $('gAct').textContent = nf(v.out_active); $('gRec').textContent = nf(v.out_recovered); $('gHub').textContent = nf(v.out_hub); $('gReal').textContent = nf(real);
+        $('gAct').textContent = nf(v.out_active); $('gRec').textContent = nf(v.out_recovered); $('gHub').textContent = nf(v.out_hub); $('gReal').textContent = nf(real); $('gClr').textContent = nf(v.out_recovered + v.out_hub);
         $('gHourT').textContent = `Hour by hour, ${fmtDay(day)}`;
         const H = v.hourly || [], lab = (i) => i === 0 ? '12a' : i < 12 ? i + 'a' : i === 12 ? '12p' : (i - 12) + 'p';
         if (HERO_CH) HERO_CH.destroy();
