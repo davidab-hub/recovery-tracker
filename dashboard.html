@@ -296,8 +296,7 @@
         <div><b id="gStart">–</b><span>MFR at start of day</span></div><div><b id="gIn">–</b><span>Inflow</span></div><div><b id="gOut">–</b><span>Outflow</span></div><div><b id="gEnd">–</b><span id="gEndL">MFR now</span></div>
         <div><b id="gAct">–</b><span>Moved to active</span></div><div><b id="gRec">–</b><span>Recovered</span></div><div><b id="gHub">–</b><span>To hub</span></div><div><b id="gReal" style="color:#ff9cc2">–</b><span>Real recovery cases</span></div>
       </div>
-      <div id="gEq" style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18);font-size:13px;line-height:1.75;color:#dbe6f7"></div>
-      <div style="margin-top:10px;font-size:12px;color:#b9c9e4" id="gHourT">Hour by hour</div><div style="height:150px"><canvas id="gHour"></canvas></div>
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18);font-size:12px;color:#b9c9e4" id="gHourT">Hour by hour</div><div style="height:150px"><canvas id="gHour"></canvas></div>
     </section>
 
     <section class="bar">
@@ -364,7 +363,7 @@
     <section class="grid2" data-tab="flow move agents mfr">
       <div class="panel" data-tab="flow">
         <h3>Inflow vs outflow, per day</h3>
-        <p class="note">Counted by us every 30 minutes · each day runs 7 am to 7 am · inflow = a bike newly marked for recovery (any bike, incl. police cases) · outflow = a bike that left MFR, split by where it went</p>
+        <p class="note">Counted by us every 30 minutes · each day runs 12 am to 12 am · inflow = a bike newly marked for recovery (any bike, incl. police cases) · outflow = a bike that left MFR, split by where it went</p>
         <div class="counts" id="trendCounts"></div>
         <div class="chart"><canvas id="trendChart"></canvas></div>
         <h3 style="margin-top:14px">Where the outflow went</h3>
@@ -372,10 +371,10 @@
         <div class="counts" id="flowCounts"></div>
         <p class="note" id="flowCheck" style="font-weight:600;color:var(--text-2)"></p>
         <h3 style="margin-top:14px">Day by day</h3>
-        <p class="note">Newest day first · each day runs 7 am to 7 am · out = where the bikes that left MFR went</p>
+        <p class="note">Newest day first · each day runs 12 am to 12 am · out = where the bikes that left MFR went</p>
         <div class="table-wrap" style="max-height:360px;overflow:auto"><table id="tFlow"><thead></thead><tbody></tbody></table></div>
         <h3 style="margin-top:14px">Day & night shifts</h3>
-        <p class="note">Each day runs 7 am to 7 am · Day = 7 am – 7 pm, Metabase's own numbers · Night = 7 pm – 7 am, counted by us every 30 minutes · unique bikes <span id="shiftNote"></span></p>
+        <p class="note">Each day runs 12 am to 12 am · Day = 7 am – 7 pm · Night = 12 am – 7 am and 7 pm – 12 am · both counted by us every 30 minutes · unique bikes <span id="shiftNote"></span></p>
         <div class="table-wrap" style="max-height:360px;overflow:auto"><table id="tShift"><thead></thead><tbody></tbody></table></div>
         <div class="dl-row">
           <button class="btn btn-dl" type="button" id="dlDaily"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Daily summary</button>
@@ -584,12 +583,12 @@
       const when = dN === 0 ? 'no Metabase data in this period' : (dN === 1 && fd[0].day === TODAY ? `today · ${at}` : `${dN} day${dN > 1 ? 's' : ''} of data · ${pName}`);
       const inN = S('inflow', fd), outN = S('outflow', fd), recN = S('recovered', fd), hubN = S('moved_hub', fd), actN = S('moved_active', fd);
       // Inflow / outflow: our own count (from FLOW_START); falls back to Metabase's figures before tracking started
-      // our days run 7 am to 7 am: "today" = the 7-to-7 day we are in now
+      // our days are calendar days, 12 am to 12 am India time
       const fTo = to >= TODAY ? FLOW_TODAY : to, fFrom = from > fTo ? fTo : from;
       const fl = FLOW.filter(fleetMatch).filter(r => r.day >= fFrom && r.day <= fTo), fx = (k, re) => fl.filter(r => r.kind === k && (!re || r.reason === re)).reduce((s, r) => s + r.n, 0);
       const flowOn = !!FLOW_START && fTo >= FLOW_START;
       const fIn = fx('in'), fOut = fx('out'), since = FLOW_START && fFrom < FLOW_START ? ` · counted since ${fmtDay(FLOW_START)}` : '';
-      const fWhen = fFrom === fTo ? `${fmtDay(fTo)}, 7 am – 7 am${fTo === FLOW_TODAY ? ' · so far, ' + at : ''}` : `${fmtDay(FLOW_START && fFrom < FLOW_START ? FLOW_START : fFrom)} – ${fmtDay(fTo)} (7 am – 7 am days)`;
+      const fWhen = fFrom === fTo ? `${fmtDay(fTo)} (12 am – 12 am)${fTo === FLOW_TODAY ? ' · so far, ' + at : ''}` : `${fmtDay(FLOW_START && fFrom < FLOW_START ? FLOW_START : fFrom)} – ${fmtDay(fTo)} (calendar days)`;
       if (flowOn) {
         $('kInflow').textContent = num(fIn); $('kInflowSub').textContent = `bikes marked for recovery · ${fWhen}${since}`;
         $('kOutflow').textContent = num(fOut);
@@ -602,7 +601,7 @@
       $('kRecovered').textContent = num(recN); $('kRecoveredSub').textContent = `${num(hubN)} reached the hub · ${when}`;
       $('kActive').textContent = num(actN); $('kActiveSub').textContent = `renewed (rent paid) · ${when}`;
       $('kHub').textContent = num(hubN); $('kHubSub').textContent = when;
-      // 7 am – 7 am days: day shift (7 am–7 pm, Metabase's own numbers) + night shift (7 pm–7 am, our count)
+      // calendar days: day shift (7 am – 7 pm) + night shift (12 am – 7 am and 7 pm – 12 am), both our count
       const shOk = (r) => { const c = $('cityFilter').value, h = $('hubFilter').value; return (!c || r.city === c) && (!h || hubKey(r.hub) === hubKey(h)); };
       const fsel = FS.filter(shOk).filter(r => r.day >= fFrom && r.day <= fTo);
       if (fsel.length && !$('modelFilter').value) {
@@ -689,10 +688,10 @@
       const d0 = D[0], dz = D[D.length - 1], open = close(addDays(d0, -1)), shut = close(dz);
       $('flowNote').textContent = `${num(fOut)} bikes left MFR · ${fWhen}` + (mvHub || back ? ` · afterwards: ${num(mvHub)} reached a hub${back ? ', ' + num(back) + ' came back to MFR' : ''}` : '');
       flowTable(D, fl, close);
-      $('flowCheck').textContent = open != null && shut != null ? `Check: ${num(open)} in MFR at 7 am ${fmtDay(d0)} + ${num(fIn)} in − ${num(fOut)} out = ${num(open + fIn - fOut)} · actual ${dz === FLOW_TODAY ? 'now' : 'at 7 am ' + fmtDay(addDays(dz, 1))}: ${num(shut)}` :
+      $('flowCheck').textContent = open != null && shut != null ? `Check: ${num(open)} in MFR at the start of ${fmtDay(d0)} + ${num(fIn)} in − ${num(fOut)} out = ${num(open + fIn - fOut)} · actual ${dz === FLOW_TODAY ? 'now' : 'at the end of ' + fmtDay(dz)}: ${num(shut)}` :
         shut != null ? `MFR now: ${num(shut)} bikes (all bikes marked for recovery, incl. police cases)` : '';
     }
-    // Day & night shifts, per 7 am – 7 am day
+    // Day & night shifts, per calendar day
     function shiftTable(from, to) {
       const T = $('tShift'); if (!T) return;
       const c = $('cityFilter').value, h = $('hubFilter').value;
@@ -700,14 +699,14 @@
       const days = [...new Set(rows.map(r => r.day))].sort().reverse();
       const v = (d, k, s) => rows.filter(r => r.day === d && (!s || r.shift === s)).reduce((a, r) => a + (r[k] || 0), 0);
       const K = [['inflow', 'Inflow'], ['outflow', 'Outflow'], ['moved_active', 'Moved to active']];
-      T.tHead.innerHTML = '<tr><th rowspan="2">Day (7 am – 7 am)</th>' + K.map(([, t]) => `<th colspan="3" class="num">${t}</th>`).join('') + '</tr><tr>' +
+      T.tHead.innerHTML = '<tr><th rowspan="2">Day (12 am – 12 am)</th>' + K.map(([, t]) => `<th colspan="3" class="num">${t}</th>`).join('') + '</tr><tr>' +
         K.map(() => '<th class="num">Day</th><th class="num">Night</th><th class="num">Total</th>').join('') + '</tr>';
       T.tBodies[0].innerHTML = days.length ? days.map(d => `<tr><td>${fmtDay(d)}${d === FLOW_TODAY ? ' (so far)' : ''}</td>` +
         K.map(([k]) => `<td class="num">${num(v(d, k, 'day'))}</td><td class="num">${num(v(d, k, 'night'))}</td><td class="num"><b>${num(v(d, k))}</b></td>`).join('') + '</tr>').join('')
         : '<tr><td colspan="10">No data for this period yet.</td></tr>';
       $('shiftNote').textContent = $('modelFilter').value ? 'The model filter does not apply here (shown for all models).' : '';
     }
-    // day-by-day table: inflow, outflow split by reason, net change and the 7 am MFR count
+    // day-by-day table: inflow, outflow split by reason, net change and the MFR count at the start / end of each calendar day
     function flowTable(D, fl, close) {
       const fx = (d, k, re) => fl.filter(r => r.day === d && r.kind === k && (!re || r.reason === re)).reduce((s, r) => s + r.n, 0);
       const R = REASONS.filter(([k]) => D.some(d => fx(d, 'out', k)));   // only reasons that happened
@@ -743,11 +742,11 @@
       const { from, to } = FLOW_RANGE, fl = FLOW.filter(fleetMatch);
       const fx = (d, k, re) => fl.filter(r => r.day === d && r.kind === k && (!re || r.reason === re)).reduce((s, r) => s + r.n, 0);
       const close = (d) => { const x = FLOW_CLOSE.filter(fleetMatch).filter(r => r.day === d); return x.length ? x.reduce((s, r) => s + r.mfr, 0) : ''; };
-      const rows = [['Day (7 am to 7 am)', 'From', 'To', 'MFR at start', 'Inflow', 'Outflow', ...REASONS.map(([, t]) => 'Out: ' + t), 'Net change', 'MFR at end', 'Adds up?',
+      const rows = [['Day (12 am to 12 am)', 'From', 'To', 'MFR at start', 'Inflow', 'Outflow', ...REASONS.map(([, t]) => 'Out: ' + t), 'Net change', 'MFR at end', 'Adds up?',
         'Afterwards: reached a hub', 'Afterwards: back to MFR']];
       for (let d = from; d <= to; d = addDays(d, 1)) {
         const open = close(addDays(d, -1)), end = close(d), i = fx(d, 'in'), o = fx(d, 'out');
-        rows.push([d, d + ' 07:00', addDays(d, 1) + ' 07:00' + (d === FLOW_TODAY ? ' (day not finished)' : ''), open, i, o, ...REASONS.map(([k]) => fx(d, 'out', k)), i - o, end,
+        rows.push([d, d + ' 00:00', addDays(d, 1) + ' 00:00' + (d === FLOW_TODAY ? ' (day not finished)' : ''), open, i, o, ...REASONS.map(([k]) => fx(d, 'out', k)), i - o, end,
           open === '' || end === '' ? '' : (open + i - o === end ? 'yes' : 'no (' + (end - open - i + o) + ')'), fx(d, 'move', 'at_hub'), fx(d, 'move', 'mfr')]);
       }
       saveCsv(`mfr-inflow-outflow-daily_${place()}_${from}_to_${to}.csv`, rows);
@@ -756,11 +755,11 @@
       if (!FLOW_RANGE || !FLOW_START) { $('dlNote').textContent = 'Nothing counted yet.'; return; }
       const { from, to } = FLOW_RANGE, btn = $('dlBikes'); btn.disabled = true; const old = btn.lastChild.textContent; btn.lastChild.textContent = 'Preparing…';
       try {
-        const ev = await pageAll(() => db.from('mfr_flow_events').select('at, day, reg_number, city, hub, model, kind, reason, from_status, to_status, police_case').gte('day', from).lte('day', to).order('at'));
+        const ev = await pageAll(() => db.from('mfr_flow_events').select('at, day, reg_number, city, hub, model, kind, reason, from_status, to_status, police_case').gte('at', from + 'T00:00:00+05:30').lt('at', addDays(to, 1) + 'T00:00:00+05:30').order('at'));
         const RL = Object.fromEntries(REASONS), KL = { in: 'Inflow', out: 'Outflow', move: 'Later move' };
         const t = (x) => new Date(x).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
-        const rows = [['Seen at (India time)', 'Day (7 am to 7 am)', 'Bike', 'City', 'Hub', 'Model', 'In / out', 'Reason', 'Status before', 'Status after', 'Police case']];
-        ev.filter(r => fleetMatch({ city: r.city || 'Unknown', hub: r.hub || 'Unknown', model: r.model || 'Unknown' })).forEach(r => rows.push([t(r.at), r.day, r.reg_number, r.city, r.hub, r.model, KL[r.kind] || r.kind,
+        const rows = [['Seen at (India time)', 'Day (12 am to 12 am)', 'Bike', 'City', 'Hub', 'Model', 'In / out', 'Reason', 'Status before', 'Status after', 'Police case']];
+        ev.filter(r => fleetMatch({ city: r.city || 'Unknown', hub: r.hub || 'Unknown', model: r.model || 'Unknown' })).forEach(r => rows.push([t(r.at), new Date(new Date(r.at).getTime() + 5.5 * 3600e3).toISOString().slice(0, 10), r.reg_number, r.city, r.hub, r.model, KL[r.kind] || r.kind,
           r.kind === 'in' ? 'Marked for recovery' : r.kind === 'move' && r.reason === 'mfr' ? 'Back to MFR' : (RL[r.reason] || r.reason), r.from_status || '(new in list)', r.to_status || '(left the list)', r.police_case ? 'yes' : 'no']));
         saveCsv(`mfr-inflow-outflow-bikes_${place()}_${from}_to_${to}.csv`, rows);
       } catch (e) { $('dlNote').textContent = 'Could not download: ' + e.message; }
@@ -945,12 +944,11 @@
           })(),
         ]).catch(e => ({ err: e }));
         // Inflow / outflow counted by us (every 30-min refresh compared with the one before)
-        const flowP = db.rpc('mfr_flow', { p_from: since, p_to: '2100-01-01' }).then(r => r.error ? [] : (r.data || [])).catch(() => []);
-        // the same count per calendar day (12 am – 12 am India time): overview cards, charts and the overview box
-        const flowCP = pageAll(() => db.rpc('mfr_flow_cal', { p_from: since, p_to: '2100-01-01' }).order('day')).catch(() => []);
-        // Day (7 am–7 pm, Metabase) and night (7 pm–7 am, our count) figures per 7 am–7 am day
-        const shiftP = pageAll(() => db.rpc('flow_shifts', { p_from: since, p_to: '2100-01-01' }).order('day').order('city').order('hub').order('shift')).catch(() => []);
-        const closeP = pageAll(() => db.from('mfr_flow_daily').select('day, city, hub, model, mfr').gte('day', since).order('day')).catch(() => []);
+        // in / out of MFR per calendar day (12 am – 12 am India time), counted by us every 30 minutes
+        const flowP = pageAll(() => db.rpc('mfr_flow_cal', { p_from: since, p_to: '2100-01-01' }).order('day')).catch(() => []);
+        // day (7 am – 7 pm) and night (12 am – 7 am, 7 pm – 12 am) per calendar day, and the MFR count at the end of each calendar day
+        const shiftP = pageAll(() => db.rpc('mfr_shift_cal', { p_from: since, p_to: '2100-01-01' }).order('day').order('city').order('hub').order('shift')).catch(() => []);
+        const closeP = pageAll(() => db.rpc('mfr_close_cal', { p_from: addDays(since, -1), p_to: '2100-01-01' }).order('day').order('city').order('hub').order('model')).catch(() => []);
         // Agent App: calls and bike updates (only the recovery team / managers can read them)
         const callsP = pageAll(() => db.from('bike_calls').select('at, agent_name, bike_id, reg_number, city, hub, outcome, promise_at, amount, return_hub, return_on, bike_location, contact, police_station, fir, note').gte('at', since).order('at')).catch(() => []);
         const updP = pageAll(() => db.from('bike_updates').select('at, agent_name, bike_id, reg_number, city, hub, outcome, moved_by, porter_amount, drop_hub, details').gte('at', since).order('at')).catch(() => []);
@@ -965,9 +963,10 @@
           [FLEET, FDAY, FAG, POLICE] = fl;
           FLEET_AT = FLEET.reduce((m, r) => r.synced_at > m ? r.synced_at : m, '') || null;
         }
-        FLOWC = await flowCP; { const m = FLOWC.reduce((x, r) => !x || r.day < x ? r.day : x, ''); FLOWC_START = m && m === (FLOW.reduce((x, r) => !x || r.day < x ? r.day : x, '')) ? addDays(m, 1) : m; }
-        FLOW = await flowP; FS = await shiftP; FLOW_CLOSE = await closeP; FLOW_START = FLOW.reduce((m, r) => !m || r.day < m ? r.day : m, '');
-        FLOW_TODAY = new Date(Date.now() + 5.5 * 3600e3 - 7 * 3600e3).toISOString().slice(0, 10);   // inflow/outflow days run 7 am to 7 am
+        FLOW = await flowP; FS = await shiftP; FLOW_CLOSE = await closeP;
+        { const m = FLOW.reduce((x, r) => !x || r.day < x ? r.day : x, ''); FLOW_START = m && m > since ? addDays(m, 1) : m; }   // counting began mid-day: start with the first full day
+        FLOWC = FLOW; FLOWC_START = FLOW_START;
+        FLOW_TODAY = new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);   // calendar days, India time
         SHEET_LAST = DATA.filter(r => !r.app).reduce((m, r) => r.d > m ? r.d : m, '');
         TODAY = new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
         FIRST = [FDAY.length ? FDAY[0].day : TODAY, DATA.reduce((m, r) => r.d < m ? r.d : m, '9999')].sort()[0];
@@ -1122,7 +1121,7 @@
           backgroundColor: (ctx) => { const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 34); g.addColorStop(0, color + '40'); g.addColorStop(1, color + '00'); return g; } }] },
           options: { animation: false, events: [], plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false, beginAtZero: true } } } });
       }
-      // in / out of MFR per day from our own 30-minute counting (adds up: MFR at 7 am + in − out = next 7 am)
+      // in / out of MFR per calendar day from our own 30-minute counting (adds up: MFR at 12 am + in − out = next 12 am)
       function flowSeries(n = 15) {
         const days = []; for (let i = n - 1; i >= 0; i--) days.push(addDays(TODAY, -i));
         const fl = FLOWC.filter(fleetMatch), f = (d, k, re) => fl.filter(r => r.day === d && r.kind === k && (!re || [].concat(re).includes(r.reason))).reduce((x, r) => x + r.n, 0);
@@ -1138,17 +1137,12 @@
         const key = [day, c, h].join('|'); if (!force && key === HERO_KEY && Date.now() - HERO_AT < 60e3) return; HERO_KEY = key; HERO_AT = Date.now();
         const { data: v, error } = await db.rpc('mfr_day_summary', { p_day: day, p_city: c, p_hub: h });
         if (error || !v || key !== HERO_KEY) { if (error) console.warn('day summary', error); return; }
-        const W = 'color:#fff;font-weight:700', today = HERO_D === 0, real = v.ins - v.renewed_24h, oth = v.outs - v.out_active - v.out_recovered - v.out_hub, net = v.ins - v.outs;
+        const today = HERO_D === 0, real = v.ins - v.renewed_24h;
         const at = v.synced_at ? new Date(v.synced_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
         $('gWhen').textContent = `${today ? 'Today' : 'Yesterday'}, ${fmtDay(day)} (12 am – 12 am)${today ? ' · so far, ' + at : ''} · counted every 30 minutes${$('modelFilter').value ? ' · all models' : ''}`;
         $('gStart').textContent = nf(v.mfr_start); $('gIn').textContent = nf(v.ins); $('gOut').textContent = nf(v.outs); $('gEnd').textContent = nf(v.mfr_end);
         $('gEndL').textContent = today ? 'MFR now' : 'MFR at end of day';
         $('gAct').textContent = nf(v.out_active); $('gRec').textContent = nf(v.out_recovered); $('gHub').textContent = nf(v.out_hub); $('gReal').textContent = nf(real);
-        $('gEq').innerHTML = `<div><span style="${W}">MFR ${nf(v.mfr_start)} + Inflow ${nf(v.ins)} − Outflow ${nf(v.outs)} = ${nf(v.mfr_end)}</span> · MFR ${net > 0 ? 'went up by ' + nf(net) + ' bikes' : net < 0 ? 'went down by ' + nf(-net) + ' bikes' : 'did not change'}${today ? ' so far' : ''}</div>`
-          + `<div><span style="${W}">Outflow ${nf(v.outs)}</span> = Moved to active ${nf(v.out_active)} + Recovered ${nf(v.out_recovered)} + To hub ${nf(v.out_hub)}${oth > 0 ? ' + Other ' + nf(oth) : ''}</div>`
-          + `<div><span style="${W}">Inflow ${nf(v.ins)}</span> = Renewed within 24 hours ${nf(v.renewed_24h)} <span style="opacity:.75">(no action needed)</span> + <span style="color:#ff9cc2;font-weight:700">Real recovery cases ${nf(real)}</span></div>`
-          + `<div style="opacity:.85;font-size:12px">Real recovery cases ${nf(real)} = Recovered ${nf(v.in_recovered)} + To hub ${nf(v.in_hub)} + Renewed after 24 hours ${nf(v.renewed_later)}${v.in_other ? ' + Other ' + nf(v.in_other) : ''} + Still in MFR now ${nf(v.in_still)}`
-          + `${v.settled ? '' : ' · still settling: bikes marked in the last 24 hours can still be renewed'}</div>`;
         $('gHourT').textContent = `Hour by hour, ${fmtDay(day)}`;
         const H = v.hourly || [], lab = (i) => i === 0 ? '12a' : i < 12 ? i + 'a' : i === 12 ? '12p' : (i - 12) + 'p';
         if (HERO_CH) HERO_CH.destroy();
