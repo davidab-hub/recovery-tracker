@@ -1,275 +1,238 @@
 <!doctype html>
-<html lang="en" data-theme="light" data-palette="blue">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Recovery Dashboard</title>
   <script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* Inside the phone app: no sidebar / top tabs, the app has its own header and bottom bar */
+    /* ===== Recovery Dashboard · new look (Nov 2026) ===== */
     html.embed .side, html.embed .tabs-top { display: none !important; }
     html.embed main { padding-top: 8px !important; }
     :root {
-      /* Bounce brand */
-      --brand: #e3262b; --brand-dark: #b91c21; --brand-tint: #3a1517; --side: #16181d; --side-2: #1f2228; --side-text: #9aa0aa;
-      --page: #f4f5f8; --card: #ffffff; --text: #111827; --text-2: #4b5563; --muted: #6b7280;
-      --border: #e5e7eb; --grid: #e1e0d9; --axis: #c3c2b7;
-      --red: #e3262b; --blue: #2563eb; --green: #16a34a; --orange: #d97706; --dark: #1f2937;
-      --input: #ffffff; --soft: #f5f6f8; --hover: #eef4ff; --ring: #93c5fd; --label: #374151; --tip: #ffffff; --tip-text: #111827;
-      --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6;
+      --brand: #e3262b; --navy: #0b1b33; --navy-2: #13294b; --navy-3: #1d3a66; --side-text: #9fb2d0;
+      --page: #f3f6fb; --card: #ffffff; --text: #0f172a; --text-2: #475569; --muted: #64748b; --border: #e3e9f2; --soft: #f1f5fb; --hover: #eaf1fc;
+      --input: #ffffff; --ring: #93c5fd; --label: #334155;
+      --blue: #2563eb; --teal: #6250d6; --amber: #eda100; --red: #6250d6; --violet: #7c3aed; --green: #2a78d6; --orange: #eda100; --dark: #0f172a;
+      --radius: 16px; --shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.12);
     }
-
-    /* ===== Themes: switch with the buttons at the top right ===== */
     html[data-theme="dark"] {
-      --page: #0b1020; --card: #121a2f; --text: #e8ecf5; --text-2: #b4bdd0; --muted: #8590a8;
-      --border: #222c47; --grid: rgba(255,255,255,.07); --axis: #2f3a58; --dark: #2a3452;
-      --input: #0e1528; --soft: #18213a; --hover: #1d2848; --ring: #4f7ddb; --label: #dfe5f2; --tip: #1a2340; --tip-text: #e8ecf5;
-      --side: #080c18; --side-2: #121a2f; --brand-tint: #3a1219;
-      --s1: #4c95ef; --s2: #f07a45; --s3: #2cc28c; --s4: #f2b31b; --s5: #ef8fb3; --s6: #4fb84f; --s7: #8b7cf0;
-      --blue: #5b9df5; --green: #34d399; --orange: #f59e0b;
+      --page: #0a1222; --card: #111c31; --text: #e8eef8; --text-2: #b3c0d6; --muted: #8495b3; --border: #1f2d47; --soft: #16233b; --hover: #1a2a47;
+      --input: #0d172b; --ring: #3b6fd1; --label: #d4def0; --shadow: 0 10px 30px -14px rgba(0,0,0,.6);
     }
-    html[data-theme="dark"] .card, html[data-theme="dark"] .panel, html[data-theme="dark"] .bar {
-      background: linear-gradient(180deg, #141d34, #10172b); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
-    html[data-theme="dark"] .cards .card { border-top: 2px solid var(--k); }
-    html[data-theme="dark"] .cards .card .value { text-shadow: 0 0 18px color-mix(in srgb, var(--k) 55%, transparent); }
-    html[data-theme="dark"] .card .ico { box-shadow: 0 0 14px color-mix(in srgb, var(--k) 45%, transparent); }
-    html[data-theme="dark"] .page-title { color: #fff; }
-
-    html[data-theme="gradient"] .cards .card { background: linear-gradient(135deg, var(--k), color-mix(in srgb, var(--k) 62%, #1a0a2e));
-      border: none; color: #fff; box-shadow: 0 6px 18px color-mix(in srgb, var(--k) 35%, transparent); }
-    html[data-theme="gradient"] .cards .card .label, html[data-theme="gradient"] .cards .card .sub,
-    html[data-theme="gradient"] .cards .card .value, html[data-theme="gradient"] .cards .card .more { color: #fff !important; }
-    html[data-theme="gradient"] .cards .card .label, html[data-theme="gradient"] .cards .card .sub { opacity: .88; }
-    html[data-theme="gradient"] .card .ico { background: rgba(255,255,255,.22) !important; color: #fff !important; }
-    html[data-theme="gradient"] .card .delta { background: rgba(255,255,255,.22) !important; color: #fff !important; }
-    html[data-theme="gradient"] .card .meter { background: rgba(255,255,255,.25); }
-    html[data-theme="gradient"] .panel { box-shadow: 0 4px 14px rgba(17,24,39,.06); border-color: transparent; }
-
-    html[data-theme="light"] .cards .card, html[data-theme="light"] .panel { box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
-
-    /* Card extras: icon badge, change vs yesterday, sparkline, meter */
-    .card .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-    .card .ico { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      color: var(--k); background: color-mix(in srgb, var(--k) 14%, transparent); }
-    .card .ico svg { width: 16px; height: 16px; }
-    .card .vrow { display: flex; align-items: baseline; gap: 8px; }
-    .card .value { color: var(--k) !important; }
-    html[data-theme="light"] .card .value, html:not([data-theme]) .card .value { color: var(--text) !important; }
-    .card .delta { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px; white-space: nowrap; }
-    .delta.good { color: #15803d; background: rgba(22,163,74,.12); } .delta.bad { color: #c81e1e; background: rgba(227,38,43,.12); }
-    .delta.flat { color: var(--muted); background: var(--soft); }
-    html[data-theme="dark"] .delta.good { color: #4ade80; } html[data-theme="dark"] .delta.bad { color: #ff7b7f; }
-    .card canvas.spark { display: block; width: 100%; height: 30px; margin-top: 6px; }
-    .card .meter { height: 6px; border-radius: 999px; background: var(--soft); margin-top: 8px; overflow: hidden; display: flex; }
-    .card .meter span { display: block; height: 100%; }
-    .themes { display: inline-flex; background: var(--soft); border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px; margin-left: auto; align-self: center; }
-    .themes button { border: none; background: transparent; color: var(--text-2); font: 600 12px inherit; font-family: inherit; padding: 4px 12px; border-radius: 999px; cursor: pointer; }
-    .themes button.on { background: var(--brand); color: #fff; }
-    .tabs-top { align-items: flex-end; flex-wrap: wrap; }
-    @media (max-width: 600px) { .themes { margin: 6px 0 8px; } }
-
-    /* ===== Colours: Bounce red, soft coral shades ===== */
-    :root { --a1: #86b6ef; --a2: #3987e5; --a3: #1c5cab; --a4: #0d366b; }
-    html[data-palette="blue"] {
-      --page: #f8fbff; --card: #ffffff; --border: #e6eef8; --input: #ffffff; --soft: #f1f6fd; --hover: #e8f0fb; --ring: #7fb3f8;
-      --text: #1b2538; --text-2: #4a5670; --muted: #7a879f; --label: #4a5670; --tip: #ffffff; --tip-text: #1b2538;
-      --grid: rgba(30,60,120,.06); --axis: #e6eef8;
-      --s1: #7fb3f8; --s2: #cfe2fd; --s3: #3b82f6; --s4: #eaf3fe; --s5: #5b9cf6; --s6: #a8cbfa; --s7: #2563eb; --red: #5b9cf6; --dark: #3b82f6;
-      --a1: #dbe9fe; --a2: #a8cbfa; --a3: #5b9cf6; --a4: #2563eb;
-    }
-    html[data-palette="blue"] .cards .card { --k: #7fb3f8 !important; }
-    html[data-palette="blue"] .card .value { color: var(--text) !important; }
-    html[data-palette="blue"] .card .delta { color: #2563eb !important; background: #e8f0fb !important; }
-    html[data-palette="blue"] .pill:not(.off) { background: #7fb3f8; border-color: #7fb3f8; color: #0b2a6f; }
-    html[data-palette="blue"] .page-title { color: var(--text); }
-    html[data-palette="blue"] .cards .card, html[data-palette="blue"] .panel, html[data-palette="blue"] .bar { box-shadow: 0 1px 2px rgba(20,40,90,.03), 0 6px 16px rgba(20,40,90,.05); }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--page); color: var(--text); }
-
-    /* App layout: dark sidebar + content */
-    .app { display: flex; min-height: 100vh; }
-    .side { width: 220px; flex-shrink: 0; background: var(--side); color: #fff; display: flex; flex-direction: column;
-            position: sticky; top: 0; height: 100vh; }
-    .side .collapse { text-align: right; padding: 10px 14px; color: var(--side-text); font-size: 15px; border-bottom: 1px solid #262930; }
-    .brandrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #262930; }
-    .logo { width: 38px; height: 38px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center;
-            justify-content: center; text-align: center; font-size: 8px; font-weight: 800; line-height: 1.1; letter-spacing: .03em; overflow: hidden; flex-shrink: 0; }
-    .logo img { width: 100%; height: 100%; object-fit: cover; }
-    .brandname { font-size: 14px; font-weight: 700; }
-    .brandname span { color: var(--brand); }
-    .navsec { padding: 12px 0 4px 16px; font-size: 10.5px; font-weight: 700; letter-spacing: .12em; color: #6b717c; }
-    .nav a { display: flex; align-items: center; gap: 10px; padding: 8px 16px; color: var(--side-text); text-decoration: none; font-size: 13.5px;
-             border-left: 3px solid transparent; }
-    .nav a:hover { background: var(--side-2); color: #fff; }
-    .nav a.active { background: var(--brand-tint); color: #fff; font-weight: 700; border-left-color: var(--brand); }
-    .nav svg { width: 16px; height: 16px; flex-shrink: 0; }
-    .side .foot { margin-top: auto; border-top: 1px solid #262930; padding: 10px 14px; font-size: 12px; color: var(--side-text); }
-    .side .foot .live { display: flex; align-items: center; gap: 8px; }
-    .side .foot .live i { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block; }
-    .content { flex: 1; min-width: 0; }
-    main { max-width: 1520px; margin: 0 auto; padding: 4px 24px 28px; }
-    .tabs-top { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin: 0 0 14px; padding-top: 12px; }
-    .tabs-top a { padding: 8px 14px; font-size: 14.5px; font-weight: 600; color: var(--text-2); text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; }
-    .tabs-top a.active { color: var(--brand); border-bottom-color: var(--brand); }
-    .page-title { margin: 0; font-size: 21px; font-weight: 800; }
-    .page-sub { margin: 3px 0 14px; color: var(--muted); font-size: 13px; }
-    .menu-btn { display: none; }
-    @media (max-width: 900px) {
-      .app { flex-direction: column; }
-      .side { width: 100%; height: auto; position: static; }
-      .side .collapse, .side .foot, .navsec { display: none; }
-      .side .nav { display: none; }
-      .side.open .nav { display: block; }
-      .brandrow { justify-content: space-between; padding: 12px 16px; }
-      .menu-btn { display: inline-block; background: none; border: 1px solid #3a3d44; color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 18px; }
-      main { padding: 8px 16px 32px; }
-    }
-    /* Show / hide pills for chart lines (brand red when on) */
-    .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
-    .pill { border: 1.5px solid var(--brand); background: var(--brand); color: #fff; border-radius: 999px; padding: 4px 12px;
-            font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; }
-    .pill i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; border: 1.5px solid #fff; }
-    .pill.off { background: var(--input); color: var(--text-2); border-color: var(--border); }
-    .pill.off i { border-color: transparent; }
-
-    /* Top filter bar (matches the design) */
-    .bar { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px;
-           display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 14px; }
-    .bar label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
-    .bar select { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;
-                  background: var(--input); color: var(--text); min-width: 120px; }
-    .bar .spacer { flex: 1; }
-    .btn { border: none; border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .btn-clear { background: var(--red); color: #fff; }
-    .btn-sync { background: var(--dark); color: #fff; }
-    .dl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
-    .btn-dl { background: var(--soft); color: var(--text); border: 1px solid var(--border); display: inline-flex; align-items: center; gap: 6px; }
-    .btn-dl:hover { border-color: var(--ring); }
-    .btn-dl svg { width: 14px; height: 14px; }
-    .dl-row .note { margin: 0; }
-    .synced { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
-    .synced i { width: 9px; height: 9px; border-radius: 50%; background: #9ca3af; display: inline-block; }
-    .synced.ok i { background: #22c55e; }
-    .synced.err i { background: var(--red); }
-    .bar a { font-size: 12.5px; color: var(--blue); }
-
-    /* KPI cards */
-    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 10px; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; min-height: 92px; }
-    .card .label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-    .card .value { font-size: 24px; font-weight: 800; margin-top: 3px; line-height: 1.1; }
-    .card .sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
-    .c-red { color: var(--red); } .c-blue { color: var(--blue); } .c-green { color: var(--green); }
-    .c-orange { color: var(--orange); } .c-dark { color: var(--text); }
-
-    /* Detail section below the cards */
-    .section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 20px 0 8px; }
-    .section-head h2 { margin: 0; font-size: 13px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .05em; }
-    .section-head select { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: var(--input); color: var(--text); }
-    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 10px; }
-    @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .bar select { min-width: 0; flex: 1 1 120px; } }
-    .mb-alert { display: flex; align-items: center; gap: 12px; background: #fdecec; border: 1.5px solid var(--red); color: #7f1d1d; border-radius: 10px; padding: 10px 14px; margin: 14px 0 0; font-size: 13.5px; }
-    .mb-alert b { font-size: 14.5px; } .mb-alert .x { margin-left: auto; }
-    .mb-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
-    .mb-add input { padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--input); color: var(--text); text-transform: uppercase; width: 150px; }
-    tr.mb-new td { background: #fff4f4; }
-    .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; min-width: 0; }
-    .panel h3 { margin: 0 0 2px; font-size: 13.5px; font-weight: 600; }
-    .panel .note { margin: 0 0 6px; font-size: 11px; color: var(--muted); }
-    .chart { position: relative; height: 230px; }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
-    th { font-size: 11px; color: var(--text-2); text-transform: uppercase; letter-spacing: .03em; background: var(--soft); }
-    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-    tr:last-child td { border-bottom: none; }
-    .bad { color: var(--red); font-weight: 600; }
-    /* Count strip at the top of each panel */
-    .counts { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
-    .count { background: var(--soft); border-radius: 8px; padding: 5px 10px; min-width: 76px; }
-    .count .n { font-size: 17px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
-    .count .t { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
-    .count .t i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-    button.count { border: 1px solid transparent; text-align: left; font-family: inherit; color: inherit; cursor: pointer; }
-    button.count:hover, button.count:focus-visible { border-color: var(--ring); background: var(--hover); outline: none; }
-    /* Clickable KPI cards */
-    .cards .card { cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
-    .cards .card:hover, .cards .card:focus-visible { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 35%, transparent); outline: none; transform: translateY(-1px); }
-    .cards .card .more { font-size: 11px; color: var(--blue); margin-top: 4px; opacity: 0; transition: opacity .15s; }
-    .cards .card:hover .more, .cards .card:focus-visible .more { opacity: 1; }
-    .panel.flash { box-shadow: 0 0 0 3px var(--ring); transition: box-shadow .3s; }
-    /* Details pop-up */
-    dialog#detail { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 14px; padding: 0; width: min(900px, 94vw); max-height: 86vh; }
-    dialog#detail::backdrop { background: rgba(0,0,0,.4); }
-    .dhead { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
-    .dhead h2 { margin: 0; font-size: 16px; flex: 1; }
-    .dhead .big { font-size: 22px; font-weight: 800; }
-    .dbody { padding: 0 18px 16px; max-height: 64vh; overflow: auto; }
-    .dbody p { color: var(--muted); font-size: 13px; }
-    .btn-light { background: var(--input); border: 1px solid var(--border); color: var(--text); }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--page); color: var(--text); -webkit-font-smoothing: antialiased; }
     .hidden { display: none !important; }
-    /* Admin link at the bottom of the sidebar */
-    .adminlink { display: flex; align-items: center; gap: 8px; padding: 7px 8px; margin: 0 -4px 10px; border-radius: 8px; color: var(--side-text); text-decoration: none; font-size: 13px; font-weight: 600; }
-    @media (max-width: 900px) { .side.open .foot { display: block; } }
+    .num, td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    /* ---- sidebar (top bar on phones) ---- */
+    .app { display: flex; min-height: 100vh; }
+    .side { width: 232px; flex-shrink: 0; background: linear-gradient(180deg, var(--navy), #08142a); color: #fff; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; transition: width .2s; z-index: 30; }
+    .side button.collapse { display: block; width: 100%; background: none; border: none; border-bottom: 1px solid rgba(255,255,255,.06); cursor: pointer; text-align: right; padding: 10px 14px; color: var(--side-text); font: inherit; font-size: 15px; }
+    .side button.collapse:hover { color: #fff; }
+    .brandrow { display: flex; align-items: center; gap: 10px; padding: 14px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .logo { width: 38px; height: 38px; border-radius: 12px; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; overflow: hidden; flex-shrink: 0; box-shadow: 0 6px 16px -6px rgba(0,0,0,.5); }
+    .logo img { width: 100%; height: 100%; object-fit: cover; }
+    .brandname { font-size: 14.5px; font-weight: 800; letter-spacing: -.01em; color: #fff; }
+    .brandname span { color: #fff; opacity: .7; font-weight: 600; }
+    .navsec { padding: 14px 0 6px 18px; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; color: #5f7397; }
+    .nav a { display: flex; align-items: center; gap: 10px; margin: 2px 10px; padding: 9px 12px; color: var(--side-text); text-decoration: none; font-size: 13.5px; border-radius: 10px; }
+    .nav a:hover { background: rgba(255,255,255,.06); color: #fff; }
+    .nav a.active { background: linear-gradient(90deg, rgba(59,130,246,.35), rgba(59,130,246,.08)); color: #fff; font-weight: 700; box-shadow: inset 3px 0 0 #60a5fa; }
+    .nav svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .side .foot { margin-top: auto; border-top: 1px solid rgba(255,255,255,.06); padding: 12px 14px; font-size: 12px; color: var(--side-text); }
+    .side .foot .live { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--side-text); background: none; padding: 0; }
+    .side .foot .live i { width: 8px; height: 8px; border-radius: 50%; background: #60a5fa; box-shadow: 0 0 0 4px rgba(96,165,250,.2); display: inline-block; }
+    .contact-side { font-size: 11.5px; line-height: 1.5; color: var(--side-text); padding: 0 0 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,.06); word-break: break-all; }
+    .contact-side a { color: #cbd7ea; text-decoration: none; }
+    .adminlink { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin: 0 -4px 10px; border-radius: 10px; color: var(--side-text); text-decoration: none; font-size: 13px; font-weight: 600; }
     .adminlink svg { width: 15px; height: 15px; }
-    .adminlink:hover, .adminlink.active { background: var(--brand-tint); color: #fff; }
-    /* Collapse button at the top of the sidebar (desktop) */
-    .side { transition: width .2s; }
-    .side button.collapse { display: block; width: 100%; background: none; border: none; border-bottom: 1px solid #262930; cursor: pointer;
-      text-align: right; padding: 10px 14px; color: var(--side-text); font: inherit; font-size: 15px; }
-    @media (max-width: 900px) { .side button.collapse { display: none; } }
-    .side button.collapse:hover { color: #fff; background: var(--side-2); }
+    .adminlink:hover, .adminlink.active { background: rgba(255,255,255,.08); color: #fff; }
+    .authbox { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .authbox .who { color: #d6e0f0; word-break: break-all; }
+    .authbox button { width: 100%; padding: 7px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12); color: #cfe0ff; font-size: 12.5px; font-weight: 600; border-radius: 10px; cursor: pointer; font-family: inherit; }
+    .menu-btn { display: none; }
     @media (min-width: 901px) {
-      html.side-min .side { width: 64px; }
+      html.side-min .side { width: 68px; }
       html.side-min .side button.collapse { text-align: center; }
       html.side-min .brandrow { justify-content: center; padding: 12px 0; }
-      html.side-min .brandname, html.side-min .navsec, html.side-min #authBox, html.side-min .side .foot .live { display: none; }
+      html.side-min .brandname, html.side-min .navsec, html.side-min #authBox, html.side-min .side .foot .live, html.side-min .contact-side { display: none; }
       html.side-min .nav a, html.side-min .adminlink { font-size: 0; justify-content: center; padding: 10px 0; gap: 0; }
       html.side-min .nav a svg, html.side-min .adminlink svg { width: 18px; height: 18px; }
-      html.side-min .nav { padding-top: 8px; }
-      html.side-min .side .foot { padding: 10px 8px; }
-      html.side-min .adminlink { margin: 0; }
     }
-    /* Admin contact details */
-    .contact { margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: var(--soft); font-size: 12.5px; line-height: 1.6; color: var(--text-2, var(--muted)); }
-    .contact a { color: var(--accent, var(--brand)); font-weight: 600; text-decoration: none; }
-    .contact-side { font-size: 11.5px; line-height: 1.5; color: var(--side-text); padding: 0 0 10px; margin-bottom: 10px; border-bottom: 1px solid #262930; word-break: break-all; }
-    .contact-side a { color: #d1d5db; text-decoration: none; }
-    .contact-side a:hover { color: #fff; }
-    @media (min-width: 901px) { html.side-min .contact-side { display: none; } }
-    /* ===== Blue theme: only the Bounce logo stays red ===== */
-    .brandname, .brandname span { color: #fff !important; }
-    .side { background: #0f1e36 !important; }
-    :root { --side: #0f1e36; --side-2: #172a48; --side-text: #a9b8d0; --brand-tint: #1e3a66; }
-    .side .collapse, .side button.collapse, .brandrow, .side .foot, .authbox, #authBox, .contact-side { border-color: #1d3050 !important; }
-    .nav a.active { background: #1e3a66 !important; color: #fff !important; border-left-color: #7fb3f8 !important; }
-    .adminlink:hover, .adminlink.active { background: #1e3a66 !important; }
-    .tabs-top a.active { color: #2563eb !important; border-bottom-color: #5b9cf6 !important; }
-    .authbox button, #authBox button { color: #9cc5fa !important; border-color: #2a4166 !important; }
-    .btn-clear { background: #5b9cf6 !important; color: #fff !important; }
-    .btn-sync { background: #2563eb !important; color: #fff !important; }
-    .contact a { color: #2563eb !important; }
-      body.noacc main > *:not(#noAccess):not(.tabs-top) { display: none !important; }
-    .chart.tall { height: 420px; }
-    .authbox { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #262930; }
-    .authbox .who { color: #d1d5db; word-break: break-all; }
-    .authbox button { width: 100%; padding: 6px; background: transparent; border: 1px solid #3a3d44; color: var(--brand); font-size: 12.5px; font-weight: 600; border-radius: 8px; cursor: pointer; font-family: inherit; }
-    .card.na { background: repeating-linear-gradient(135deg, #f8fafc, #f8fafc 8px, #f1f5f9 8px, #f1f5f9 16px); }
-    .card.na .value { color: #cbd5e1; } .card.na .sub { color: #94a3b8; font-style: italic; }
-    .na-box { height: 230px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #94a3b8; font-style: italic; border: 1.5px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; }
-    .na-col { color: #cbd5e1 !important; }
-    .sheet { font-size: 9px; font-weight: 700; letter-spacing: .04em; color: #64748b; background: #f1f5f9; border-radius: 4px; padding: 1px 5px; vertical-align: 2px; margin-left: 4px; }
-    .live { font-size: 9px; font-weight: 700; letter-spacing: .04em; color: #16a34a; background: #dcfce7; border-radius: 4px; padding: 1px 5px; vertical-align: 2px; margin-left: 4px; }
-    .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #eef2f7; color: #475569; }
-    .tag-bad { background: #fde8e8; color: #b91c1c; } .tag-fir { background: #f3e8e8; color: #7f1d1d; } .tag-wait { background: #fff4e0; color: #a15c00; }
-    .login { max-width: 420px; margin: 20px 0; }
-    .login label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
-    .login input { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
-    .login button { margin-top: 14px; width: 100%; padding: 9px; }
-    .login .err { color: #b91c1c; font-size: 13px; min-height: 1em; margin: 8px 0 0; }
-    body.noacc main > *:not(#noAccess):not(.tabs-top) { display: none !important; }
+    @media (max-width: 900px) {
+      .app { flex-direction: column; }
+      .side { width: 100%; height: auto; position: sticky; top: 0; }
+      .side button.collapse, .side .foot, .navsec { display: none; }
+      .side .nav { display: none; padding-bottom: 8px; }
+      .side.open .nav, .side.open .foot { display: block; }
+      .brandrow { justify-content: space-between; padding: 10px 16px; }
+      .menu-btn { display: inline-block; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: #fff; border-radius: 10px; padding: 6px 10px; font-size: 18px; }
+    }
+
+    /* ---- page ---- */
+    .content { flex: 1; min-width: 0; }
+    main { max-width: 1560px; margin: 0 auto; padding: 8px 28px 40px; }
+    @media (max-width: 900px) { main { padding: 6px 14px 32px; } }
+    .tabs-top { display: flex; gap: 6px; margin: 10px 0 6px; }
+    .tabs-top a { padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--text-2); text-decoration: none; border-radius: 999px; }
+    .tabs-top a.active { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+    .page-title { margin: 6px 0 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+    .page-sub { margin: 4px 0 14px; color: var(--muted); font-size: 13px; }
+    .err { color: #4c3bc2; }
+
+    /* ---- hero header ---- */
+    .hero { position: relative; overflow: hidden; border-radius: 22px; padding: 22px 24px; margin: 10px 0 14px; color: #fff;
+      background: radial-gradient(1200px 300px at 85% -40%, rgba(96,165,250,.45), transparent 60%), radial-gradient(600px 240px at 0% 120%, rgba(98,80,214,.35), transparent 60%), linear-gradient(120deg, #0b1b33, #13305c); box-shadow: 0 20px 40px -24px rgba(11,27,51,.8); }
+    .hero h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+    .hero p { margin: 4px 0 0; color: #b9c9e4; font-size: 13px; }
+    .hero .hrow { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .hero .hact { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .hero .synced { color: #cfe0ff; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); padding: 6px 12px; border-radius: 999px; font-size: 12px; max-width: 520px; }
+    .hero .btn-sync { background: #fff !important; color: var(--navy) !important; }
+    .hero .tbtn { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.16); }
+    .hero .glance { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 18px; }
+    .hero .glance div b { display: block; font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+    .hero .glance div span { font-size: 12px; color: #b9c9e4; }
+    .synced { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+    .synced i { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; display: inline-block; flex-shrink: 0; }
+    .synced.ok i { background: #60a5fa; box-shadow: 0 0 0 4px rgba(96,165,250,.25); } .synced.err i { background: var(--red); }
+
+    /* ---- filter bar ---- */
+    .bar { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 12px; box-shadow: var(--shadow); }
+    @media (max-width: 900px) { .bar { position: static; } }
+    .bar label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .bar select, .section-head select, .dl-row select { padding: 8px 30px 8px 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 13px; font-weight: 600; background: var(--input) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; color: var(--text); -webkit-appearance: none; appearance: none; font-family: inherit; min-width: 130px; cursor: pointer; }
+    .bar select:hover { border-color: var(--ring); }
+    .bar .spacer { flex: 1; }
     .bar .range { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
-    .bar .range input { padding: 5px 6px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: var(--input); color: var(--text); font-family: inherit; }
+    .bar .range input { padding: 7px 8px; border: 1px solid var(--border); border-radius: 10px; font-size: 12.5px; background: var(--input); color: var(--text); font-family: inherit; }
+    .seg { display: inline-flex; background: var(--soft); border: 1px solid var(--border); border-radius: 12px; padding: 3px; gap: 2px; overflow-x: auto; max-width: 100%; }
+    .seg button { border: 0; background: transparent; color: var(--text-2); font: 600 12.5px inherit; font-family: inherit; padding: 6px 12px; border-radius: 9px; cursor: pointer; white-space: nowrap; }
+    .seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 2px 8px -2px rgba(15,23,42,.12); }
+    .seg { scrollbar-width: none; } .seg::-webkit-scrollbar { display: none; }
+    #periodFilter { display: none; }
+    .fchip { display: inline-flex; align-items: center; gap: 6px; background: #e8f0fe; color: #1d4ed8; border-radius: 999px; padding: 4px 6px 4px 10px; font-size: 12px; font-weight: 700; }
+    .fchip button { border: 0; background: rgba(29,78,216,.12); color: inherit; width: 18px; height: 18px; border-radius: 50%; cursor: pointer; line-height: 1; font-size: 12px; }
+    @media (max-width: 600px) { .bar select { min-width: 0; flex: 1 1 130px; } .bar label { display: none; } }
+
+    /* ---- buttons ---- */
+    .btn { border: none; border-radius: 12px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; transition: transform .1s, box-shadow .15s; }
+    .btn:active { transform: translateY(1px); }
+    .btn-clear { background: var(--soft); color: var(--text-2); border: 1px solid var(--border); }
+    .btn-sync { background: var(--navy); color: #fff; }
+    .btn-light { background: var(--input); border: 1px solid var(--border); color: var(--text); }
+    .btn-dl { background: var(--soft); color: var(--text); border: 1px solid var(--border); }
+    .btn-dl:hover { border-color: var(--ring); background: var(--hover); }
+    .btn-dl svg { width: 14px; height: 14px; }
+    .dl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+    .dl-row .note { margin: 0; }
+
+    /* ---- section tabs ---- */
+    .stabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 4px 0 14px; padding: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); }
+    .stabs::-webkit-scrollbar { display: none; }
+    .stabs button { flex: none; border: 0; background: transparent; color: var(--text-2); font: 650 13px inherit; font-family: inherit; padding: 9px 14px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+    .stabs button:hover { background: var(--soft); color: var(--text); }
+    .stabs button.on { background: var(--navy); color: #fff; }
+    .stabs button i { font-style: normal; font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: rgba(98,80,214,.12); color: var(--red); }
+    .stabs button.on i { background: rgba(255,255,255,.18); color: #fff; }
+    [hidden] { display: none !important; }
+    body:has(#dash:not(.hidden)) #pageTitle, body:has(#dash:not(.hidden)) #pageSub { display: none; }
+
+    /* ---- KPI cards ---- */
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+    .card { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px 12px; min-height: 118px; box-shadow: var(--shadow); overflow: hidden;
+      transition: transform .15s, box-shadow .15s, border-color .15s; --k: var(--blue); }
+    .card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--k); opacity: .9; }
+    .card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--k) 40%, var(--border)); box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--k) 60%, transparent); }
+    .card .label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; display: flex; align-items: center; gap: 6px; }
+    .card .value { font-size: 30px; font-weight: 800; margin-top: 6px; line-height: 1.05; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; }
+    .card .sub { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+    .card .sparkbox { position: relative; height: 34px; margin-top: 8px; }
+    .card canvas.spark { display: block; }
+    .card.k-red { --k: #e87ba4; } .card.k-orange { --k: #e87ba4; } .card.k-sky { --k: #38bdf8; } .card.k-blue { --k: #2563eb; } .card.k-teal { --k: #6250d6; } .card.k-amber { --k: #eda100; } .card.k-violet { --k: #7c3aed; } .card.k-slate { --k: #475569; } .card.k-green { --k: #2a78d6; } .card.k-pink { --k: #e87ba4; }
+    .c-red, .c-blue, .c-green, .c-orange, .c-dark { color: var(--text); }
+    .live, .sheet { font-size: 9px; font-weight: 800; letter-spacing: .06em; border-radius: 6px; padding: 2px 6px; }
+    .live { color: #1d4ed8; background: rgba(42,120,214,.12); } .sheet { color: #64748b; background: var(--soft); }
+    .card.na { background: repeating-linear-gradient(135deg, var(--card), var(--card) 8px, var(--soft) 8px, var(--soft) 16px); }
+    .card.na .value { color: #cbd5e1; } .card.na .sub { font-style: italic; }
+    .na-box { height: 230px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #94a3b8; font-style: italic; border: 1.5px dashed #cbd5e1; border-radius: 12px; }
+    .na-col { color: #cbd5e1 !important; }
+    @media (max-width: 600px) { .cards { grid-template-columns: 1fr 1fr; gap: 10px; } .card { min-height: 0; padding: 12px 12px 10px; } .card .value { font-size: 24px; } .card .label { font-size: 10px; letter-spacing: .04em; flex-wrap: wrap; } .hero { padding: 18px; } .hero .glance { gap: 14px 20px; } .hero .glance div b { font-size: 24px; } }
+    .kgroup { font-size: 11px; font-weight: 800; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; margin: 18px 2px 8px; }
+
+    /* ---- overview ---- */
+    .ovgrid { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-top: 12px; }
+    .ovgrid .wide { grid-column: 1 / -1; }
+    @media (max-width: 1000px) { .ovgrid { grid-template-columns: 1fr; } }
+    .insights { display: grid; gap: 8px; }
+    .insight { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: var(--soft); font-size: 13px; line-height: 1.45; }
+    .insight b { font-weight: 800; }
+    .insight .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; background: var(--blue); }
+    .insight.warn .dot { background: var(--amber); } .insight.bad .dot { background: var(--red); } .insight.good .dot { background: var(--blue); }
+    .linkbtn { border: 0; background: none; color: var(--blue); font: 700 12px inherit; font-family: inherit; cursor: pointer; padding: 0; }
+
+    /* ---- panels, charts, tables ---- */
+    .section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 2px 10px; }
+    .section-head h2 { margin: 0; font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 12px; }
+    @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; min-width: 0; box-shadow: var(--shadow); }
+    .panel + .panel, section.panel { margin-top: 12px; }
+    .grid2 > .panel { margin-top: 0; }
+    .panel h3 { margin: 0 0 2px; font-size: 15px; font-weight: 750; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .panel .note { margin: 2px 0 10px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+    .chart { position: relative; height: 260px; }
+    .chart.tall { height: 440px; }
+    .counts { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+    .count { background: var(--soft); border: 1px solid transparent; border-radius: 12px; padding: 8px 12px; min-width: 86px; }
+    .count .n { font-size: 19px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+    .count .t { font-size: 11.5px; color: var(--muted); margin-top: 3px; display: flex; align-items: center; gap: 6px; }
+    .count .t i { width: 8px; height: 8px; border-radius: 3px; display: inline-block; }
+    button.count { text-align: left; font-family: inherit; color: inherit; cursor: pointer; }
+    button.count:hover, button.count:focus-visible { border-color: var(--ring); background: var(--hover); outline: none; }
+    .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+    .pill { border: 1.5px solid var(--blue); background: var(--blue); color: #fff; border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; }
+    .pill i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; border: 1.5px solid #fff; }
+    .pill.off { background: var(--input); color: var(--text-2); border-color: var(--border); }
+    .table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: 12px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+    th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { position: sticky; top: 0; z-index: 1; font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; background: var(--soft); font-weight: 800; }
+    th[data-k] { cursor: pointer; } th[data-k]:hover { color: var(--text); }
+    tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--soft) 45%, transparent); }
+    tbody tr:hover td { background: var(--hover); }
+    tr:last-child td { border-bottom: none; }
+    .tsearch { width: 100%; max-width: 320px; padding: 8px 12px 8px 34px; border: 1px solid var(--border); border-radius: 12px; margin: 0 0 8px; background: var(--input) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.4'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 12px center; color: var(--text); font: 13px inherit; font-family: inherit; }
+    #pSearch { padding-left: 34px !important; border-radius: 12px !important; background: var(--input) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.4'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 12px center !important; }
+    .bad { color: var(--red); font-weight: 700; }
+    .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; background: var(--soft); color: var(--text-2); }
+    .tag-bad { background: rgba(98,80,214,.12); color: #4c3bc2; } .tag-fir { background: rgba(59,47,158,.12); color: #3b2f9e; } .tag-wait { background: rgba(217,119,6,.14); color: #a15c00; }
+    html[data-theme="dark"] .tag-bad { color: #c4b5fd; } html[data-theme="dark"] .tag-wait { color: #fcd34d; }
+
+    /* ---- missing bikes ---- */
+    .mb-alert { display: flex; align-items: center; gap: 12px; background: linear-gradient(90deg, rgba(98,80,214,.12), rgba(98,80,214,.04)); border: 1px solid rgba(98,80,214,.35); color: #3b2f9e; border-radius: var(--radius); padding: 12px 16px; margin: 0 0 12px; font-size: 13.5px; }
+    html[data-theme="dark"] .mb-alert { color: #ddd6fe; }
+    .mb-alert b { font-size: 14.5px; } .mb-alert .x { margin-left: auto; }
+    .mb-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 12px; }
+    .mb-add input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 13px; background: var(--input); color: var(--text); text-transform: uppercase; width: 170px; font-family: inherit; }
+    tr.mb-new td { background: rgba(98,80,214,.07) !important; }
+
+    /* ---- sign in, dialog, misc ---- */
+    .login { max-width: 440px; margin: 20px 0; }
+    .login label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; font-weight: 600; }
+    .login input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
+    .login button { margin-top: 14px; width: 100%; padding: 11px; justify-content: center; background: var(--navy); color: #fff; }
+    .login .err { font-size: 13px; min-height: 1em; margin: 8px 0 0; }
+    .contact { margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: var(--soft); font-size: 12.5px; line-height: 1.6; color: var(--text-2); }
+    .contact a { color: var(--blue); font-weight: 600; text-decoration: none; }
+    dialog#detail { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 18px; padding: 0; width: min(900px, 94vw); max-height: 86vh; }
+    dialog#detail::backdrop { background: rgba(2,6,23,.5); }
+    body.noacc main > *:not(#noAccess):not(.tabs-top) { display: none !important; }
+    .panel.flash { box-shadow: 0 0 0 3px var(--ring); transition: box-shadow .3s; }
+    @media (prefers-reduced-motion: reduce) { .card, .btn { transition: none; } }
   </style>
 </head>
 <body>
@@ -307,8 +270,8 @@
       <a href="dashboard.html" class="active">Recovery Dashboard</a>
       <a href="qc.html">QC Dashboard</a>
     </nav>
-    <h1 class="page-title">Recovery Dashboard</h1>
-    <p class="page-sub">From Metabase, refreshed every 30 minutes · only Own truck / Porter transport comes from the recovery sheet</p>
+    <h1 class="page-title" id="pageTitle">Recovery Dashboard</h1>
+    <p class="page-sub" id="pageSub">From Metabase, refreshed every 30 minutes · only Own truck / Porter transport comes from the recovery sheet</p>
 
     <section class="panel login" id="loginBox">
       <h3>Sign in to see recovery data</h3>
@@ -325,13 +288,21 @@
     <p class="err" id="loadErr" style="color:#b91c1c"></p>
 
     <div id="dash" class="hidden">
+    <section class="hero">
+      <div class="hrow"><div><h1>Recovery overview</h1><p>Live from Metabase every 30 minutes · <span id="gWhen">Today</span></p></div>
+        <div class="hact"><button class="btn tbtn" type="button" id="themeBtn">☾ Dark</button></div></div>
+      <div class="glance">
+        <div><b id="gMfr">–</b><span>Bikes in MFR now</span></div><div><b id="gPct">–</b><span>of the fleet</span></div>
+        <div><b id="gIn">–</b><span>Inflow</span></div><div><b id="gOut">–</b><span>Outflow</span></div><div><b id="gRec">–</b><span>Recovered</span></div>
+      </div>
+    </section>
 
     <section class="bar">
       <label for="cityFilter">City</label>
       <select id="cityFilter"><option value="">All Cities</option></select>
       <label for="hubFilter">Hub</label>
       <select id="hubFilter"><option value="">All Hubs</option></select>
-      <label for="periodFilter">Period</label>
+      <label>Period</label><span class="seg" id="periodSeg" role="group" aria-label="Period"></span>
       <select id="periodFilter" autocomplete="off">
         <option value="1" selected>Today</option>
         <option value="7">Last 7 days</option>
@@ -344,30 +315,36 @@
       </span>
       <label for="modelFilter">Model</label>
       <select id="modelFilter" title="Applies to the live fleet numbers (Metabase)"><option value="">All Models</option></select>
-      <span class="spacer"></span>
+      <span id="fchips" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span><span class="spacer"></span>
       <button class="btn btn-clear" id="clearBtn" type="button">Clear</button>
       <button class="btn btn-sync" id="syncBtn" type="button">↻ Refresh</button>
       <span class="synced"><i></i><span id="synced"></span></span>
     </section>
-
-    <section class="cards">
-      <div class="card"><div class="label">Total Bikes <span class="live">LIVE</span></div><div class="value c-dark" id="kTotal">–</div><div class="sub" id="kTotalSub"></div></div>
-      <div class="card"><div class="label">Bikes MFR <span class="live">LIVE</span></div><div class="value c-red" id="kMfr">–</div><div class="sub" id="kMfrSub"></div></div>
-      <div class="card"><div class="label">MFR % <span class="live">LIVE</span></div><div class="value c-orange" id="kMfrPct">–</div><div class="sub" id="kMfrPctSub"></div></div>
-      <div class="card"><div class="label">Inflow <span class="live">LIVE</span></div><div class="value c-red" id="kInflow">–</div><div class="sub" id="kInflowSub"></div></div>
-      <div class="card"><div class="label">Outflow <span class="live">LIVE</span></div><div class="value c-green" id="kOutflow">–</div><div class="sub" id="kOutflowSub"></div></div>
-      <div class="card"><div class="label">Recovered Bikes <span class="live">LIVE</span></div><div class="value c-orange" id="kRecovered">–</div><div class="sub" id="kRecoveredSub"></div></div>
-      <div class="card"><div class="label">Available Recovery Agents <span class="live">LIVE</span></div><div class="value c-dark" id="kAgents">–</div><div class="sub" id="kAgentsSub"></div></div>
-      <div class="card"><div class="label">Moved to Active <span class="live">LIVE</span></div><div class="value c-green" id="kActive">–</div><div class="sub" id="kActiveSub"></div></div>
-      <div class="card"><div class="label">Moved to Hub <span class="live">LIVE</span></div><div class="value c-orange" id="kHub">–</div><div class="sub" id="kHubSub"></div></div>
-      <div class="card"><div class="label">Moved by Own Truck <span class="sheet">SHEET</span></div><div class="value c-dark" id="kTruck">–</div><div class="sub" id="kTruckSub"></div></div>
-      <div class="card"><div class="label">Moved by Porter <span class="sheet">SHEET</span></div><div class="value c-dark" id="kPorter">–</div><div class="sub" id="kPorterSub"></div></div>
-      <div class="card"><div class="label">Police Station Bikes <span class="live">LIVE</span></div><div class="value c-red" id="kPolice">–</div><div class="sub" id="kPoliceSub"></div></div>
-      <div class="card"><div class="label">FIR Registered Bikes <span class="live">LIVE</span></div><div class="value c-red" id="kFir">–</div><div class="sub" id="kFirSub"></div></div>
+    <nav class="stabs" id="stabs" aria-label="Dashboard sections"></nav>
+    <section class="cards" data-tab="overview">
+      <div class="card k-slate"><div class="label">Total Bikes <span class="live">LIVE</span></div><div class="value c-dark" id="kTotal">–</div><div class="sub" id="kTotalSub"></div></div>
+      <div class="card k-orange"><div class="label">Bikes MFR <span class="live">LIVE</span></div><div class="value c-red" id="kMfr">–</div><div class="sub" id="kMfrSub"></div></div>
+      <div class="card k-amber"><div class="label">MFR % <span class="live">LIVE</span></div><div class="value c-orange" id="kMfrPct">–</div><div class="sub" id="kMfrPctSub"></div></div>
+      <div class="card k-orange"><div class="label">Inflow <span class="live">LIVE</span></div><div class="value c-red" id="kInflow">–</div><div class="sub" id="kInflowSub"></div></div>
+      <div class="card k-blue"><div class="label">Outflow <span class="live">LIVE</span></div><div class="value c-green" id="kOutflow">–</div><div class="sub" id="kOutflowSub"></div></div>
+      <div class="card k-amber"><div class="label">Recovered Bikes <span class="live">LIVE</span></div><div class="value c-orange" id="kRecovered">–</div><div class="sub" id="kRecoveredSub"></div></div>
+      <div class="card k-violet"><div class="label">Available Recovery Agents <span class="live">LIVE</span></div><div class="value c-dark" id="kAgents">–</div><div class="sub" id="kAgentsSub"></div></div>
+      <div class="card k-sky"><div class="label">Moved to Active <span class="live">LIVE</span></div><div class="value c-green" id="kActive">–</div><div class="sub" id="kActiveSub"></div></div>
+      <div class="card k-blue"><div class="label">Moved to Hub <span class="live">LIVE</span></div><div class="value c-orange" id="kHub">–</div><div class="sub" id="kHubSub"></div></div>
+      <div class="card k-slate"><div class="label">Moved by Own Truck <span class="sheet">SHEET</span></div><div class="value c-dark" id="kTruck">–</div><div class="sub" id="kTruckSub"></div></div>
+      <div class="card k-slate"><div class="label">Moved by Porter <span class="sheet">SHEET</span></div><div class="value c-dark" id="kPorter">–</div><div class="sub" id="kPorterSub"></div></div>
+      <div class="card k-orange"><div class="label">Police Station Bikes <span class="live">LIVE</span></div><div class="value c-red" id="kPolice">–</div><div class="sub" id="kPoliceSub"></div></div>
+      <div class="card k-orange"><div class="label">FIR Registered Bikes <span class="live">LIVE</span></div><div class="value c-red" id="kFir">–</div><div class="sub" id="kFirSub"></div></div>
     </section>
 
+    <section class="ovgrid" data-tab="overview">
+      <div class="panel"><h3>Inflow vs outflow · last 14 days</h3><p class="note">Bars = bikes in and out of MFR per day (7 am – 7 am) · line = renewed (back to active) · follows City, Hub and Model</p><div class="chart"><canvas id="ovTrend"></canvas></div></div>
+      <div class="panel"><h3>What stands out</h3><p class="note">Worked out from the numbers on this page</p><div class="insights" id="ovInsights"></div></div>
+      <div class="panel"><h3>MFR now by city <span class="live">LIVE</span></h3><p class="note">Tap a city to filter the whole dashboard</p><div class="chart"><canvas id="ovCity"></canvas></div></div>
+      <div class="panel"><h3>MFR now by age <span class="live">LIVE</span></h3><p class="note">Days since marked for recovery · darker = older</p><div class="chart"><canvas id="ovAge"></canvas></div></div>
+    </section>
     <div class="mb-alert hidden" id="mbAlert"></div>
-    <section class="panel" style="margin-top:16px" id="mbPanel">
+    <section class="panel" id="mbPanel" data-tab="missing">
       <h3>Missing bikes <span class="note" id="mbCount" style="font-weight:500"></span></h3>
       <p class="note">Watched every fleet refresh (every 30 min, hourly at night). When a bike's location shows up or moves 150 m or more, the recovery team gets an email and an alert here. Metabase sends no ping time, so "Location changed" is when our check noticed it.</p>
       <div class="mb-add"><input id="mbReg" placeholder="Bike number" aria-label="Bike number to add"><button class="btn btn-dl" type="button" id="mbAddBtn">Add to list</button>
@@ -378,11 +355,11 @@
       <div class="table-wrap" style="max-height:380px;overflow:auto"><table id="tMb"><thead><tr><th>Bike</th><th>Hub</th><th>Last location</th><th>Location changed</th><th>Last checked</th><th>Alerts</th><th></th></tr></thead><tbody></tbody></table></div>
     </section>
 
-    <div class="section-head">
-      <h2>Details</h2><span class="note" id="periodNote" style="margin:0"></span>
+    <div class="section-head" data-tab="flow move agents mfr">
+      <h2>Period</h2><span class="note" id="periodNote" style="margin:0"></span>
     </div>
-    <section class="grid2">
-      <div class="panel">
+    <section class="grid2" data-tab="flow move agents mfr">
+      <div class="panel" data-tab="flow">
         <h3>Inflow vs outflow, per day</h3>
         <p class="note">Counted by us every 30 minutes · each day runs 7 am to 7 am · inflow = a bike newly marked for recovery (any bike, incl. police cases) · outflow = a bike that left MFR, split by where it went</p>
         <div class="counts" id="trendCounts"></div>
@@ -403,25 +380,25 @@
           <span class="note" id="dlNote">Excel / CSV files for the period, city, hub and model chosen above. Everything is kept, from the first day of counting.</span>
         </div>
       </div>
-      <div class="panel">
+      <div class="panel" data-tab="move">
         <h3>Recovered bikes moved to hub, per day</h3>
         <p class="note">By transport · from the recovery sheet (to 26 Oct) and the Agent App</p>
         <div class="counts" id="hubCounts"></div>
         <div class="chart"><canvas id="hubChart"></canvas></div>
       </div>
-      <div class="panel" style="grid-column:1/-1">
+      <div class="panel" data-tab="move" style="grid-column:1/-1">
         <h3>Transport cost, own truck vs Porter</h3>
         <p class="note">Total ₹ spent per day on moving bikes to the hub · from the recovery sheet (to 26 Oct) and the Agent App (Porter amount; own vehicle has no ₹ in the app)</p>
         <div class="counts" id="costCounts"></div>
         <div class="chart"><canvas id="costChart"></canvas></div>
       </div>
-      <div class="panel">
+      <div class="panel" data-tab="agents">
         <h3>Agent activity by outcome</h3>
         <p class="note">Top 15 agents in the period · from Metabase</p>
         <div class="counts" id="agentCounts"></div>
         <div class="chart tall"><canvas id="agentChart"></canvas></div>
       </div>
-      <div class="panel">
+      <div class="panel" data-tab="agents">
         <h3>Agent table</h3>
         <p class="note">From Metabase (agent who closed the bike) · click a column to sort</p>
         <div class="table-wrap" style="max-height:470px;overflow:auto">
@@ -432,32 +409,32 @@
           </table>
         </div>
       </div>
-      <div class="panel">
+      <div class="panel" data-tab="mfr">
         <h3>MFR bikes by age <span class="live">LIVE</span></h3>
         <p class="note">Days since marked for recovery · police-case bikes not included</p>
         <div class="counts" id="ageCounts"></div>
         <div class="chart"><canvas id="ageChart"></canvas></div>
       </div>
-      <div class="panel">
+      <div class="panel" data-tab="mfr">
         <h3>MFR bikes by city and age <span class="live">LIVE</span></h3>
         <p class="note">Darker blue = older</p>
         <div class="counts" id="cityAgeCounts"></div>
         <div class="chart"><canvas id="cityAgeChart"></canvas></div>
       </div>
-      <div class="panel">
+      <div class="panel" data-tab="mfr">
         <h3>Fleet status <span class="live">LIVE</span></h3>
         <p class="note">Every bike by its current status in Metabase · follows City, Hub and Model</p>
         <div class="counts" id="fleetCounts"></div>
         <div class="chart"><canvas id="fleetChart"></canvas></div>
       </div>
-      <div class="panel">
+      <div class="panel" data-tab="move">
         <h3>Case outcomes</h3>
         <p class="note" id="outcomeNote"></p>
         <div class="counts" id="outcomeCounts"></div>
         <div class="chart"><canvas id="outcomeChart"></canvas></div>
       </div>
     </section>
-    <section class="panel" style="margin-top:16px">
+    <section class="panel" data-tab="app">
       <h3>Agent App: calls and bike updates</h3>
       <p class="note">What the team logs in the Agent App after each call ("Log this call") and when something happens to a bike ("Update bike status") · for the period, city and hub chosen above</p>
       <div class="counts" id="appCounts"></div>
@@ -479,7 +456,7 @@
       <p class="note">Latest promise per bike: will pay, call back, will return, come pick it up · overdue first · hidden once the bike has a newer update</p>
       <div class="table-wrap" style="max-height:320px;overflow:auto"><table id="tAppFollow"><thead><tr><th>Due</th><th>Bike</th><th>What</th><th>Details</th><th>Agent</th><th>Logged</th></tr></thead><tbody></tbody></table></div>
     </section>
-    <section class="panel" style="margin-top:16px">
+    <section class="panel" data-tab="hubs">
       <h3>Hub table</h3>
       <p class="note">From Metabase (bike's home hub) · only Own truck and Porter come from the recovery sheet</p>
       <div class="table-wrap">
@@ -490,7 +467,7 @@
         </table>
       </div>
     </section>
-    <section class="panel" style="margin-top:16px">
+    <section class="panel" data-tab="police">
       <h3>Police station &amp; FIR bikes <span class="note" id="polCount" style="font-weight:500"></span></h3>
       <p class="note">From Metabase (police case type) · follows City and Hub</p>
       <input id="pSearch" type="search" placeholder="Search vehicle, city or hub…" style="width:100%;max-width:360px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;background:var(--input);color:var(--text)">
@@ -516,9 +493,9 @@
     const addDays = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
     const OUT = ['Moved to Hub', 'Rent Paid', 'Found in Hub', 'Police Station'];
     const MODES = ['Van', 'Porter', 'Customer drop'];
-    const B1 = '#1d4ed8', B2 = '#60a5fa', B3 = '#bfdbfe', RED = '#dc2626', ORG = '#f59e0b', GRY = '#94a3b8';
-    const OC = { 'Moved to Hub': B1, 'Rent Paid': B2, 'Found in Hub': B3, 'Police Station': RED };
-    const MC = { 'Van': B1, 'Porter': B2, 'Customer drop': B3 };
+    const B1 = '#2a78d6', B2 = '#6250d6', B3 = '#eda100', RED = '#e87ba4', ORG = '#e87ba4', GRY = '#94a3b8';   // pink & blue: no green, red or orange in any chart (RED = pink)
+    const OC = { 'Moved to Hub': B1, 'Rent Paid': B3, 'Found in Hub': B2, 'Police Station': RED };
+    const MC = { 'Van': B1, 'Porter': B3, 'Customer drop': B2 };
     Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
     Chart.defaults.font.size = 11; Chart.defaults.color = '#64748b';
     Chart.defaults.plugins.legend.labels.usePointStyle = true; Chart.defaults.plugins.legend.labels.boxWidth = 8;
@@ -668,14 +645,14 @@
       draw('cityAgeChart', { type: 'bar', data: { labels: C, datasets: B.map((b, i) => ({ label: b, backgroundColor: shade(i, B.length), data: C.map(c => S('mfr', M.filter(r => r.city === c && r.age_bucket === b))) })) },
         options: { scales: axes(true) } });
       // Fleet status
-      const GR = [['active', 'Active', '#16a34a'], ['marked for recovery', 'Marked for recovery', RED], ['oos', 'Out of service', ORG], ['in_transit', 'In transit', B2], ['recovered', 'Recovered', B1], ['other', 'Other', GRY]];
+      const GR = [['active', 'Active', B1], ['marked for recovery', 'Marked for recovery', RED], ['oos', 'Out of service', B2], ['in_transit', 'In transit', B3], ['recovered', 'Recovered', '#38bdf8'], ['other', 'Other', GRY]];
       const g = (s) => GR.some(x => x[0] === s) ? s : 'other', v = GR.map(([k]) => S('bikes', F.filter(r => g(r.status) === k)));
       chips('fleetCounts', GR.map(([, t, col], i) => ({ t, n: v[i], color: col })));
       draw('fleetChart', { type: 'doughnut', data: { labels: GR.map(x => x[1]), datasets: [{ data: v, backgroundColor: GR.map(x => x[2]), borderWidth: 0 }] }, options: { cutout: '62%', plugins: { legend: { position: 'right' } } } });
     }
     // ---- Inflow / outflow, counted by us: where every MFR bike went ----
-    const REASONS = [['renewed', 'Renewed (back to active)', '#16a34a'], ['recovered', 'Recovered', B1], ['to_hub', 'On the way to hub', B2],
-      ['at_hub', 'At hub / workshop', '#0e7490'], ['left_list', 'Left the fleet list', GRY], ['other', 'Other status', '#a78bfa']];
+    const REASONS = [['renewed', 'Renewed (back to active)', B1], ['recovered', 'Recovered', B3], ['to_hub', 'On the way to hub', B2],
+      ['at_hub', 'At hub / workshop', '#38bdf8'], ['left_list', 'Left the fleet list', GRY], ['other', 'Other status', '#475569']];
     let FLOW_RANGE = null;
     function flowPanel(from, to, fl, flowOn, fWhen) {
       FLOW_RANGE = { from: FLOW_START && from < FLOW_START ? FLOW_START : from, to };
@@ -794,7 +771,7 @@
       const cnt = (a, o, m) => a.filter(r => r.outcome === o && (!m || r.moved_by === m)).length;
       const porter = (a) => a.filter(r => r.outcome === 'moved_hub' && r.moved_by === 'porter').reduce((s, r) => s + (Number(r.porter_amount) || 0), 0);
       const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
-      chips('appCounts', [{ t: 'Calls logged', n: C.length }, { t: 'Answered', n: ans(C), color: '#16a34a' }, { t: 'Promised to pay', n: cnt(C, 'will_pay'), color: '#f59e0b' },
+      chips('appCounts', [{ t: 'Calls logged', n: C.length }, { t: 'Answered', n: ans(C), color: B2 }, { t: 'Promised to pay', n: cnt(C, 'will_pay'), color: '#f59e0b' },
         { t: 'Bike updates', n: U.length }, { t: 'Moved to hub', n: cnt(U, 'moved_hub'), color: B1 }, { t: 'Police station', n: cnt(U, 'police'), color: RED }]);
       const days = [...new Set([...C, ...U].map(r => istDay(r.at)))].sort().reverse();
       const on = (a, d) => a.filter(r => istDay(r.at) === d), z = (n) => n ? num(n) : '<span style="color:var(--text-3,#9ca3af)">0</span>';
@@ -1005,7 +982,7 @@
     let lastUid;
     db.auth.onAuthStateChange((_ev, session) => { const id = session?.user?.id || null; if (id === lastUid) return; lastUid = id; setTimeout(() => showFor(session), 0); });
     // ---- Roles: who can see which page (the database enforces the same rules) ----
-    const PAGE_ROLES = { 'dashboard.html': ['admin', 'recovery'], 'tracker.html': ['admin', 'recovery'], 'qc.html': ['admin', 'qc'], 'qc-new.html': ['admin', 'qc'], 'admin.html': ['admin'], 'agent.html': ['admin', 'agent', 'recovery', 'mfr'], 'areas.html': ['admin', 'recovery'] };
+    const PAGE_ROLES = { 'dashboard.html': ['admin', 'recovery'], 'dashboard-new.html': ['admin', 'recovery'], 'tracker.html': ['admin', 'recovery'], 'qc.html': ['admin', 'qc'], 'qc-new.html': ['admin', 'qc'], 'admin.html': ['admin'], 'agent.html': ['admin', 'agent', 'recovery', 'mfr'], 'areas.html': ['admin', 'recovery'] };
     const ROLE_HOME = { manager: 'dashboard.html', qc: 'qc.html', recovery: 'dashboard.html', agent: 'agent.html', mfr: 'agent.html' };
     let myRoleCache = { uid: null, roles: [] };
     // Shows only the menu links this person may use. Returns true if they may use THIS page.
@@ -1043,6 +1020,154 @@
       if (box) { box.querySelector('.na-email').textContent = email || ''; box.classList.toggle('hidden', !on); }
       document.body.classList.toggle('noacc', !!on);
     }
+  </script>
+
+  <script>
+    // ===== New look: section tabs, period buttons, overview charts, click-to-filter, table search =====
+    (function () {
+      const $ = (id) => document.getElementById(id), main = document.querySelector('main');
+      const TABS = [['overview', 'Overview'], ['flow', 'Inflow & outflow'], ['move', 'Transport & outcomes'], ['agents', 'Agents'], ['mfr', 'MFR & fleet'],
+        ['app', 'Calls & follow-ups'], ['hubs', 'Hubs'], ['police', 'Police & FIR'], ['missing', 'Missing bikes']];
+      let cur = 'overview'; try { cur = sessionStorage.getItem('rt-tab') || 'overview'; } catch (e) {}
+      if (!TABS.some(t => t[0] === cur)) cur = 'overview';
+      const nav = $('stabs');
+      nav.innerHTML = TABS.map(([k, l]) => `<button type="button" data-go="${k}">${l}<i class="hidden" data-badge="${k}"></i></button>`).join('');
+      function show(k) {
+        cur = k; try { sessionStorage.setItem('rt-tab', k); } catch (e) {}
+        nav.querySelectorAll('[data-go]').forEach(b => b.classList.toggle('on', b.dataset.go === k));
+        document.querySelectorAll('#dash [data-tab]').forEach(el => { el.hidden = !el.dataset.tab.split(' ').includes(k); });
+        window.dispatchEvent(new Event('resize'));   // charts that were hidden size themselves now
+      }
+      nav.addEventListener('click', (e) => { const b = e.target.closest('[data-go]'); if (b) { show(b.dataset.go); nav.scrollIntoView({ block: 'nearest' }); } });
+      document.addEventListener('click', (e) => { const b = e.target.closest('[data-goto]'); if (b) { show(b.dataset.goto); window.scrollTo({ top: nav.offsetTop - 80, behavior: 'smooth' }); } });
+      show(cur);
+
+      // period: buttons instead of a drop-down (the drop-down stays and drives the page)
+      const pf = $('periodFilter'), seg = $('periodSeg');
+      seg.innerHTML = [...pf.options].map(o => `<button type="button" data-p="${o.value}">${o.value === 'custom' ? 'Dates…' : o.text.replace('Last ', '')}</button>`).join('');
+      const markP = () => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.p === pf.value));
+      seg.addEventListener('click', (e) => { const b = e.target.closest('[data-p]'); if (!b) return; pf.value = b.dataset.p; pf.dispatchEvent(new Event('change', { bubbles: true })); markP(); });
+      pf.addEventListener('change', markP); markP();
+
+      // chips showing the city / hub / model filter, with a × to clear
+      function fchips() {
+        const box = $('fchips'); if (!box) return;
+        box.innerHTML = ['cityFilter', 'hubFilter', 'modelFilter'].filter(id => $(id).value)
+          .map(id => `<span class="fchip">${$(id).value.replace(/</g, '&lt;')}<button type="button" data-clr="${id}" aria-label="Clear">×</button></span>`).join('');
+      }
+      $('fchips').addEventListener('click', (e) => { const b = e.target.closest('[data-clr]'); if (!b) return; $(b.dataset.clr).value = ''; $(b.dataset.clr).dispatchEvent(new Event('change', { bubbles: true })); });
+
+      // ---- chart look + click a city / hub on any chart to filter the whole page ----
+      Chart.defaults.font.family = '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+      Chart.defaults.font.size = 11.5; Chart.defaults.color = '#64748b';
+      Chart.defaults.elements.bar.borderRadius = 4; Chart.defaults.elements.bar.borderSkipped = 'start';
+      Chart.defaults.datasets.bar.maxBarThickness = 34; Chart.defaults.datasets.bar.borderColor = 'rgba(255,255,255,.9)'; Chart.defaults.datasets.bar.borderWidth = { top: 0, right: 0, bottom: 0, left: 0 };
+      Chart.defaults.elements.line.borderWidth = 2; Chart.defaults.elements.line.tension = .35; Chart.defaults.elements.point.radius = 0; Chart.defaults.elements.point.hoverRadius = 5;
+      Chart.defaults.interaction = { mode: 'index', intersect: false };
+      Object.assign(Chart.defaults.plugins.tooltip, { backgroundColor: '#0b1b33', titleColor: '#fff', bodyColor: '#dbe6f7', footerColor: '#fff', padding: 10, cornerRadius: 10,
+        titleFont: { weight: '700' }, bodySpacing: 4, boxPadding: 4, usePointStyle: true });
+      Chart.defaults.plugins.legend.position = 'bottom'; Chart.defaults.plugins.legend.labels.padding = 14;
+      Chart.defaults.animation = { duration: 500, easing: 'easeOutQuart' };
+      const optIn = (id, v) => [...$(id).options].some(o => o.value === v);
+      const pick = (chart, els) => { if (!els || !els.length) return null; const lab = chart.data.labels && chart.data.labels[els[0].index];
+        const v = Array.isArray(lab) ? lab.join(' ') : String(lab ?? ''); return optIn('cityFilter', v) ? ['cityFilter', v] : optIn('hubFilter', v) ? ['hubFilter', v] : null; };
+      Chart.defaults.onHover = (e, els, chart) => { chart.canvas.style.cursor = pick(chart, els) ? 'pointer' : 'default'; };
+      Chart.defaults.onClick = (e, els, chart) => { const p = pick(chart, chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false)); if (!p) return;
+        if (p[0] === 'cityFilter') $('hubFilter').value = '';
+        $(p[0]).value = p[1]; $(p[0]).dispatchEvent(new Event('change', { bubbles: true })); };
+
+      // ---- after every redraw: overview numbers, sparklines, mini charts, insights ----
+      const nf = (n) => Number(n || 0).toLocaleString('en-IN');
+      const ov = {}; const odraw = (id, cfg) => { if (ov[id]) ov[id].destroy(); ov[id] = new Chart($(id), cfg); };
+      function series(keys, n = 14) {   // last n days of the daily Metabase numbers (follows City / Hub / Model)
+        const days = []; for (let i = n - 1; i >= 0; i--) days.push(addDays(TODAY, -i));
+        const F = FDAY.filter(fleetMatch), byDay = new Map();
+        F.forEach(r => { const x = byDay.get(r.day) || {}; keys.forEach(k => { x[k] = (x[k] || 0) + (r[k] || 0); }); byDay.set(r.day, x); });
+        const bad = (d) => { const x = byDay.get(d); return x && (x.inflow || 0) + (x.outflow || 0) > 1500; };   // the broken refresh of 3 Nov
+        return { days, get: (k) => days.map(d => (byDay.has(d) && !bad(d) ? byDay.get(d)[k] || 0 : null)) };
+      }
+      function spark(cardId, values, color) {
+        const card = $(cardId)?.closest('.card'); if (!card) return; let c = card.querySelector('canvas.spark');
+        if (!c) { const box = document.createElement('div'); box.className = 'sparkbox'; c = document.createElement('canvas'); c.className = 'spark'; box.appendChild(c); card.appendChild(box); }
+        if (c._ch) c._ch.destroy();
+        c._ch = new Chart(c, { type: 'line', data: { labels: values.map((_, i) => i), datasets: [{ data: values, borderColor: color, borderWidth: 2, fill: true, spanGaps: true,
+          backgroundColor: (ctx) => { const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 34); g.addColorStop(0, color + '40'); g.addColorStop(1, color + '00'); return g; } }] },
+          options: { animation: false, events: [], plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false, beginAtZero: true } } } });
+      }
+      // in / out of MFR per day from our own 30-minute counting (adds up: MFR at 7 am + in − out = next 7 am)
+      function flowSeries(n = 14) {
+        const days = []; for (let i = n - 1; i >= 0; i--) days.push(addDays(TODAY, -i));
+        const fl = FLOW.filter(fleetMatch), f = (d, k, re) => fl.filter(r => r.day === d && r.kind === k && (!re || r.reason === re)).reduce((x, r) => x + r.n, 0);
+        const ok = (d) => FLOW_START && d >= FLOW_START;
+        return { days, inn: days.map(d => ok(d) ? f(d, 'in') : null), out: days.map(d => ok(d) ? f(d, 'out') : null), active: days.map(d => ok(d) ? f(d, 'out', 'renewed') : null) };
+      }
+      function overview() {
+        const s = series(['recovered', 'moved_hub']), fs = flowSeries();
+        spark('kInflow', fs.inn, '#e87ba4'); spark('kOutflow', fs.out, '#2a78d6');
+        spark('kRecovered', s.get('recovered'), '#eda100'); spark('kActive', fs.active, '#38bdf8'); spark('kHub', s.get('moved_hub'), '#6250d6');
+        // hero numbers
+        const t = (id) => $(id).textContent;
+        $('gMfr').textContent = t('kMfr'); $('gPct').textContent = t('kMfrPct'); $('gIn').textContent = t('kInflow'); $('gOut').textContent = t('kOutflow'); $('gRec').textContent = t('kRecovered');
+        $('gWhen').textContent = $('periodNote').textContent || 'Today';
+        // 14-day inflow vs outflow
+        odraw('ovTrend', { type: 'bar', data: { labels: fs.days.map(fmtDay), datasets: [
+          { label: 'Inflow', data: fs.inn, backgroundColor: '#e87ba4' }, { label: 'Outflow', data: fs.out, backgroundColor: '#2a78d6' },
+          { type: 'line', label: 'Renewed (back to active)', data: fs.active, borderColor: '#eda100', backgroundColor: '#eda100' }] },
+          options: { scales: axes(false), plugins: { tooltip: { callbacks: { footer: (it) => { const a = it.find(x => x.dataset.label === 'Inflow'), b = it.find(x => x.dataset.label === 'Outflow');
+            return a && b && a.raw != null && b.raw != null ? `Net change in MFR: ${a.raw - b.raw > 0 ? '+' : ''}${a.raw - b.raw}` : ''; } } } } } });
+        // MFR now, by city (click a bar to filter)
+        const F = FLEET.filter(r => (!$('hubFilter').value || hubKey(r.hub) === hubKey($('hubFilter').value)) && (!$('modelFilter').value || r.model === $('modelFilter').value));
+        const city = new Map(); F.forEach(r => city.set(r.city, (city.get(r.city) || 0) + (r.mfr || 0)));
+        const cs = [...city].filter(x => x[0]).sort((a, b) => b[1] - a[1]);
+        const sel = $('cityFilter').value;
+        odraw('ovCity', { type: 'bar', data: { labels: cs.map(x => x[0]), datasets: [{ label: 'Bikes in MFR now', data: cs.map(x => x[1]),
+          backgroundColor: cs.map(x => !sel || x[0] === sel ? '#2a78d6' : '#bfd3f8') }] },
+          options: { indexAxis: 'y', scales: axes(false, true), plugins: { legend: { display: false } } } });
+        // MFR by age (sequential: older = darker)
+        const age = new Map(); FLEET.filter(fleetMatch).forEach(r => { if (r.age_bucket) age.set(r.age_bucket, (age.get(r.age_bucket) || 0) + (r.mfr || 0)); });
+        const ages = AGE_ORDER.filter(a => age.has(a)), ramp = ['#dbe7fd', '#bcd2fb', '#93b5f6', '#6694ee', '#3f72e0', '#2556c4', '#173a8f'];
+        odraw('ovAge', { type: 'bar', data: { labels: ages.map(a => a.replace(' days', 'd').replace('Above 10d', '10d+')), datasets: [{ label: 'Bikes in MFR', data: ages.map(a => age.get(a)),
+          backgroundColor: ages.map(a => ramp[AGE_ORDER.indexOf(a)] || '#2556c4') }] }, options: { scales: axes(false), plugins: { legend: { display: false } } } });
+        // insights in plain words
+        const ins = [], totMfr = ages.reduce((x, a) => x + age.get(a), 0), old = (age.get('Above 10 days') || 0) + (age.get('5-10 days') || 0);
+        const inn = fs.inn.slice(-7).filter(v => v != null), out = fs.out.slice(-7).filter(v => v != null), sum = (a) => a.reduce((x, y) => x + y, 0);
+        if (inn.length && out.length) { const net = sum(inn) - sum(out);
+          ins.push([net > 0 ? 'bad' : 'good', `Last 7 days: <b>${nf(sum(inn))}</b> in, <b>${nf(sum(out))}</b> out — MFR ${net > 0 ? 'grew' : 'shrank'} by <b>${nf(Math.abs(net))}</b> bikes.`, 'flow']); }
+        if (totMfr) ins.push([old / totMfr > .25 ? 'warn' : 'info', `<b>${nf(old)}</b> of ${nf(totMfr)} MFR bikes (${Math.round(100 * old / totMfr)}%) have been in MFR for 5+ days.`, 'mfr']);
+        if (cs.length) ins.push(['info', `Most MFR bikes now: <b>${cs[0][0]}</b> (${nf(cs[0][1])})${cs[1] ? `, then ${cs[1][0]} (${nf(cs[1][1])})` : ''}.`, 'hubs']);
+        const pol = Number(($('kPolice').textContent || '0').replace(/\D/g, '')), fir = Number(($('kFir').textContent || '0').replace(/\D/g, ''));
+        if (pol || fir) ins.push(['warn', `<b>${nf(pol)}</b> bikes at police stations · <b>${nf(fir)}</b> with an FIR.`, 'police']);
+        const fu = ($('appFollowN')?.textContent || '').match(/\d+/); if (fu && Number(fu[0])) ins.push(['warn', `<b>${fu[0]}</b> follow-ups from agent calls are waiting.`, 'app']);
+        $('ovInsights').innerHTML = ins.map(([k, h, go]) => `<div class="insight ${k}"><span class="dot"></span><div>${h} <button class="linkbtn" type="button" data-goto="${go}">View →</button></div></div>`).join('')
+          || '<p class="note">Numbers appear once the data has loaded.</p>';
+        // badges on the tabs
+        const mb = document.querySelectorAll('#tMb tbody tr').length, mbB = document.querySelector('[data-badge="missing"]');
+        if (mbB) { mbB.textContent = mb || ''; mbB.classList.toggle('hidden', !mb || /No bikes|Loading/.test($('tMb').tBodies[0]?.textContent || '')); }
+        const pB = document.querySelector('[data-badge="police"]'); if (pB) { pB.textContent = nf(pol); pB.classList.toggle('hidden', !pol); }
+        fchips();
+      }
+      // search box above the long tables
+      function tableSearch(id, ph) {
+        const t = $(id); if (!t || t.dataset.s) return; t.dataset.s = 1;
+        const i = document.createElement('input'); i.type = 'search'; i.className = 'tsearch'; i.placeholder = ph;
+        t.closest('.table-wrap').before(i);
+        const run = () => { const q = i.value.trim().toLowerCase(); [...t.tBodies[0].rows].forEach(r => { r.hidden = !!q && !r.textContent.toLowerCase().includes(q); }); };
+        i.addEventListener('input', run); new MutationObserver(run).observe(t.tBodies[0], { childList: true });
+      }
+      [['agentTable', 'Search agent…'], ['hubTable', 'Search hub or city…'], ['tAppAgents', 'Search agent…'], ['tCalls', 'Search bike, agent or result…'], ['tAppFollow', 'Search bike or agent…'], ['tMb', 'Search bike or hub…']]
+        .forEach(([id, ph]) => tableSearch(id, ph));
+
+      const orig = window.render;
+      window.render = function () { const r = orig.apply(this, arguments); try { overview(); } catch (e) { console.warn('overview', e); } return r; };
+      // missing-bike list loads on its own: refresh the badge when it changes
+      const mbT = document.querySelector('#tMb tbody'); if (mbT) new MutationObserver(() => { try { overview(); } catch (e) {} }).observe(mbT, { childList: true });
+
+      // light / dark switch (remembered on this browser)
+      const thm = $('themeBtn'); let dark = false; try { dark = localStorage.getItem('rt-theme') === 'dark'; } catch (e) {}
+      const applyT = () => { document.documentElement.dataset.theme = dark ? 'dark' : 'light'; thm.textContent = dark ? '☀ Light' : '☾ Dark';
+        Chart.defaults.color = dark ? '#9fb0cc' : '#64748b'; Object.values(Chart.instances || {}).forEach(c => c.update('none')); };
+      thm.addEventListener('click', () => { dark = !dark; try { localStorage.setItem('rt-theme', dark ? 'dark' : 'light'); } catch (e) {} applyT(); }); applyT();
+    })();
   </script>
   <script>
     // Sidebar collapse button («): remembers your choice on this browser
