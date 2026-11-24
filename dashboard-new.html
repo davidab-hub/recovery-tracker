@@ -1,0 +1,1220 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recovery Dashboard</title>
+  <script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ===== Recovery Dashboard · new look (Nov 2026) ===== */
+    html.embed .side, html.embed .tabs-top { display: none !important; }
+    html.embed main { padding-top: 8px !important; }
+    :root {
+      --brand: #e3262b; --navy: #0b1b33; --navy-2: #13294b; --navy-3: #1d3a66; --side-text: #9fb2d0;
+      --page: #f3f6fb; --card: #ffffff; --text: #0f172a; --text-2: #475569; --muted: #64748b; --border: #e3e9f2; --soft: #f1f5fb; --hover: #eaf1fc;
+      --input: #ffffff; --ring: #93c5fd; --label: #334155;
+      --blue: #2563eb; --teal: #6250d6; --amber: #eda100; --red: #6250d6; --violet: #7c3aed; --green: #2a78d6; --orange: #eda100; --dark: #0f172a;
+      --radius: 16px; --shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.12);
+    }
+    html[data-theme="dark"] {
+      --page: #0a1222; --card: #111c31; --text: #e8eef8; --text-2: #b3c0d6; --muted: #8495b3; --border: #1f2d47; --soft: #16233b; --hover: #1a2a47;
+      --input: #0d172b; --ring: #3b6fd1; --label: #d4def0; --shadow: 0 10px 30px -14px rgba(0,0,0,.6);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--page); color: var(--text); -webkit-font-smoothing: antialiased; }
+    .hidden { display: none !important; }
+    .num, td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+    /* ---- sidebar (top bar on phones) ---- */
+    .app { display: flex; min-height: 100vh; }
+    .side { width: 232px; flex-shrink: 0; background: linear-gradient(180deg, var(--navy), #08142a); color: #fff; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; transition: width .2s; z-index: 30; }
+    .side button.collapse { display: block; width: 100%; background: none; border: none; border-bottom: 1px solid rgba(255,255,255,.06); cursor: pointer; text-align: right; padding: 10px 14px; color: var(--side-text); font: inherit; font-size: 15px; }
+    .side button.collapse:hover { color: #fff; }
+    .brandrow { display: flex; align-items: center; gap: 10px; padding: 14px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .logo { width: 38px; height: 38px; border-radius: 12px; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; overflow: hidden; flex-shrink: 0; box-shadow: 0 6px 16px -6px rgba(0,0,0,.5); }
+    .logo img { width: 100%; height: 100%; object-fit: cover; }
+    .brandname { font-size: 14.5px; font-weight: 800; letter-spacing: -.01em; color: #fff; }
+    .brandname span { color: #fff; opacity: .7; font-weight: 600; }
+    .navsec { padding: 14px 0 6px 18px; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; color: #5f7397; }
+    .nav a { display: flex; align-items: center; gap: 10px; margin: 2px 10px; padding: 9px 12px; color: var(--side-text); text-decoration: none; font-size: 13.5px; border-radius: 10px; }
+    .nav a:hover { background: rgba(255,255,255,.06); color: #fff; }
+    .nav a.active { background: linear-gradient(90deg, rgba(59,130,246,.35), rgba(59,130,246,.08)); color: #fff; font-weight: 700; box-shadow: inset 3px 0 0 #60a5fa; }
+    .nav svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .side .foot { margin-top: auto; border-top: 1px solid rgba(255,255,255,.06); padding: 12px 14px; font-size: 12px; color: var(--side-text); }
+    .side .foot .live { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--side-text); background: none; padding: 0; }
+    .side .foot .live i { width: 8px; height: 8px; border-radius: 50%; background: #60a5fa; box-shadow: 0 0 0 4px rgba(96,165,250,.2); display: inline-block; }
+    .contact-side { font-size: 11.5px; line-height: 1.5; color: var(--side-text); padding: 0 0 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,.06); word-break: break-all; }
+    .contact-side a { color: #cbd7ea; text-decoration: none; }
+    .adminlink { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin: 0 -4px 10px; border-radius: 10px; color: var(--side-text); text-decoration: none; font-size: 13px; font-weight: 600; }
+    .adminlink svg { width: 15px; height: 15px; }
+    .adminlink:hover, .adminlink.active { background: rgba(255,255,255,.08); color: #fff; }
+    .authbox { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .authbox .who { color: #d6e0f0; word-break: break-all; }
+    .authbox button { width: 100%; padding: 7px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12); color: #cfe0ff; font-size: 12.5px; font-weight: 600; border-radius: 10px; cursor: pointer; font-family: inherit; }
+    .menu-btn { display: none; }
+    @media (min-width: 901px) {
+      html.side-min .side { width: 68px; }
+      html.side-min .side button.collapse { text-align: center; }
+      html.side-min .brandrow { justify-content: center; padding: 12px 0; }
+      html.side-min .brandname, html.side-min .navsec, html.side-min #authBox, html.side-min .side .foot .live, html.side-min .contact-side { display: none; }
+      html.side-min .nav a, html.side-min .adminlink { font-size: 0; justify-content: center; padding: 10px 0; gap: 0; }
+      html.side-min .nav a svg, html.side-min .adminlink svg { width: 18px; height: 18px; }
+    }
+    @media (max-width: 900px) {
+      .app { flex-direction: column; }
+      .side { width: 100%; height: auto; position: sticky; top: 0; }
+      .side button.collapse, .side .foot, .navsec { display: none; }
+      .side .nav { display: none; padding-bottom: 8px; }
+      .side.open .nav, .side.open .foot { display: block; }
+      .brandrow { justify-content: space-between; padding: 10px 16px; }
+      .menu-btn { display: inline-block; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: #fff; border-radius: 10px; padding: 6px 10px; font-size: 18px; }
+    }
+
+    /* ---- page ---- */
+    .content { flex: 1; min-width: 0; }
+    main { max-width: 1560px; margin: 0 auto; padding: 8px 28px 40px; }
+    @media (max-width: 900px) { main { padding: 6px 14px 32px; } }
+    .tabs-top { display: flex; gap: 6px; margin: 10px 0 6px; }
+    .tabs-top a { padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--text-2); text-decoration: none; border-radius: 999px; }
+    .tabs-top a.active { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+    .page-title { margin: 6px 0 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+    .page-sub { margin: 4px 0 14px; color: var(--muted); font-size: 13px; }
+    .err { color: #4c3bc2; }
+
+    /* ---- hero header ---- */
+    .hero { position: relative; overflow: hidden; border-radius: 22px; padding: 22px 24px; margin: 10px 0 14px; color: #fff;
+      background: radial-gradient(1200px 300px at 85% -40%, rgba(96,165,250,.45), transparent 60%), radial-gradient(600px 240px at 0% 120%, rgba(98,80,214,.35), transparent 60%), linear-gradient(120deg, #0b1b33, #13305c); box-shadow: 0 20px 40px -24px rgba(11,27,51,.8); }
+    .hero h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+    .hero p { margin: 4px 0 0; color: #b9c9e4; font-size: 13px; }
+    .hero .hrow { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .hero .hact { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .hero .synced { color: #cfe0ff; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); padding: 6px 12px; border-radius: 999px; font-size: 12px; max-width: 520px; }
+    .hero .btn-sync { background: #fff !important; color: var(--navy) !important; }
+    .hero .tbtn { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.16); }
+    .hero .glance { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 18px; }
+    .hero .glance div b { display: block; font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+    .hero .glance div span { font-size: 12px; color: #b9c9e4; }
+    .synced { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+    .synced i { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; display: inline-block; flex-shrink: 0; }
+    .synced.ok i { background: #60a5fa; box-shadow: 0 0 0 4px rgba(96,165,250,.25); } .synced.err i { background: var(--red); }
+
+    /* ---- filter bar ---- */
+    .bar { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 12px; box-shadow: var(--shadow); }
+    @media (max-width: 900px) { .bar { position: static; } }
+    .bar label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .bar select, .section-head select, .dl-row select { padding: 8px 30px 8px 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 13px; font-weight: 600; background: var(--input) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; color: var(--text); -webkit-appearance: none; appearance: none; font-family: inherit; min-width: 130px; cursor: pointer; }
+    .bar select:hover { border-color: var(--ring); }
+    .bar .spacer { flex: 1; }
+    .bar .range { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+    .bar .range input { padding: 7px 8px; border: 1px solid var(--border); border-radius: 10px; font-size: 12.5px; background: var(--input); color: var(--text); font-family: inherit; }
+    .seg { display: inline-flex; background: var(--soft); border: 1px solid var(--border); border-radius: 12px; padding: 3px; gap: 2px; overflow-x: auto; max-width: 100%; }
+    .seg button { border: 0; background: transparent; color: var(--text-2); font: 600 12.5px inherit; font-family: inherit; padding: 6px 12px; border-radius: 9px; cursor: pointer; white-space: nowrap; }
+    .seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 2px 8px -2px rgba(15,23,42,.12); }
+    #periodFilter { display: none; }
+    .fchip { display: inline-flex; align-items: center; gap: 6px; background: #e8f0fe; color: #1d4ed8; border-radius: 999px; padding: 4px 6px 4px 10px; font-size: 12px; font-weight: 700; }
+    .fchip button { border: 0; background: rgba(29,78,216,.12); color: inherit; width: 18px; height: 18px; border-radius: 50%; cursor: pointer; line-height: 1; font-size: 12px; }
+    @media (max-width: 600px) { .bar select { min-width: 0; flex: 1 1 130px; } .bar label { display: none; } }
+
+    /* ---- buttons ---- */
+    .btn { border: none; border-radius: 12px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; transition: transform .1s, box-shadow .15s; }
+    .btn:active { transform: translateY(1px); }
+    .btn-clear { background: var(--soft); color: var(--text-2); border: 1px solid var(--border); }
+    .btn-sync { background: var(--navy); color: #fff; }
+    .btn-light { background: var(--input); border: 1px solid var(--border); color: var(--text); }
+    .btn-dl { background: var(--soft); color: var(--text); border: 1px solid var(--border); }
+    .btn-dl:hover { border-color: var(--ring); background: var(--hover); }
+    .btn-dl svg { width: 14px; height: 14px; }
+    .dl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+    .dl-row .note { margin: 0; }
+
+    /* ---- section tabs ---- */
+    .stabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 4px 0 14px; padding: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); }
+    .stabs::-webkit-scrollbar { display: none; }
+    .stabs button { flex: none; border: 0; background: transparent; color: var(--text-2); font: 650 13px inherit; font-family: inherit; padding: 9px 14px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+    .stabs button:hover { background: var(--soft); color: var(--text); }
+    .stabs button.on { background: var(--navy); color: #fff; }
+    .stabs button i { font-style: normal; font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: rgba(98,80,214,.12); color: var(--red); }
+    .stabs button.on i { background: rgba(255,255,255,.18); color: #fff; }
+    [hidden] { display: none !important; }
+    body:has(#dash:not(.hidden)) #pageTitle, body:has(#dash:not(.hidden)) #pageSub { display: none; }
+
+    /* ---- KPI cards ---- */
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+    .card { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px 12px; min-height: 118px; box-shadow: var(--shadow); overflow: hidden;
+      transition: transform .15s, box-shadow .15s, border-color .15s; --k: var(--blue); }
+    .card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--k); opacity: .9; }
+    .card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--k) 40%, var(--border)); box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--k) 60%, transparent); }
+    .card .label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; display: flex; align-items: center; gap: 6px; }
+    .card .value { font-size: 30px; font-weight: 800; margin-top: 6px; line-height: 1.05; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; }
+    .card .sub { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+    .card .sparkbox { position: relative; height: 34px; margin-top: 8px; }
+    .card canvas.spark { display: block; }
+    .card.k-red { --k: #e87ba4; } .card.k-orange { --k: #e87ba4; } .card.k-sky { --k: #38bdf8; } .card.k-blue { --k: #2563eb; } .card.k-teal { --k: #6250d6; } .card.k-amber { --k: #eda100; } .card.k-violet { --k: #7c3aed; } .card.k-slate { --k: #475569; } .card.k-green { --k: #2a78d6; } .card.k-pink { --k: #e87ba4; }
+    .c-red, .c-blue, .c-green, .c-orange, .c-dark { color: var(--text); }
+    .live, .sheet { font-size: 9px; font-weight: 800; letter-spacing: .06em; border-radius: 6px; padding: 2px 6px; }
+    .live { color: #1d4ed8; background: rgba(42,120,214,.12); } .sheet { color: #64748b; background: var(--soft); }
+    .card.na { background: repeating-linear-gradient(135deg, var(--card), var(--card) 8px, var(--soft) 8px, var(--soft) 16px); }
+    .card.na .value { color: #cbd5e1; } .card.na .sub { font-style: italic; }
+    .na-box { height: 230px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #94a3b8; font-style: italic; border: 1.5px dashed #cbd5e1; border-radius: 12px; }
+    .na-col { color: #cbd5e1 !important; }
+    @media (max-width: 600px) { .cards { grid-template-columns: 1fr 1fr; gap: 10px; } .card { min-height: 0; padding: 12px 12px 10px; } .card .value { font-size: 24px; } .card .label { font-size: 10px; letter-spacing: .04em; flex-wrap: wrap; } .hero { padding: 18px; } .hero .glance { gap: 14px 20px; } .hero .glance div b { font-size: 24px; } }
+    .kgroup { font-size: 11px; font-weight: 800; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; margin: 18px 2px 8px; }
+
+    /* ---- overview ---- */
+    .ovgrid { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-top: 12px; }
+    .ovgrid .wide { grid-column: 1 / -1; }
+    @media (max-width: 1000px) { .ovgrid { grid-template-columns: 1fr; } }
+    .insights { display: grid; gap: 8px; }
+    .insight { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: var(--soft); font-size: 13px; line-height: 1.45; }
+    .insight b { font-weight: 800; }
+    .insight .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; background: var(--blue); }
+    .insight.warn .dot { background: var(--amber); } .insight.bad .dot { background: var(--red); } .insight.good .dot { background: var(--blue); }
+    .linkbtn { border: 0; background: none; color: var(--blue); font: 700 12px inherit; font-family: inherit; cursor: pointer; padding: 0; }
+
+    /* ---- panels, charts, tables ---- */
+    .section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 2px 10px; }
+    .section-head h2 { margin: 0; font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 12px; }
+    @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; min-width: 0; box-shadow: var(--shadow); }
+    .panel + .panel, section.panel { margin-top: 12px; }
+    .grid2 > .panel { margin-top: 0; }
+    .panel h3 { margin: 0 0 2px; font-size: 15px; font-weight: 750; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .panel .note { margin: 2px 0 10px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+    .chart { position: relative; height: 260px; }
+    .chart.tall { height: 440px; }
+    .counts { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+    .count { background: var(--soft); border: 1px solid transparent; border-radius: 12px; padding: 8px 12px; min-width: 86px; }
+    .count .n { font-size: 19px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+    .count .t { font-size: 11.5px; color: var(--muted); margin-top: 3px; display: flex; align-items: center; gap: 6px; }
+    .count .t i { width: 8px; height: 8px; border-radius: 3px; display: inline-block; }
+    button.count { text-align: left; font-family: inherit; color: inherit; cursor: pointer; }
+    button.count:hover, button.count:focus-visible { border-color: var(--ring); background: var(--hover); outline: none; }
+    .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+    .pill { border: 1.5px solid var(--blue); background: var(--blue); color: #fff; border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; }
+    .pill i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; border: 1.5px solid #fff; }
+    .pill.off { background: var(--input); color: var(--text-2); border-color: var(--border); }
+    .table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: 12px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+    th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { position: sticky; top: 0; z-index: 1; font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; background: var(--soft); font-weight: 800; }
+    th[data-k] { cursor: pointer; } th[data-k]:hover { color: var(--text); }
+    tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--soft) 45%, transparent); }
+    tbody tr:hover td { background: var(--hover); }
+    tr:last-child td { border-bottom: none; }
+    .tsearch { width: 100%; max-width: 320px; padding: 8px 12px 8px 34px; border: 1px solid var(--border); border-radius: 12px; margin: 0 0 8px; background: var(--input) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.4'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 12px center; color: var(--text); font: 13px inherit; font-family: inherit; }
+    #pSearch { padding-left: 34px !important; border-radius: 12px !important; background: var(--input) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.4'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 12px center !important; }
+    .bad { color: var(--red); font-weight: 700; }
+    .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; background: var(--soft); color: var(--text-2); }
+    .tag-bad { background: rgba(98,80,214,.12); color: #4c3bc2; } .tag-fir { background: rgba(59,47,158,.12); color: #3b2f9e; } .tag-wait { background: rgba(217,119,6,.14); color: #a15c00; }
+    html[data-theme="dark"] .tag-bad { color: #c4b5fd; } html[data-theme="dark"] .tag-wait { color: #fcd34d; }
+
+    /* ---- missing bikes ---- */
+    .mb-alert { display: flex; align-items: center; gap: 12px; background: linear-gradient(90deg, rgba(98,80,214,.12), rgba(98,80,214,.04)); border: 1px solid rgba(98,80,214,.35); color: #3b2f9e; border-radius: var(--radius); padding: 12px 16px; margin: 0 0 12px; font-size: 13.5px; }
+    html[data-theme="dark"] .mb-alert { color: #ddd6fe; }
+    .mb-alert b { font-size: 14.5px; } .mb-alert .x { margin-left: auto; }
+    .mb-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 12px; }
+    .mb-add input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 13px; background: var(--input); color: var(--text); text-transform: uppercase; width: 170px; font-family: inherit; }
+    tr.mb-new td { background: rgba(98,80,214,.07) !important; }
+
+    /* ---- sign in, dialog, misc ---- */
+    .login { max-width: 440px; margin: 20px 0; }
+    .login label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; font-weight: 600; }
+    .login input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
+    .login button { margin-top: 14px; width: 100%; padding: 11px; justify-content: center; background: var(--navy); color: #fff; }
+    .login .err { font-size: 13px; min-height: 1em; margin: 8px 0 0; }
+    .contact { margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: var(--soft); font-size: 12.5px; line-height: 1.6; color: var(--text-2); }
+    .contact a { color: var(--blue); font-weight: 600; text-decoration: none; }
+    dialog#detail { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 18px; padding: 0; width: min(900px, 94vw); max-height: 86vh; }
+    dialog#detail::backdrop { background: rgba(2,6,23,.5); }
+    body.noacc main > *:not(#noAccess):not(.tabs-top) { display: none !important; }
+    .panel.flash { box-shadow: 0 0 0 3px var(--ring); transition: box-shadow .3s; }
+    @media (prefers-reduced-motion: reduce) { .card, .btn { transition: none; } }
+  </style>
+</head>
+<body>
+ <div class="app">
+  <!-- Sidebar -->
+  <aside class="side" id="side">
+    <button class="collapse" id="sideToggle" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">«</button>
+    <div class="brandrow">
+      <div style="display:flex;align-items:center;gap:12px">
+        <!-- Upload your logo to the repo as logo.png and it shows here automatically -->
+        <div class="logo"><img src="logo.png" alt="Bounce" onerror="this.parentNode.textContent = 'BOUNCE DAILY'"></div>
+        <div class="brandname">Bounce <span>Recovery Info</span></div>
+      </div>
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu">☰</button>
+    </div>
+    <nav class="nav">
+      <div class="navsec">ANALYTICS</div>
+      <a href="dashboard.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Recovery Dashboard</a>
+      <a href="qc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>QC Dashboard</a>
+      <a href="qc-new.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v3h6V3M12 10v6M9 13h6"/></svg>QC App</a>
+      <a href="tracker.html" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Recovery Tracker</a>
+          <a href="agent.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>Recovery App</a>
+          <a href="areas.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Agents &amp; areas</a>
+    </nav>
+    <div class="foot">
+      <div class="contact-side">Need help? Contact admin<br><a href="tel:+919180260780">+91 91802 60780</a><br><a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a></div>
+      <a href="admin.html" class="adminlink hidden" id="adminLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/><path d="M19 3l2 2-2 2"/></svg>Admin · Users</a>
+      <div id="authBox" class="authbox"></div>
+      <div class="live"><i></i>Live · Supabase</div>
+    </div>
+  </aside>
+  <div class="content">
+  <main>
+    <nav class="tabs-top">
+      <a href="dashboard.html" class="active">Recovery Dashboard</a>
+      <a href="qc.html">QC Dashboard</a>
+    </nav>
+    <h1 class="page-title" id="pageTitle">Recovery Dashboard</h1>
+    <p class="page-sub" id="pageSub">From Metabase, refreshed every 30 minutes · only Own truck / Porter transport comes from the recovery sheet</p>
+
+    <section class="panel login" id="loginBox">
+      <h3>Sign in to see recovery data</h3>
+      <p class="note">This page uses real recovery data, so it is only visible after signing in.</p>
+      <form id="loginForm">
+        <label for="email">Email or phone number</label><input id="email" type="text" inputmode="email" autocomplete="username" required>
+        <label for="password">Password or 6-digit PIN</label><input id="password" type="password" autocomplete="current-password" required>
+        <button class="btn btn-clear" type="submit">Sign in</button>
+        <p class="err" id="loginErr"></p>
+      </form>
+      <div class="contact"><strong>Need access or help?</strong> Contact the admin, David Abraham:<br>
+        <a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a> · <a href="tel:+919180260780">+91 91802 60780</a> · <a href="https://wa.me/919180260780" target="_blank" rel="noopener">WhatsApp</a></div>
+    </section>
+    <p class="err" id="loadErr" style="color:#b91c1c"></p>
+
+    <div id="dash" class="hidden">
+    <section class="hero">
+      <div class="hrow"><div><h1>Recovery overview</h1><p>Live from Metabase every 30 minutes · <span id="gWhen">Today</span></p></div>
+        <div class="hact"><button class="btn tbtn" type="button" id="themeBtn">☾ Dark</button></div></div>
+      <div class="glance">
+        <div><b id="gMfr">–</b><span>Bikes in MFR now</span></div><div><b id="gPct">–</b><span>of the fleet</span></div>
+        <div><b id="gIn">–</b><span>Inflow</span></div><div><b id="gOut">–</b><span>Outflow</span></div><div><b id="gRec">–</b><span>Recovered</span></div>
+      </div>
+    </section>
+
+    <section class="bar">
+      <label for="cityFilter">City</label>
+      <select id="cityFilter"><option value="">All Cities</option></select>
+      <label for="hubFilter">Hub</label>
+      <select id="hubFilter"><option value="">All Hubs</option></select>
+      <label>Period</label><span class="seg" id="periodSeg" role="group" aria-label="Period"></span>
+      <select id="periodFilter" autocomplete="off">
+        <option value="1" selected>Today</option>
+        <option value="7">Last 7 days</option>
+        <option value="15">Last 15 days</option>
+        <option value="30">Last 30 days</option>
+        <option value="custom">Pick dates…</option>
+      </select>
+      <span class="range hidden" id="rangeBox">
+        <input type="date" id="fromDate" aria-label="From date"><span>to</span><input type="date" id="toDate" aria-label="To date">
+      </span>
+      <label for="modelFilter">Model</label>
+      <select id="modelFilter" title="Applies to the live fleet numbers (Metabase)"><option value="">All Models</option></select>
+      <span id="fchips" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span><span class="spacer"></span>
+      <button class="btn btn-clear" id="clearBtn" type="button">Clear</button>
+      <button class="btn btn-sync" id="syncBtn" type="button">↻ Refresh</button>
+      <span class="synced"><i></i><span id="synced"></span></span>
+    </section>
+    <nav class="stabs" id="stabs" aria-label="Dashboard sections"></nav>
+    <section class="cards" data-tab="overview">
+      <div class="card k-slate"><div class="label">Total Bikes <span class="live">LIVE</span></div><div class="value c-dark" id="kTotal">–</div><div class="sub" id="kTotalSub"></div></div>
+      <div class="card k-orange"><div class="label">Bikes MFR <span class="live">LIVE</span></div><div class="value c-red" id="kMfr">–</div><div class="sub" id="kMfrSub"></div></div>
+      <div class="card k-amber"><div class="label">MFR % <span class="live">LIVE</span></div><div class="value c-orange" id="kMfrPct">–</div><div class="sub" id="kMfrPctSub"></div></div>
+      <div class="card k-orange"><div class="label">Inflow <span class="live">LIVE</span></div><div class="value c-red" id="kInflow">–</div><div class="sub" id="kInflowSub"></div></div>
+      <div class="card k-blue"><div class="label">Outflow <span class="live">LIVE</span></div><div class="value c-green" id="kOutflow">–</div><div class="sub" id="kOutflowSub"></div></div>
+      <div class="card k-amber"><div class="label">Recovered Bikes <span class="live">LIVE</span></div><div class="value c-orange" id="kRecovered">–</div><div class="sub" id="kRecoveredSub"></div></div>
+      <div class="card k-violet"><div class="label">Available Recovery Agents <span class="live">LIVE</span></div><div class="value c-dark" id="kAgents">–</div><div class="sub" id="kAgentsSub"></div></div>
+      <div class="card k-sky"><div class="label">Moved to Active <span class="live">LIVE</span></div><div class="value c-green" id="kActive">–</div><div class="sub" id="kActiveSub"></div></div>
+      <div class="card k-blue"><div class="label">Moved to Hub <span class="live">LIVE</span></div><div class="value c-orange" id="kHub">–</div><div class="sub" id="kHubSub"></div></div>
+      <div class="card k-slate"><div class="label">Moved by Own Truck <span class="sheet">SHEET</span></div><div class="value c-dark" id="kTruck">–</div><div class="sub" id="kTruckSub"></div></div>
+      <div class="card k-slate"><div class="label">Moved by Porter <span class="sheet">SHEET</span></div><div class="value c-dark" id="kPorter">–</div><div class="sub" id="kPorterSub"></div></div>
+      <div class="card k-orange"><div class="label">Police Station Bikes <span class="live">LIVE</span></div><div class="value c-red" id="kPolice">–</div><div class="sub" id="kPoliceSub"></div></div>
+      <div class="card k-orange"><div class="label">FIR Registered Bikes <span class="live">LIVE</span></div><div class="value c-red" id="kFir">–</div><div class="sub" id="kFirSub"></div></div>
+    </section>
+
+    <section class="ovgrid" data-tab="overview">
+      <div class="panel"><h3>Inflow vs outflow · last 14 days</h3><p class="note">Bars = bikes in and out of MFR per day (7 am – 7 am) · line = renewed (back to active) · follows City, Hub and Model</p><div class="chart"><canvas id="ovTrend"></canvas></div></div>
+      <div class="panel"><h3>What stands out</h3><p class="note">Worked out from the numbers on this page</p><div class="insights" id="ovInsights"></div></div>
+      <div class="panel"><h3>MFR now by city <span class="live">LIVE</span></h3><p class="note">Tap a city to filter the whole dashboard</p><div class="chart"><canvas id="ovCity"></canvas></div></div>
+      <div class="panel"><h3>MFR now by age <span class="live">LIVE</span></h3><p class="note">Days since marked for recovery · darker = older</p><div class="chart"><canvas id="ovAge"></canvas></div></div>
+    </section>
+    <div class="mb-alert hidden" id="mbAlert"></div>
+    <section class="panel" id="mbPanel" data-tab="missing">
+      <h3>Missing bikes <span class="note" id="mbCount" style="font-weight:500"></span></h3>
+      <p class="note">Watched every fleet refresh (every 30 min, hourly at night). When a bike's location shows up or moves 150 m or more, the recovery team gets an email and an alert here. Metabase sends no ping time, so "Location changed" is when our check noticed it.</p>
+      <div class="mb-add"><input id="mbReg" placeholder="Bike number" aria-label="Bike number to add"><button class="btn btn-dl" type="button" id="mbAddBtn">Add to list</button>
+        <button class="btn btn-dl" type="button" id="mbNotify">Turn on alerts on this computer</button><span class="note" id="mbMsg" style="margin:0"></span></div>
+      <h3 style="margin-top:10px">Latest alerts</h3>
+      <div class="table-wrap" style="max-height:260px;overflow:auto"><table id="tMbPings"><thead><tr><th>Seen at</th><th>Bike</th><th>What</th><th>Location</th><th>Hub</th><th>Rider</th></tr></thead><tbody></tbody></table></div>
+      <h3 style="margin-top:14px">Watch list</h3>
+      <div class="table-wrap" style="max-height:380px;overflow:auto"><table id="tMb"><thead><tr><th>Bike</th><th>Hub</th><th>Last location</th><th>Location changed</th><th>Last checked</th><th>Alerts</th><th></th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <div class="section-head" data-tab="flow move agents mfr">
+      <h2>Period</h2><span class="note" id="periodNote" style="margin:0"></span>
+    </div>
+    <section class="grid2" data-tab="flow move agents mfr">
+      <div class="panel" data-tab="flow">
+        <h3>Inflow vs outflow, per day</h3>
+        <p class="note">Counted by us every 30 minutes · each day runs 7 am to 7 am · inflow = a bike newly marked for recovery (any bike, incl. police cases) · outflow = a bike that left MFR, split by where it went</p>
+        <div class="counts" id="trendCounts"></div>
+        <div class="chart"><canvas id="trendChart"></canvas></div>
+        <h3 style="margin-top:14px">Where the outflow went</h3>
+        <p class="note" id="flowNote"></p>
+        <div class="counts" id="flowCounts"></div>
+        <p class="note" id="flowCheck" style="font-weight:600;color:var(--text-2)"></p>
+        <h3 style="margin-top:14px">Day by day</h3>
+        <p class="note">Newest day first · each day runs 7 am to 7 am · out = where the bikes that left MFR went</p>
+        <div class="table-wrap" style="max-height:360px;overflow:auto"><table id="tFlow"><thead></thead><tbody></tbody></table></div>
+        <h3 style="margin-top:14px">Day & night shifts</h3>
+        <p class="note">Each day runs 7 am to 7 am · Day = 7 am – 7 pm, Metabase's own numbers · Night = 7 pm – 7 am, counted by us every 30 minutes · unique bikes <span id="shiftNote"></span></p>
+        <div class="table-wrap" style="max-height:360px;overflow:auto"><table id="tShift"><thead></thead><tbody></tbody></table></div>
+        <div class="dl-row">
+          <button class="btn btn-dl" type="button" id="dlDaily"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Daily summary</button>
+          <button class="btn btn-dl" type="button" id="dlBikes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Bike-by-bike list</button>
+          <span class="note" id="dlNote">Excel / CSV files for the period, city, hub and model chosen above. Everything is kept, from the first day of counting.</span>
+        </div>
+      </div>
+      <div class="panel" data-tab="move">
+        <h3>Recovered bikes moved to hub, per day</h3>
+        <p class="note">By transport · from the recovery sheet (to 26 Oct) and the Agent App</p>
+        <div class="counts" id="hubCounts"></div>
+        <div class="chart"><canvas id="hubChart"></canvas></div>
+      </div>
+      <div class="panel" data-tab="move" style="grid-column:1/-1">
+        <h3>Transport cost, own truck vs Porter</h3>
+        <p class="note">Total ₹ spent per day on moving bikes to the hub · from the recovery sheet (to 26 Oct) and the Agent App (Porter amount; own vehicle has no ₹ in the app)</p>
+        <div class="counts" id="costCounts"></div>
+        <div class="chart"><canvas id="costChart"></canvas></div>
+      </div>
+      <div class="panel" data-tab="agents">
+        <h3>Agent activity by outcome</h3>
+        <p class="note">Top 15 agents in the period · from Metabase</p>
+        <div class="counts" id="agentCounts"></div>
+        <div class="chart tall"><canvas id="agentChart"></canvas></div>
+      </div>
+      <div class="panel" data-tab="agents">
+        <h3>Agent table</h3>
+        <p class="note">From Metabase (agent who closed the bike) · click a column to sort</p>
+        <div class="table-wrap" style="max-height:470px;overflow:auto">
+          <table id="agentTable">
+            <thead><tr><th data-k="a">Agent</th><th class="num" data-k="today" title="Bikes closed today">Today</th><th class="num" data-k="n">Bikes closed</th><th class="num" data-k="rec">Recovered</th>
+              <th class="num" data-k="hub">To hub</th><th class="num" data-k="ren">Renewed</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel" data-tab="mfr">
+        <h3>MFR bikes by age <span class="live">LIVE</span></h3>
+        <p class="note">Days since marked for recovery · police-case bikes not included</p>
+        <div class="counts" id="ageCounts"></div>
+        <div class="chart"><canvas id="ageChart"></canvas></div>
+      </div>
+      <div class="panel" data-tab="mfr">
+        <h3>MFR bikes by city and age <span class="live">LIVE</span></h3>
+        <p class="note">Darker blue = older</p>
+        <div class="counts" id="cityAgeCounts"></div>
+        <div class="chart"><canvas id="cityAgeChart"></canvas></div>
+      </div>
+      <div class="panel" data-tab="mfr">
+        <h3>Fleet status <span class="live">LIVE</span></h3>
+        <p class="note">Every bike by its current status in Metabase · follows City, Hub and Model</p>
+        <div class="counts" id="fleetCounts"></div>
+        <div class="chart"><canvas id="fleetChart"></canvas></div>
+      </div>
+      <div class="panel" data-tab="move">
+        <h3>Case outcomes</h3>
+        <p class="note" id="outcomeNote"></p>
+        <div class="counts" id="outcomeCounts"></div>
+        <div class="chart"><canvas id="outcomeChart"></canvas></div>
+      </div>
+    </section>
+    <section class="panel" data-tab="app">
+      <h3>Agent App: calls and bike updates</h3>
+      <p class="note">What the team logs in the Agent App after each call ("Log this call") and when something happens to a bike ("Update bike status") · for the period, city and hub chosen above</p>
+      <div class="counts" id="appCounts"></div>
+      <h3 style="margin-top:14px">Day by day</h3>
+      <div class="table-wrap" style="max-height:360px;overflow:auto"><table id="tApp"><thead><tr><th>Day</th><th class="num">Calls</th><th class="num">Answered</th><th class="num">Promised to pay</th>
+        <th class="num">Rent paid</th><th class="num">Moved to hub</th><th class="num">· own vehicle</th><th class="num">· Porter</th><th class="num">· customer drop</th><th class="num">· agent rode</th>
+        <th class="num">Porter ₹</th><th class="num">Found at hub</th><th class="num">Police</th><th class="num">Couldn't recover</th></tr></thead><tbody></tbody></table></div>
+      <h3 style="margin-top:14px">By agent</h3>
+      <div class="table-wrap" style="max-height:320px;overflow:auto"><table id="tAppAgents"><thead><tr><th>Agent</th><th class="num">Calls</th><th class="num">Answered</th><th class="num">Promised to pay</th>
+        <th class="num">Bike updates</th><th class="num">Moved to hub</th><th class="num">Police</th><th class="num">Couldn't recover</th></tr></thead><tbody></tbody></table></div>
+      <h3 style="margin-top:14px">Call list <span class="note" id="callListN" style="font-weight:500"></span></h3>
+      <div class="dl-row" style="border-top:0;padding-top:0;margin-top:4px">
+        <select id="callAgent" aria-label="Agent"><option value="">All agents</option></select>
+        <select id="callOutF" aria-label="Call result"><option value="">All results</option></select>
+        <button class="btn btn-dl" type="button" id="dlCalls"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Download calls</button>
+      </div>
+      <div class="table-wrap" style="max-height:420px;overflow:auto;margin-top:8px"><table id="tCalls"><thead><tr><th>Time</th><th>Agent</th><th>Bike</th><th>City / hub</th><th>Result</th><th>Details</th><th>Note</th></tr></thead><tbody></tbody></table></div>
+      <h3 style="margin-top:14px">Follow-ups <span class="note" id="appFollowN" style="font-weight:500"></span></h3>
+      <p class="note">Latest promise per bike: will pay, call back, will return, come pick it up · overdue first · hidden once the bike has a newer update</p>
+      <div class="table-wrap" style="max-height:320px;overflow:auto"><table id="tAppFollow"><thead><tr><th>Due</th><th>Bike</th><th>What</th><th>Details</th><th>Agent</th><th>Logged</th></tr></thead><tbody></tbody></table></div>
+    </section>
+    <section class="panel" data-tab="hubs">
+      <h3>Hub table</h3>
+      <p class="note">From Metabase (bike's home hub) · only Own truck and Porter come from the recovery sheet</p>
+      <div class="table-wrap">
+        <table id="hubTable">
+          <thead><tr><th>Hub</th><th>City</th><th class="num">Total bikes</th><th class="num">MFR</th><th class="num">MFR %</th>
+            <th class="num">Avg days</th><th class="num">MFR over 10 days</th><th class="num">Own truck</th><th class="num">Porter</th><th class="num">Recovered (period)</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="panel" data-tab="police">
+      <h3>Police station &amp; FIR bikes <span class="note" id="polCount" style="font-weight:500"></span></h3>
+      <p class="note">From Metabase (police case type) · follows City and Hub</p>
+      <input id="pSearch" type="search" placeholder="Search vehicle, city or hub…" style="width:100%;max-width:360px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;background:var(--input);color:var(--text)">
+      <div class="table-wrap" style="max-height:420px;overflow:auto"><table id="tPol"><thead><tr><th>Vehicle</th><th>Case type</th><th>Bike status</th><th>City</th><th>Hub</th><th>Marked since</th><th class="num">Days</th></tr></thead><tbody></tbody></table></div>
+    </section>
+    </div>
+  </main>
+  </div>
+ </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const num = (n) => Number(n).toLocaleString('en-IN');
+    const rs = (n) => '₹' + (n >= 1e5 ? (n / 1e5).toFixed(2) + ' L' : num(Math.round(n)));
+    const fmtDay = (d) => new Date(d + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    let APP_CALLS = [], APP_UPD = [], DATA = [], POLICE = [], LAST = '', FIRST = '', FLEET = [], FDAY = [], FAG = [], FLEET_AT = null, SHEET_LAST = '', FLOW = [], FLOW_START = '', FLOW_CLOSE = [], FLOW_TODAY = '', FS = [];
+    const hubKey = (s) => String(s || '').toLowerCase().replace(/[^a-z]/g, '').replace('yeshwanthpur', 'yeswanthpur');
+    const AGE_ORDER = ['0-1 days', '1-2 days', '2-3 days', '3-4 days', '4-5 days', '5-10 days', 'Above 10 days'];
+    const ageSort = (a, b) => { const i = AGE_ORDER.indexOf(a), j = AGE_ORDER.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j) || a.localeCompare(b); };
+    const addDays = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+    const OUT = ['Moved to Hub', 'Rent Paid', 'Found in Hub', 'Police Station'];
+    const MODES = ['Van', 'Porter', 'Customer drop'];
+    const B1 = '#2a78d6', B2 = '#6250d6', B3 = '#eda100', RED = '#e87ba4', ORG = '#e87ba4', GRY = '#94a3b8';   // pink & blue: no green, red or orange in any chart (RED = pink)
+    const OC = { 'Moved to Hub': B1, 'Rent Paid': B3, 'Found in Hub': B2, 'Police Station': RED };
+    const MC = { 'Van': B1, 'Porter': B3, 'Customer drop': B2 };
+    Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+    Chart.defaults.font.size = 11; Chart.defaults.color = '#64748b';
+    Chart.defaults.plugins.legend.labels.usePointStyle = true; Chart.defaults.plugins.legend.labels.boxWidth = 8;
+    Chart.defaults.maintainAspectRatio = false;
+    const axes = (stacked, horiz) => { const v = { beginAtZero: true, stacked, ticks: { precision: 0 }, grid: { color: '#e8eef7' }, border: { display: false } };
+      const c = { stacked, grid: { display: false }, ticks: { autoSkip: !horiz, maxRotation: 0 }, border: { color: '#cbd5e1' } }; return horiz ? { x: v, y: c } : { x: c, y: v }; };
+    const charts = {}; const draw = (id, cfg) => { if (charts[id]) charts[id].destroy(); charts[id] = new Chart($(id), cfg); };
+
+
+    let TODAY = '';
+    const uniq = (a) => [...new Set(a)].filter(Boolean).sort();
+    function fillCities() { const cur = $('cityFilter').value; $('cityFilter').length = 1;
+      uniq(FLEET.map(r => r.city)).forEach(c => $('cityFilter').add(new Option(c, c))); $('cityFilter').value = cur; }
+    function fillHubs() { const c = $('cityFilter').value, cur = $('hubFilter').value; $('hubFilter').length = 1;
+      const seen = new Set(), hs = [];
+      FLEET.filter(r => (!c || r.city === c) && r.hub !== 'Unknown').map(r => r.hub).filter(Boolean)
+        .forEach(h => { const k = hubKey(h); if (!seen.has(k)) { seen.add(k); hs.push(h); } });
+      hs.sort().forEach(h => $('hubFilter').add(new Option(h, h))); $('hubFilter').value = cur; }
+    function fillModels() { const cur = $('modelFilter').value; $('modelFilter').length = 1;
+      uniq(FLEET.map(r => r.model)).forEach(m => $('modelFilter').add(new Option(m, m))); $('modelFilter').value = cur; }
+    const isRec = (r) => r.o === 'Moved to Hub' || r.o === 'Found in Hub';
+    const isRen = (r) => r.o === 'Rent Paid';
+    function chips(id, items) { $(id).innerHTML = items.map(it => `<div class="count"><div class="n">${num(it.n)}</div><div class="t">${it.color ? `<i style="background:${it.color}"></i>` : ''}${esc(it.t)}</div></div>`).join(''); }
+
+    function render() {
+      const c = $('cityFilter').value, h = $('hubFilter').value, pv = $('periodFilter').value;
+      // One period for the whole page: cards, charts and tables
+      let from, to;
+      if (pv === 'custom') { from = $('fromDate').value || FIRST; to = $('toDate').value || TODAY; if (from > to) [from, to] = [to, from]; }
+      else { to = TODAY; from = addDays(TODAY, 1 - Number(pv)); }
+      const pName = from === to ? fmtDay(to) : `${fmtDay(from < FIRST ? FIRST : from)} – ${fmtDay(to)}`;
+      $('periodNote').textContent = pName;
+      const tm = (d) => new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      $('synced').textContent = `Metabase live ${FLEET_AT ? tm(FLEET_AT) : '–'} · transport from the sheet${SHEET_LAST ? ' (latest ' + fmtDay(SHEET_LAST) + ')' : ''} · updated ${tm(loadedAt)}`;
+      const days = []; for (let d = from < FIRST ? FIRST : from; d <= to; d = addDays(d, 1)) days.push(d);
+      const labels = days.map(fmtDay);
+      fleet(from, to, pName, days, labels);
+
+      // ---- Transport: own truck / Porter (recovery sheet) ----
+      const rows = DATA.filter(r => (!c || r.c === c) && (!h || hubKey(r.l) === hubKey(h)) && r.d >= from && r.d <= to);
+      const hub = rows.filter(r => r.o === 'Moved to Hub'), rsum = (a) => a.reduce((s, r) => s + r.amt, 0);
+      const per = (arr) => arr.length ? rs(rsum(arr) / arr.length) + '/bike' : '';
+      const tv = hub.filter(r => r.m === 'Van'), tp = hub.filter(r => r.m === 'Porter');
+      $('kTruck').textContent = num(tv.length); $('kTruckSub').textContent = `${per(tv)} · ${pName}`;
+      $('kPorter').textContent = num(tp.length); $('kPorterSub').textContent = `${per(tp)} · ${pName}`;
+      chips('hubCounts', MODES.map(m => ({ t: m === 'Van' ? 'Own truck' : m, n: hub.filter(r => r.m === m).length, color: MC[m] })));
+      const vanC = rsum(tv), porC = rsum(tp), vanN = tv.length, porN = tp.length;
+      const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
+      $('costCounts').innerHTML = [[inr(vanC + porC), 'Total cost', ''], [inr(vanC), `Own truck · ${num(vanN)} bikes · ${vanN ? inr(vanC / vanN) : '–'}/bike`, MC.Van],
+        [inr(porC), `Porter · ${num(porN)} bikes · ${porN ? inr(porC / porN) : '–'}/bike`, MC.Porter]]
+        .map(([v, t, c]) => `<div class="count"><div class="n">${v}</div><div class="t">${c ? `<i style="background:${c}"></i>` : ''}${esc(t)}</div></div>`).join('');
+      draw('costChart', { type: 'bar', data: { labels, datasets: ['Van', 'Porter'].map(m => ({ label: m === 'Van' ? 'Own truck' : m, backgroundColor: MC[m],
+        data: days.map(d => Math.round(rsum(hub.filter(r => r.d === d && r.m === m)))) })) },
+        options: { scales: axes(true), plugins: { tooltip: { callbacks: { label: (x) => `${x.dataset.label}: ${inr(x.raw)}`, footer: (it) => 'Total: ' + inr(it.reduce((s, x) => s + x.raw, 0)) } } } } });
+      draw('hubChart', { type: 'bar', data: { labels, datasets: MODES.map(m => ({ label: m === 'Van' ? 'Own truck' : m, backgroundColor: MC[m], data: days.map(d => hub.filter(r => r.d === d && r.m === m).length) })) }, options: { scales: axes(true) } });
+
+      appPanel(from, to, c, h);
+
+      // ---- Hub table: Metabase (bikes, MFR, age, recovered) + sheet (own truck / Porter) ----
+      const hubs = new Map(), hub0 = (name) => ({ name, cities: new Map(), old: 0, van: 0, por: 0, rec: 0, tot: 0, mfr: 0, age: 0 });
+      const get = (name) => { const k = hubKey(name); if (!hubs.has(k)) hubs.set(k, hub0(name)); return hubs.get(k); };
+      FLEET.filter(fleetMatch).filter(r => r.hub !== 'Unknown').forEach(r => { const x = get(r.hub);
+        x.cities.set(r.city, (x.cities.get(r.city) || 0) + r.bikes); x.tot += r.bikes; x.mfr += r.mfr; x.age += r.age_sum; if (r.age_bucket === 'Above 10 days') x.old += r.mfr; });
+      FDAY.filter(fleetMatch).filter(r => r.day >= from && r.day <= to && r.hub !== 'Unknown').forEach(r => { get(r.hub).rec += r.recovered; });
+      hub.filter(r => r.l).forEach(r => { const k = hubKey(r.l); if (!hubs.has(k)) return; const x = hubs.get(k); if (r.m === 'Van') x.van++; if (r.m === 'Porter') x.por++; });
+      $('hubTable').tBodies[0].innerHTML = [...hubs.values()].filter(x => x.tot).sort((p, q) => q.mfr - p.mfr || q.tot - p.tot).map(x => `<tr><td><strong>${esc(x.name)}</strong></td><td>${esc(([...x.cities].sort((p, q) => q[1] - p[1])[0] || [''])[0])}</td>
+        <td class="num">${num(x.tot)}</td><td class="num">${num(x.mfr)}</td><td class="num">${(100 * x.mfr / x.tot).toFixed(1)}%</td><td class="num">${x.mfr ? (x.age / x.mfr).toFixed(1) : '–'}</td>
+        <td class="num">${x.old}</td><td class="num">${num(x.van)}</td><td class="num">${num(x.por)}</td><td class="num">${num(x.rec)}</td></tr>`).join('') || '<tr><td colspan="10">No Metabase data yet.</td></tr>';
+    }
+    // ---- Metabase "Recovery all data" (refreshed every 30 min; daily history from 30 Oct 2026) ----
+    const RENEW_LABEL = 'moved away from recovery when user renewed plan';
+    function fleetMatch(r) { const c = $('cityFilter').value, h = $('hubFilter').value, m = $('modelFilter').value;
+      return (!c || r.city === c) && (!h || hubKey(r.hub) === hubKey(h)) && (!m || r.model === m); }
+    function fleet(from, to, pName, days, labels) {
+      const F = FLEET.filter(fleetMatch), S = (k, arr = F) => arr.reduce((s, r) => s + (r[k] || 0), 0);
+      const at = FLEET_AT ? new Date(FLEET_AT).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+      const tot = S('bikes'), mfr = S('mfr'), pol = S('mfr_police');
+      $('kTotal').textContent = FLEET.length ? num(tot) : '–'; $('kTotalSub').textContent = FLEET.length ? `all statuses · live ${at}` : 'live data not loaded yet';
+      $('kMfr').textContent = num(mfr); $('kMfrSub').textContent = `marked for recovery now · +${num(pol)} police-case bikes`;
+      $('kMfrPct').textContent = tot ? (100 * mfr / tot).toFixed(1) + '%' : '–'; $('kMfrPctSub').textContent = `${num(mfr)} of ${num(tot)} bikes`;
+      // Period numbers from the daily history
+      const fd = FDAY.filter(fleetMatch).filter(r => r.day >= from && r.day <= to), dN = new Set(fd.map(r => r.day)).size;
+      const when = dN === 0 ? 'no Metabase data in this period' : (dN === 1 && fd[0].day === TODAY ? `today · ${at}` : `${dN} day${dN > 1 ? 's' : ''} of data · ${pName}`);
+      const inN = S('inflow', fd), outN = S('outflow', fd), recN = S('recovered', fd), hubN = S('moved_hub', fd), actN = S('moved_active', fd);
+      // Inflow / outflow: our own count (from FLOW_START); falls back to Metabase's figures before tracking started
+      // our days run 7 am to 7 am: "today" = the 7-to-7 day we are in now
+      const fTo = to >= TODAY ? FLOW_TODAY : to, fFrom = from > fTo ? fTo : from;
+      const fl = FLOW.filter(fleetMatch).filter(r => r.day >= fFrom && r.day <= fTo), fx = (k, re) => fl.filter(r => r.kind === k && (!re || r.reason === re)).reduce((s, r) => s + r.n, 0);
+      const flowOn = !!FLOW_START && fTo >= FLOW_START;
+      const fIn = fx('in'), fOut = fx('out'), since = FLOW_START && fFrom < FLOW_START ? ` · counted since ${fmtDay(FLOW_START)}` : '';
+      const fWhen = fFrom === fTo ? `${fmtDay(fTo)}, 7 am – 7 am${fTo === FLOW_TODAY ? ' · so far, ' + at : ''}` : `${fmtDay(FLOW_START && fFrom < FLOW_START ? FLOW_START : fFrom)} – ${fmtDay(fTo)} (7 am – 7 am days)`;
+      if (flowOn) {
+        $('kInflow').textContent = num(fIn); $('kInflowSub').textContent = `bikes marked for recovery · ${fWhen}${since}`;
+        $('kOutflow').textContent = num(fOut);
+        $('kOutflowSub').textContent = `${num(fx('out', 'renewed'))} renewed · ${num(fx('out', 'recovered') + fx('out', 'to_hub') + fx('out', 'at_hub'))} recovered / to hub · ${num(fOut - fx('out', 'renewed') - fx('out', 'recovered') - fx('out', 'to_hub') - fx('out', 'at_hub'))} other${since}`;
+      } else {
+        $('kInflow').textContent = num(inN); $('kInflowSub').textContent = `newly marked · ${when}`;
+        $('kOutflow').textContent = num(outN); $('kOutflowSub').textContent = `${num(recN)} recovered · ${num(actN)} renewed · ${when}`;
+      }
+      flowPanel(fFrom, fTo, fl, flowOn, fWhen);
+      $('kRecovered').textContent = num(recN); $('kRecoveredSub').textContent = `${num(hubN)} reached the hub · ${when}`;
+      $('kActive').textContent = num(actN); $('kActiveSub').textContent = `renewed (rent paid) · ${when}`;
+      $('kHub').textContent = num(hubN); $('kHubSub').textContent = when;
+      // 7 am – 7 am days: day shift (7 am–7 pm, Metabase's own numbers) + night shift (7 pm–7 am, our count)
+      const shOk = (r) => { const c = $('cityFilter').value, h = $('hubFilter').value; return (!c || r.city === c) && (!h || hubKey(r.hub) === hubKey(h)); };
+      const fsel = FS.filter(shOk).filter(r => r.day >= fFrom && r.day <= fTo);
+      if (fsel.length && !$('modelFilter').value) {
+        const sh = (k, s) => fsel.filter(r => !s || r.shift === s).reduce((a, r) => a + (r[k] || 0), 0);
+        const dn = (k) => `Day ${num(sh(k, 'day'))} · Night ${num(sh(k, 'night'))}`;
+        $('kInflow').textContent = num(sh('inflow')); $('kInflowSub').textContent = `${dn('inflow')} · ${fWhen}`;
+        $('kOutflow').textContent = num(sh('outflow')); $('kOutflowSub').textContent = `${dn('outflow')} · ${fWhen}`;
+        $('kActive').textContent = num(sh('moved_active')); $('kActiveSub').textContent = `${dn('moved_active')} · renewed (rent paid)`;
+        $('kRecovered').textContent = num(sh('recovered')); $('kRecoveredSub').textContent = `${dn('recovered')} · ${fWhen}`;
+        $('kHub').textContent = num(sh('moved_hub')); $('kHubSub').textContent = `${dn('moved_hub')} · ${fWhen}`;
+      }
+      shiftTable(fFrom, fTo);
+      // Agents (Metabase "outflow agent"; renewals by the customer are not counted as an agent)
+      const c = $('cityFilter').value, h = $('hubFilter').value;
+      const fa = FAG.filter(r => r.agent !== RENEW_LABEL && (!c || r.city === c) && (!h || hubKey(r.hub) === hubKey(h)) && r.day >= from && r.day <= to);
+      const nA = new Set(fa.map(r => r.agent)).size, aDays = new Set(fa.map(r => r.day)).size;
+      $('kAgents').textContent = num(nA); $('kAgentsSub').textContent = aDays > 1 ? `avg ${Math.round(new Set(fa.map(r => r.day + '|' + r.agent)).size / aDays)} a day · ${when}` : `closed ≥ 1 bike · ${when}`;
+      const byA = new Map(); fa.forEach(r => { const x = byA.get(r.agent) || { a: r.agent.trim(), today: 0, n: 0, rec: 0, hub: 0, ren: 0 };
+        x.n += r.outflow; x.rec += r.recovered; x.hub += r.moved_hub; x.ren += r.moved_active; if (r.day === TODAY) x.today += r.outflow; byA.set(r.agent, x); });
+      AG = [...byA.values()]; agentTable();
+      const cases = S('outflow', fa);
+      chips('agentCounts', [{ t: 'Agents', n: nA }, { t: 'Bikes closed', n: cases }, { t: 'Avg / agent / day', n: Math.round(cases / Math.max(1, nA) / Math.max(1, aDays)) }]);
+      const top = [...AG].sort((p, q) => q.n - p.n).slice(0, 15);
+      draw('agentChart', { type: 'bar', data: { labels: top.map(x => x.a), datasets: [
+        { label: 'Moved to hub', backgroundColor: B1, data: top.map(x => x.hub) },
+        { label: 'Recovered, not at hub yet', backgroundColor: B3, data: top.map(x => Math.max(0, x.rec - x.hub)) },
+        { label: 'Renewed', backgroundColor: B2, data: top.map(x => x.ren) },
+        { label: 'Other', backgroundColor: GRY, data: top.map(x => Math.max(0, x.n - Math.max(x.rec, x.hub) - x.ren)) }] }, options: { indexAxis: 'y', scales: axes(true, true) } });
+      // Outcomes of bikes that left MFR
+      const OC2 = [['Moved to hub', hubN, B1], ['Recovered, not at hub yet', Math.max(0, recN - hubN), B3], ['Renewed', actN, B2], ['Other', Math.max(0, outN - Math.max(recN, hubN) - actN), GRY]];
+      $('outcomeNote').textContent = `${num(outN)} bikes left MFR · ${when}`;
+      chips('outcomeCounts', OC2.map(([t, n, color]) => ({ t, n, color })));
+      draw('outcomeChart', { type: 'doughnut', data: { labels: OC2.map(x => x[0]), datasets: [{ data: OC2.map(x => x[1]), backgroundColor: OC2.map(x => x[2]), borderWidth: 0 }] }, options: { cutout: '62%', plugins: { legend: { position: 'right' } } } });
+      // Ageing
+      const M = F.filter(r => r.age_bucket), B = uniq(M.map(r => r.age_bucket)).sort(ageSort);
+      const shade = (i, n) => { const t = n > 1 ? i / (n - 1) : 1; const a = [191, 219, 254], b = [30, 58, 138]; return `rgb(${a.map((v, j) => Math.round(v + (b[j] - v) * t)).join(',')})`; };
+      const avg = mfr ? +(S('age_sum') / mfr).toFixed(1) : 0;
+      chips('ageCounts', [{ t: 'MFR bikes', n: mfr }, { t: 'Avg days', n: avg }, { t: 'Over 10 days', n: S('mfr', M.filter(r => r.age_bucket === 'Above 10 days')) }]);
+      draw('ageChart', { type: 'bar', data: { labels: B, datasets: [{ label: 'Bikes', data: B.map(b => S('mfr', M.filter(r => r.age_bucket === b))), backgroundColor: B.map((_, i) => shade(i, B.length)), borderRadius: 4 }] },
+        options: { scales: axes(false), plugins: { legend: { display: false } } } });
+      const C = uniq(M.map(r => r.city)).sort((a, b) => S('mfr', M.filter(r => r.city === b)) - S('mfr', M.filter(r => r.city === a)));
+      chips('cityAgeCounts', C.map(c => ({ t: c, n: S('mfr', M.filter(r => r.city === c)) })));
+      draw('cityAgeChart', { type: 'bar', data: { labels: C, datasets: B.map((b, i) => ({ label: b, backgroundColor: shade(i, B.length), data: C.map(c => S('mfr', M.filter(r => r.city === c && r.age_bucket === b))) })) },
+        options: { scales: axes(true) } });
+      // Fleet status
+      const GR = [['active', 'Active', B1], ['marked for recovery', 'Marked for recovery', RED], ['oos', 'Out of service', B2], ['in_transit', 'In transit', B3], ['recovered', 'Recovered', '#38bdf8'], ['other', 'Other', GRY]];
+      const g = (s) => GR.some(x => x[0] === s) ? s : 'other', v = GR.map(([k]) => S('bikes', F.filter(r => g(r.status) === k)));
+      chips('fleetCounts', GR.map(([, t, col], i) => ({ t, n: v[i], color: col })));
+      draw('fleetChart', { type: 'doughnut', data: { labels: GR.map(x => x[1]), datasets: [{ data: v, backgroundColor: GR.map(x => x[2]), borderWidth: 0 }] }, options: { cutout: '62%', plugins: { legend: { position: 'right' } } } });
+    }
+    // ---- Inflow / outflow, counted by us: where every MFR bike went ----
+    const REASONS = [['renewed', 'Renewed (back to active)', B1], ['recovered', 'Recovered', B3], ['to_hub', 'On the way to hub', B2],
+      ['at_hub', 'At hub / workshop', '#38bdf8'], ['left_list', 'Left the fleet list', GRY], ['other', 'Other status', '#475569']];
+    let FLOW_RANGE = null;
+    function flowPanel(from, to, fl, flowOn, fWhen) {
+      FLOW_RANGE = { from: FLOW_START && from < FLOW_START ? FLOW_START : from, to };
+      if (!flowOn) { $('flowNote').textContent = 'Counting starts with the next 30-minute refresh.'; chips('trendCounts', []); chips('flowCounts', []); $('flowCheck').textContent = '';
+        draw('trendChart', { type: 'bar', data: { labels: ['No data yet'], datasets: [] }, options: { scales: axes(false) } }); return; }
+      const fx = (k, re, d) => fl.filter(r => r.kind === k && (!re || r.reason === re) && (!d || r.day === d)).reduce((s, r) => s + r.n, 0);
+      const D = []; for (let d = from < FLOW_START ? FLOW_START : from; d <= to; d = addDays(d, 1)) D.push(d); const L = D.map(fmtDay);
+      const fIn = fx('in'), fOut = fx('out');
+      chips('trendCounts', [{ t: 'Inflow', n: fIn, color: RED }, { t: 'Outflow', n: fOut, color: '#334155' }, { t: 'Net change in MFR', n: fIn - fOut }]);
+      draw('trendChart', { type: 'bar', data: { labels: L, datasets: [
+        { label: 'Inflow', stack: 'in', data: D.map(d => fx('in', null, d)), backgroundColor: RED, borderRadius: 4, maxBarThickness: 40 },
+        ...REASONS.map(([k, t, c]) => ({ label: 'Out: ' + t, stack: 'out', data: D.map(d => fx('out', k, d)), backgroundColor: c, maxBarThickness: 40 }))] },
+        options: { scales: axes(true), plugins: { tooltip: { mode: 'index', filter: (x) => x.raw > 0 } } } });
+      chips('flowCounts', REASONS.map(([k, t, c]) => ({ t, n: fx('out', k), color: c })).filter(x => x.n));
+      // after leaving MFR (next 14 days): how many recovered bikes reached a hub, how many came back to MFR
+      const mvHub = fx('move', 'at_hub'), back = fl.filter(r => r.kind === 'move' && r.reason === 'mfr').reduce((s, r) => s + r.n, 0);
+      // check: opening + in - out = closing (closing = MFR count at the last refresh of the day)
+      const close = (d) => { const x = FLOW_CLOSE.filter(fleetMatch).filter(r => r.day === d); return x.length ? x.reduce((s, r) => s + r.mfr, 0) : null; };
+      const d0 = D[0], dz = D[D.length - 1], open = close(addDays(d0, -1)), shut = close(dz);
+      $('flowNote').textContent = `${num(fOut)} bikes left MFR · ${fWhen}` + (mvHub || back ? ` · afterwards: ${num(mvHub)} reached a hub${back ? ', ' + num(back) + ' came back to MFR' : ''}` : '');
+      flowTable(D, fl, close);
+      $('flowCheck').textContent = open != null && shut != null ? `Check: ${num(open)} in MFR at 7 am ${fmtDay(d0)} + ${num(fIn)} in − ${num(fOut)} out = ${num(open + fIn - fOut)} · actual ${dz === FLOW_TODAY ? 'now' : 'at 7 am ' + fmtDay(addDays(dz, 1))}: ${num(shut)}` :
+        shut != null ? `MFR now: ${num(shut)} bikes (all bikes marked for recovery, incl. police cases)` : '';
+    }
+    // Day & night shifts, per 7 am – 7 am day
+    function shiftTable(from, to) {
+      const T = $('tShift'); if (!T) return;
+      const c = $('cityFilter').value, h = $('hubFilter').value;
+      const rows = FS.filter(r => (!c || r.city === c) && (!h || hubKey(r.hub) === hubKey(h)) && r.day >= from && r.day <= to);
+      const days = [...new Set(rows.map(r => r.day))].sort().reverse();
+      const v = (d, k, s) => rows.filter(r => r.day === d && (!s || r.shift === s)).reduce((a, r) => a + (r[k] || 0), 0);
+      const K = [['inflow', 'Inflow'], ['outflow', 'Outflow'], ['moved_active', 'Moved to active']];
+      T.tHead.innerHTML = '<tr><th rowspan="2">Day (7 am – 7 am)</th>' + K.map(([, t]) => `<th colspan="3" class="num">${t}</th>`).join('') + '</tr><tr>' +
+        K.map(() => '<th class="num">Day</th><th class="num">Night</th><th class="num">Total</th>').join('') + '</tr>';
+      T.tBodies[0].innerHTML = days.length ? days.map(d => `<tr><td>${fmtDay(d)}${d === FLOW_TODAY ? ' (so far)' : ''}</td>` +
+        K.map(([k]) => `<td class="num">${num(v(d, k, 'day'))}</td><td class="num">${num(v(d, k, 'night'))}</td><td class="num"><b>${num(v(d, k))}</b></td>`).join('') + '</tr>').join('')
+        : '<tr><td colspan="10">No data for this period yet.</td></tr>';
+      $('shiftNote').textContent = $('modelFilter').value ? 'The model filter does not apply here (shown for all models).' : '';
+    }
+    // day-by-day table: inflow, outflow split by reason, net change and the 7 am MFR count
+    function flowTable(D, fl, close) {
+      const fx = (d, k, re) => fl.filter(r => r.day === d && r.kind === k && (!re || r.reason === re)).reduce((s, r) => s + r.n, 0);
+      const R = REASONS.filter(([k]) => D.some(d => fx(d, 'out', k)));   // only reasons that happened
+      const short = { renewed: 'Renewed', recovered: 'Recovered', to_hub: 'To hub', at_hub: 'At hub', left_list: 'Left list', other: 'Other' };
+      const T = $('tFlow');
+      T.tHead.innerHTML = '<tr><th>Day</th><th class="num">MFR at start</th><th class="num">Inflow</th><th class="num">Outflow</th>' +
+        R.map(([k]) => `<th class="num">${short[k] || k}</th>`).join('') + '<th class="num">Net</th><th class="num">MFR at end</th><th>Adds up?</th></tr>';
+      const esc = (t) => String(t).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+      const tot = { i: 0, o: 0, r: R.map(() => 0) };
+      const rows = D.slice().reverse().map((d) => {
+        const open = close(addDays(d, -1)), end = close(d), i = fx(d, 'in'), o = fx(d, 'out'), net = i - o;
+        tot.i += i; tot.o += o; R.forEach(([k], j) => { tot.r[j] += fx(d, 'out', k); });
+        const ok = open == null || end == null ? '–' : open + i - o === end ? '✓' : '✗ ' + num(end - open - i + o);
+        const label = fmtDay(d) + (d === FLOW_TODAY ? ' (so far)' : d === FLOW_START ? ' (from start of counting)' : '');
+        return `<tr><td>${esc(label)}</td><td class="num">${open == null ? '–' : num(open)}</td><td class="num c-red">${num(i)}</td><td class="num">${num(o)}</td>` +
+          R.map(([k]) => `<td class="num">${num(fx(d, 'out', k))}</td>`).join('') +
+          `<td class="num" style="font-weight:700">${net > 0 ? '+' : ''}${num(net)}</td><td class="num">${end == null ? '–' : num(end)}</td><td>${ok}</td></tr>`;
+      });
+      if (D.length > 1) rows.push(`<tr style="font-weight:700;background:var(--soft)"><td>Total</td><td></td><td class="num c-red">${num(tot.i)}</td><td class="num">${num(tot.o)}</td>` +
+        tot.r.map((n) => `<td class="num">${num(n)}</td>`).join('') + `<td class="num">${tot.i - tot.o > 0 ? '+' : ''}${num(tot.i - tot.o)}</td><td></td><td></td></tr>`);
+      T.tBodies[0].innerHTML = rows.join('') || '<tr><td colspan="9">No days counted yet.</td></tr>';
+    }
+    // ---- Downloads (CSV opens in Excel) ----
+    function saveCsv(name, rows) {
+      const cell = (v) => { const t = v == null ? '' : String(v); return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+      const blob = new Blob(['\ufeff' + rows.map(r => r.map(cell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }
+    const place = () => [$('cityFilter').value, $('hubFilter').value, $('modelFilter').value].filter(Boolean).join('-').replace(/\s+/g, '') || 'all';
+    $('dlDaily').onclick = () => {
+      if (!FLOW_RANGE || !FLOW_START) { $('dlNote').textContent = 'Nothing counted yet.'; return; }
+      const { from, to } = FLOW_RANGE, fl = FLOW.filter(fleetMatch);
+      const fx = (d, k, re) => fl.filter(r => r.day === d && r.kind === k && (!re || r.reason === re)).reduce((s, r) => s + r.n, 0);
+      const close = (d) => { const x = FLOW_CLOSE.filter(fleetMatch).filter(r => r.day === d); return x.length ? x.reduce((s, r) => s + r.mfr, 0) : ''; };
+      const rows = [['Day (7 am to 7 am)', 'From', 'To', 'MFR at start', 'Inflow', 'Outflow', ...REASONS.map(([, t]) => 'Out: ' + t), 'Net change', 'MFR at end', 'Adds up?',
+        'Afterwards: reached a hub', 'Afterwards: back to MFR']];
+      for (let d = from; d <= to; d = addDays(d, 1)) {
+        const open = close(addDays(d, -1)), end = close(d), i = fx(d, 'in'), o = fx(d, 'out');
+        rows.push([d, d + ' 07:00', addDays(d, 1) + ' 07:00' + (d === FLOW_TODAY ? ' (day not finished)' : ''), open, i, o, ...REASONS.map(([k]) => fx(d, 'out', k)), i - o, end,
+          open === '' || end === '' ? '' : (open + i - o === end ? 'yes' : 'no (' + (end - open - i + o) + ')'), fx(d, 'move', 'at_hub'), fx(d, 'move', 'mfr')]);
+      }
+      saveCsv(`mfr-inflow-outflow-daily_${place()}_${from}_to_${to}.csv`, rows);
+    };
+    $('dlBikes').onclick = async () => {
+      if (!FLOW_RANGE || !FLOW_START) { $('dlNote').textContent = 'Nothing counted yet.'; return; }
+      const { from, to } = FLOW_RANGE, btn = $('dlBikes'); btn.disabled = true; const old = btn.lastChild.textContent; btn.lastChild.textContent = 'Preparing…';
+      try {
+        const ev = await pageAll(() => db.from('mfr_flow_events').select('at, day, reg_number, city, hub, model, kind, reason, from_status, to_status, police_case').gte('day', from).lte('day', to).order('at'));
+        const RL = Object.fromEntries(REASONS), KL = { in: 'Inflow', out: 'Outflow', move: 'Later move' };
+        const t = (x) => new Date(x).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+        const rows = [['Seen at (India time)', 'Day (7 am to 7 am)', 'Bike', 'City', 'Hub', 'Model', 'In / out', 'Reason', 'Status before', 'Status after', 'Police case']];
+        ev.filter(r => fleetMatch({ city: r.city || 'Unknown', hub: r.hub || 'Unknown', model: r.model || 'Unknown' })).forEach(r => rows.push([t(r.at), r.day, r.reg_number, r.city, r.hub, r.model, KL[r.kind] || r.kind,
+          r.kind === 'in' ? 'Marked for recovery' : r.kind === 'move' && r.reason === 'mfr' ? 'Back to MFR' : (RL[r.reason] || r.reason), r.from_status || '(new in list)', r.to_status || '(left the list)', r.police_case ? 'yes' : 'no']));
+        saveCsv(`mfr-inflow-outflow-bikes_${place()}_${from}_to_${to}.csv`, rows);
+      } catch (e) { $('dlNote').textContent = 'Could not download: ' + e.message; }
+      btn.disabled = false; btn.lastChild.textContent = old;
+    };
+    let AG = [], sortK = 'n', sortDir = -1;
+    function agentTable() {
+      const s = [...AG].sort((p, q) => { const a = p[sortK], b = q[sortK]; return (typeof a === 'string' ? a.localeCompare(b) : a - b) * sortDir; });
+      $('agentTable').tBodies[0].innerHTML = s.map(x => `<tr><td><strong>${esc(x.a)}</strong></td><td class="num">${x.today}</td><td class="num">${num(x.n)}</td><td class="num">${num(x.rec)}</td><td class="num">${num(x.hub)}</td><td class="num">${num(x.ren)}</td></tr>`).join('') || '<tr><td colspan="6">Nothing in this period.</td></tr>';
+    }
+    document.querySelectorAll('#agentTable th').forEach(th => { th.style.cursor = 'pointer'; th.onclick = () => { const k = th.dataset.k; sortDir = sortK === k ? -sortDir : (k === 'a' ? 1 : -1); sortK = k; agentTable(); }; });
+
+    // ---- Police-case bikes (Metabase police_case_type) ----
+    const polList = () => { const c = $('cityFilter').value, h = $('hubFilter').value; return POLICE.filter(r => (!c || r.city === c) && (!h || hubKey(r.hub) === hubKey(h))); };
+    // ---- Agent App: calls and bike updates ----
+    function istDay(t) { return new Date(Date.parse(t) + 5.5 * 3600e3).toISOString().slice(0, 10); }
+    function appPanel(from, to, c, h) {
+      const ok = (r) => (!c || r.city === c) && (!h || hubKey(r.hub) === hubKey(h) || hubKey(r.drop_hub) === hubKey(h));
+      const C = APP_CALLS.filter(ok).filter(r => { const d = istDay(r.at); return d >= from && d <= to; });
+      callList(C);
+      const U = APP_UPD.filter(ok).filter(r => { const d = istDay(r.at); return d >= from && d <= to; });
+      const NA = ['not_answered', 'switched_off', 'wrong_number'], ans = (a) => a.filter(r => !NA.includes(r.outcome)).length;
+      const cnt = (a, o, m) => a.filter(r => r.outcome === o && (!m || r.moved_by === m)).length;
+      const porter = (a) => a.filter(r => r.outcome === 'moved_hub' && r.moved_by === 'porter').reduce((s, r) => s + (Number(r.porter_amount) || 0), 0);
+      const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
+      chips('appCounts', [{ t: 'Calls logged', n: C.length }, { t: 'Answered', n: ans(C), color: B2 }, { t: 'Promised to pay', n: cnt(C, 'will_pay'), color: '#f59e0b' },
+        { t: 'Bike updates', n: U.length }, { t: 'Moved to hub', n: cnt(U, 'moved_hub'), color: B1 }, { t: 'Police station', n: cnt(U, 'police'), color: RED }]);
+      const days = [...new Set([...C, ...U].map(r => istDay(r.at)))].sort().reverse();
+      const on = (a, d) => a.filter(r => istDay(r.at) === d), z = (n) => n ? num(n) : '<span style="color:var(--text-3,#9ca3af)">0</span>';
+      $('tApp').tBodies[0].innerHTML = days.map(d => { const c1 = on(C, d), u1 = on(U, d);
+        return `<tr><td>${fmtDay(d)}</td><td class="num">${z(c1.length)}</td><td class="num">${z(ans(c1))}</td><td class="num">${z(cnt(c1, 'will_pay'))}</td><td class="num">${z(cnt(u1, 'renewed'))}</td>
+          <td class="num" style="font-weight:700">${z(cnt(u1, 'moved_hub'))}</td><td class="num">${z(cnt(u1, 'moved_hub', 'own'))}</td><td class="num">${z(cnt(u1, 'moved_hub', 'porter'))}</td><td class="num">${z(cnt(u1, 'moved_hub', 'customer'))}</td><td class="num">${z(cnt(u1, 'moved_hub', 'agent_rode'))}</td>
+          <td class="num">${porter(u1) ? inr(porter(u1)) : z(0)}</td><td class="num">${z(cnt(u1, 'found_hub'))}</td><td class="num">${z(cnt(u1, 'police'))}</td><td class="num">${z(cnt(u1, 'not_recovered'))}</td></tr>`; }).join('')
+        || '<tr><td colspan="14">Nothing logged in the Agent App for this period yet.</td></tr>';
+      const ag = new Map(), A = (n) => { n = n || 'Unknown'; if (!ag.has(n)) ag.set(n, { n, c: [], u: [] }); return ag.get(n); };
+      C.forEach(r => A(r.agent_name).c.push(r)); U.forEach(r => A(r.agent_name).u.push(r));
+      $('tAppAgents').tBodies[0].innerHTML = [...ag.values()].sort((p, q) => (q.c.length + q.u.length) - (p.c.length + p.u.length)).map(x => `<tr><td><strong>${esc(x.n)}</strong></td>
+        <td class="num">${z(x.c.length)}</td><td class="num">${z(ans(x.c))}</td><td class="num">${z(cnt(x.c, 'will_pay'))}</td><td class="num">${z(x.u.length)}</td><td class="num">${z(cnt(x.u, 'moved_hub'))}</td>
+        <td class="num">${z(cnt(x.u, 'police'))}</td><td class="num">${z(cnt(x.u, 'not_recovered'))}</td></tr>`).join('') || '<tr><td colspan="8">No one has logged anything for this period yet.</td></tr>';
+      // follow-ups: the latest promise per bike (any date), unless the bike got an update after it
+      const lastUpd = new Map(); APP_UPD.forEach(r => { if (!lastUpd.has(r.bike_id) || r.at > lastUpd.get(r.bike_id)) lastUpd.set(r.bike_id, r.at); });
+      const FU = { will_pay: 'Will pay', call_back: 'Call back', will_return: 'Will return the bike', pick_up: 'Pick up the bike' }, latest = new Map();
+      APP_CALLS.filter(ok).forEach(r => { const k = r.bike_id || r.reg_number; if (!latest.has(k) || r.at > latest.get(k).at) latest.set(k, r); });
+      const now = Date.now(), due = (r) => r.promise_at || (r.return_on ? r.return_on + 'T18:00:00+05:30' : r.at);
+      const F = [...latest.values()].filter(r => FU[r.outcome] && !(lastUpd.get(r.bike_id) > r.at)).sort((p, q) => due(p).localeCompare(due(q)));
+      const when = (t) => new Date(t).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+      $('appFollowN').textContent = F.length ? `${F.length} open · ${F.filter(r => Date.parse(due(r)) < now).length} overdue` : '';
+      $('tAppFollow').tBodies[0].innerHTML = F.map(r => { const late = Date.parse(due(r)) < now;
+        const det = [r.amount ? inr(r.amount) : '', r.return_hub || '', r.bike_location || '', r.note ? '“' + r.note + '”' : ''].filter(Boolean).join(' · ');
+        return `<tr><td style="${late ? 'color:var(--red);font-weight:700' : ''}">${r.promise_at || r.return_on ? when(due(r)) : 'asap'}${late ? ' · overdue' : ''}</td><td><strong>${esc(r.reg_number)}</strong></td>
+          <td>${esc(FU[r.outcome])}</td><td style="white-space:normal;min-width:180px">${esc(det)}</td><td>${esc(r.agent_name || '')}</td><td>${when(r.at)}</td></tr>`; }).join('')
+        || '<tr><td colspan="6">No open follow-ups.</td></tr>';
+    }
+    // ---- Call list: every call logged in the Agent App, newest first, by agent ----
+    const CALL_LBL = { not_answered: 'Not answered', switched_off: 'Switched off / busy', wrong_number: 'Wrong number', call_back: 'Call back later', will_pay: 'Will pay / renew',
+      paid: 'Already paid', will_return: 'Will return the bike', pick_up: 'Come pick it up', police: 'Bike with police', stolen: 'Says stolen / lost', someone_else: 'Bike with someone else', refused: 'Refused / abusive' };
+    let CALL_ROWS = [];
+    function callDetails(r) {
+      const when = (t) => new Date(t).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+      return [r.promise_at ? 'by ' + when(r.promise_at) : '', r.amount ? '₹' + Math.round(r.amount).toLocaleString('en-IN') : '', r.return_hub ? 'to ' + r.return_hub : '',
+        r.return_on ? 'on ' + fmtDay(r.return_on) : '', r.bike_location || '', r.contact ? 'contact ' + r.contact : '', r.police_station || '', r.fir ? 'FIR: ' + r.fir : ''].filter(Boolean).join(' · ');
+    }
+    function callList(C) {
+      const keep = (id, opts) => { const el = $(id), v = el.value; el.innerHTML = el.options[0].outerHTML + opts.map(([k, t]) => `<option value="${esc(k)}">${esc(t)}</option>`).join(''); el.value = opts.some(([k]) => k === v) ? v : ''; };
+      const names = [...new Set(C.map(r => r.agent_name || 'Unknown'))].sort();
+      keep('callAgent', names.map(n => [n, `${n} (${C.filter(r => (r.agent_name || 'Unknown') === n).length})`]));
+      keep('callOutF', Object.entries(CALL_LBL).filter(([k]) => C.some(r => r.outcome === k)));
+      const a = $('callAgent').value, o = $('callOutF').value;
+      CALL_ROWS = C.filter(r => (!a || (r.agent_name || 'Unknown') === a) && (!o || r.outcome === o)).sort((p, q) => q.at.localeCompare(p.at));
+      const NA = ['not_answered', 'switched_off', 'wrong_number'];
+      $('callListN').textContent = CALL_ROWS.length ? `${num(CALL_ROWS.length)} calls · ${num(CALL_ROWS.filter(r => !NA.includes(r.outcome)).length)} answered` : '';
+      const tm = (t) => new Date(t).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+      $('tCalls').tBodies[0].innerHTML = CALL_ROWS.slice(0, 500).map(r => `<tr><td>${tm(r.at)}</td><td>${esc(r.agent_name || '')}</td><td><strong>${esc(r.reg_number)}</strong></td>
+        <td>${esc([r.city, r.hub].filter(Boolean).join(' · '))}</td><td style="${NA.includes(r.outcome) ? 'color:var(--text-2)' : 'font-weight:600'}">${esc(CALL_LBL[r.outcome] || r.outcome)}</td>
+        <td style="white-space:normal;min-width:160px">${esc(callDetails(r))}</td><td style="white-space:normal;min-width:160px">${esc(r.note || '')}</td></tr>`).join('')
+        + (CALL_ROWS.length > 500 ? `<tr><td colspan="7">Showing the latest 500 · download for all ${num(CALL_ROWS.length)}</td></tr>` : '')
+        || '<tr><td colspan="7">No calls logged for this period.</td></tr>';
+    }
+    $('callAgent').onchange = $('callOutF').onchange = () => render();
+    $('dlCalls').onclick = () => {
+      const t = (x) => new Date(x).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+      saveCsv(`agent-calls_${($('callAgent').value || 'all-agents').replace(/\s+/g, '-')}.csv`, [['Time (India)', 'Agent', 'Bike', 'City', 'Hub', 'Result', 'Promised by', 'Amount promised', 'Return hub', 'Return on', 'Bike location', 'Contact', 'Police station', 'FIR', 'Note'],
+        ...CALL_ROWS.map(r => [t(r.at), r.agent_name, r.reg_number, r.city, r.hub, CALL_LBL[r.outcome] || r.outcome, r.promise_at ? t(r.promise_at) : '', r.amount ?? '', r.return_hub, r.return_on, r.bike_location, r.contact, r.police_station, r.fir, r.note])]);
+    };
+    // ---- Missing bikes: watch list + alerts (location appeared / moved) ----
+    let MB = [], MBP = [], MB_SEEN = null;
+    const mbWhen = (t) => t ? new Date(t).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '–';
+    const mbMap = (la, lg) => la == null ? '<span class="note" style="margin:0">no location</span>' : `<a href="https://maps.google.com/?q=${la},${lg}" target="_blank" rel="noopener">${Number(la).toFixed(5)}, ${Number(lg).toFixed(5)}</a>`;
+    async function loadMissing() {
+      const [w, p] = await Promise.all([db.from('missing_bikes').select('*').eq('active', true).order('reg_number'),
+        db.from('missing_bike_pings').select('*').order('at', { ascending: false }).limit(200)]);
+      if (w.error) { $('mbPanel').classList.add('hidden'); return; }
+      MB = w.data || []; MBP = p.data || [];
+      $('mbCount').textContent = `${MB.length} bikes · ${MB.filter(r => r.last_lat != null).length} with a location`;
+      const n = new Map(); MBP.forEach(r => n.set(r.reg_number, (n.get(r.reg_number) || 0) + 1));
+      const day = Date.now() - 864e5;
+      $('tMbPings').tBodies[0].innerHTML = MBP.slice(0, 50).map(r => `<tr class="${Date.parse(r.at) > day ? 'mb-new' : ''}"><td>${mbWhen(r.at)}</td><td><strong>${esc(r.reg_number)}</strong></td>
+        <td>${r.kind === 'first_location' ? 'Location showed up' : 'Moved ' + (r.moved_m >= 1000 ? (r.moved_m / 1000).toFixed(1) + ' km' : r.moved_m + ' m')}</td><td>${mbMap(r.lat, r.lng)}</td>
+        <td>${esc(r.hub || '')}</td><td>${esc(r.rider_name || '')}${r.rider_phone ? ' · <a href="tel:+91' + esc(r.rider_phone) + '">' + esc(r.rider_phone) + '</a>' : ''}</td></tr>`).join('')
+        || '<tr><td colspan="6">No alerts yet. The first one comes when a watched bike\'s location shows up or moves.</td></tr>';
+      $('tMb').tBodies[0].innerHTML = MB.sort((a, b) => (b.loc_changed_at || '').localeCompare(a.loc_changed_at || '') || a.reg_number.localeCompare(b.reg_number)).map(r => `<tr><td><strong>${esc(r.reg_number)}</strong>${r.note ? '<br><span class="note" style="margin:0">' + esc(r.note) + '</span>' : ''}</td>
+        <td>${esc(r.hub || '')}</td><td>${mbMap(r.last_lat, r.last_lng)}</td><td>${r.loc_changed_at ? mbWhen(r.loc_changed_at) : '<span class="note" style="margin:0">not since watching</span>'}</td>
+        <td>${mbWhen(r.checked_at)}</td><td class="num">${n.get(r.reg_number) || 0}</td><td><button class="btn btn-dl" type="button" data-mbrm="${esc(r.reg_number)}">Remove</button></td></tr>`).join('')
+        || '<tr><td colspan="7">No bikes on the list.</td></tr>';
+      const recent = MBP.filter(r => Date.parse(r.at) > day);
+      $('mbAlert').classList.toggle('hidden', !recent.length);
+      if (recent.length) $('mbAlert').innerHTML = `<span style="font-size:22px">🚨</span><div><b>${recent.length} missing-bike alert${recent.length > 1 ? 's' : ''} in the last 24 hours</b><br>${recent.slice(0, 4).map(r => esc(r.reg_number)).join(', ')}${recent.length > 4 ? '…' : ''}</div><a class="x btn btn-dl" href="#mbPanel">See</a>`;
+      // notify about alerts that came in while the page is open
+      if (MB_SEEN && 'Notification' in window && Notification.permission === 'granted') MBP.filter(r => r.at > MB_SEEN).forEach(r => {
+        try { new Notification('🚨 Missing bike ' + (r.kind === 'first_location' ? 'pinged: ' : 'moved: ') + r.reg_number, { body: [r.hub, r.rider_name, r.lat.toFixed(5) + ', ' + r.lng.toFixed(5)].filter(Boolean).join(' · '), tag: 'mb' + r.id }); } catch (e) {}
+      });
+      MB_SEEN = MBP[0]?.at || MB_SEEN || new Date(0).toISOString();
+    }
+    $('mbAddBtn').onclick = async () => { const v = $('mbReg').value.trim(); if (!v) return;
+      const { error } = await db.rpc('set_missing_bike', { p_reg: v, p_active: true }); $('mbMsg').textContent = error ? error.message : 'Added. It is checked at the next refresh.'; if (!error) { $('mbReg').value = ''; loadMissing(); } };
+    $('tMb').addEventListener('click', async (e) => { const b = e.target.closest('[data-mbrm]'); if (!b || !confirm('Take ' + b.dataset.mbrm + ' off the missing list?')) return;
+      const { error } = await db.rpc('set_missing_bike', { p_reg: b.dataset.mbrm, p_active: false }); $('mbMsg').textContent = error ? error.message : b.dataset.mbrm + ' removed from the list.'; loadMissing(); });
+    const mbNote = () => { $('mbNotify').textContent = !('Notification' in window) ? 'Alerts not supported in this browser' : Notification.permission === 'granted' ? 'Alerts on for this computer ✓' : 'Turn on alerts on this computer'; };
+    $('mbNotify').onclick = async () => { if ('Notification' in window && Notification.permission !== 'granted') await Notification.requestPermission(); mbNote(); };
+    mbNote();
+    setInterval(() => { if (!$('dash').classList.contains('hidden')) loadMissing().catch(() => {}); }, 2 * 60 * 1000);
+    function police() {
+      const P = polList(), cnt = (s) => P.filter(r => r.police_case_type === s).length;
+      $('kPolice').textContent = num(cnt('Police Station')); $('kPoliceSub').textContent = `held at a police station · live ${FLEET_AT ? new Date(FLEET_AT).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : ''}`;
+      $('kFir').textContent = num(cnt('FIR Filed')); $('kFirSub').textContent = `FIR filed · ${cnt('Under Process')} more under process`;
+      polTable(P);
+    }
+    function polTable(P) {
+      const q = $('pSearch').value.trim().toLowerCase();
+      const L = q ? P.filter(r => [r.reg_number, r.police_case_type, r.status, r.city, r.hub].join(' ').toLowerCase().includes(q)) : P;
+      const ord = { 'Police Station': 0, 'FIR Filed': 1, 'Under Process': 2 };
+      $('polCount').textContent = `· ${L.length} bikes`;
+      $('tPol').tBodies[0].innerHTML = [...L].sort((p, q2) => (ord[p.police_case_type] ?? 9) - (ord[q2.police_case_type] ?? 9) || String(p.city).localeCompare(q2.city) || (q2.age_days || 0) - (p.age_days || 0)).map(r => {
+        const s = r.police_case_type, tag = s === 'Police Station' ? 'tag-bad' : s === 'FIR Filed' ? 'tag-fir' : s === 'Under Process' ? 'tag-wait' : '';
+        const since = r.mfr_since ? new Date(r.mfr_since).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit', timeZone: 'Asia/Kolkata' }) : '';
+        return `<tr><td><strong>${esc(r.reg_number)}</strong></td><td><span class="tag ${tag}">${esc(s)}</span></td><td>${esc(r.status || '')}</td><td>${esc(r.city || '')}</td><td>${esc(r.hub || '')}</td><td>${since}</td><td class="num">${r.age_days ?? ''}</td></tr>`; }).join('') || '<tr><td colspan="7">No matches.</td></tr>';
+    }
+    $('pSearch').oninput = () => polTable(polList());
+    $('cityFilter').onchange = () => { fillHubs(); render(); police(); };
+    $('hubFilter').onchange = () => { render(); police(); };
+    $('modelFilter').onchange = render;
+    $('periodFilter').onchange = () => {
+      const custom = $('periodFilter').value === 'custom';
+      $('rangeBox').classList.toggle('hidden', !custom);
+      if (custom && !$('fromDate').value) { $('toDate').value = TODAY; $('fromDate').value = addDays(TODAY, -29) < FIRST ? FIRST : addDays(TODAY, -29); }
+      render();
+    };
+    ['fromDate', 'toDate'].forEach(id => $(id).addEventListener('change', render));
+    $('clearBtn').onclick = () => { $('cityFilter').value = ''; $('modelFilter').value = ''; fillHubs(); $('hubFilter').value = ''; $('periodFilter').value = '1'; $('rangeBox').classList.add('hidden'); $('fromDate').value = ''; $('toDate').value = ''; render(); police(); };
+    $('menuBtn').onclick = () => $('side').classList.toggle('open');
+
+    // ---- Load from Supabase (Recovery team + admins only; the database checks the role) ----
+    const SUPABASE_URL = 'https://ibsgrnuefzarnxguyfpn.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlic2dybnVlZnphcm54Z3V5ZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1NzQzMzksImV4cCI6MjEwODE1MDMzOX0.XImDA-444nhb0pLpbx4K6Jn5fsROhG9usviEFX5ATEU';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let loadedAt = Date.now(), loading = false;
+    async function pageAll(q) {
+      const out = [];
+      for (let from = 0; ; from += 1000) { const { data, error } = await q().range(from, from + 999); if (error) throw error; out.push(...data); if (data.length < 1000) break; }
+      return out;
+    }
+    async function load() {
+      if (loading) return; loading = true; $('loadErr').textContent = '';
+      try {
+        const since = new Date(Date.now() - 120 * 864e5).toISOString().slice(0, 10);   // last ~4 months (for "Pick dates")
+        // Ask for everything at once instead of one after another: the dashboard is ready about twice as fast
+        const casesP = pageAll(() => db.from('recovery_cases').select('case_date, city, outcome, moved_by, amount, drop_loc').gte('case_date', since).eq('outcome', 'Moved to Hub').order('id'));
+        const fleetP = Promise.all([   // Metabase data (refreshed every 30 min)
+          db.rpc('fleet_summary').then(fs => { if (fs.error) throw fs.error; return fs.data || []; }),
+          pageAll(() => db.from('fleet_daily').select('day, city, hub, model, inflow, outflow, recovered, moved_hub, moved_active, mfr_all').gte('day', since).order('day')),
+          pageAll(() => db.from('fleet_agent_daily').select('day, agent, city, hub, outflow, recovered, moved_hub, moved_active').gte('day', since).order('day')),
+          pageAll(() => db.from('fleet_live').select('reg_number, city, hub, status, police_case_type, mfr_since, age_days').not('police_case_type', 'is', null).order('reg_number')),
+        ]).catch(e => ({ err: e }));
+        // Inflow / outflow counted by us (every 30-min refresh compared with the one before)
+        const flowP = db.rpc('mfr_flow', { p_from: since, p_to: '2100-01-01' }).then(r => r.error ? [] : (r.data || [])).catch(() => []);
+        // Day (7 am–7 pm, Metabase) and night (7 pm–7 am, our count) figures per 7 am–7 am day
+        const shiftP = pageAll(() => db.rpc('flow_shifts', { p_from: since, p_to: '2100-01-01' }).order('day').order('city').order('hub').order('shift')).catch(() => []);
+        const closeP = pageAll(() => db.from('mfr_flow_daily').select('day, city, hub, model, mfr').gte('day', since).order('day')).catch(() => []);
+        // Agent App: calls and bike updates (only the recovery team / managers can read them)
+        const callsP = pageAll(() => db.from('bike_calls').select('at, agent_name, bike_id, reg_number, city, hub, outcome, promise_at, amount, return_hub, return_on, bike_location, contact, police_station, fir, note').gte('at', since).order('at')).catch(() => []);
+        const updP = pageAll(() => db.from('bike_updates').select('at, agent_name, bike_id, reg_number, city, hub, outcome, moved_by, porter_amount, drop_hub, details').gte('at', since).order('at')).catch(() => []);
+        const cases = await casesP;
+        DATA = cases.map(r => ({ d: r.case_date, c: r.city || '', o: r.outcome || '', m: r.moved_by === 'Own truck' ? 'Van' : (r.moved_by || ''), amt: Number(r.amount) || 0, l: r.drop_loc || '' }));
+        APP_CALLS = await callsP; APP_UPD = await updP;
+        const MB = { own: 'Van', agent_rode: 'Van', porter: 'Porter', customer: 'Customer drop' };
+        APP_UPD.filter(r => r.outcome === 'moved_hub').forEach(r => DATA.push({ d: istDay(r.at), c: r.city || '', o: 'Moved to Hub', m: MB[r.moved_by] || '', amt: Number(r.porter_amount) || 0, l: r.drop_hub || r.hub || '', app: 1 }));
+        const fl = await fleetP;
+        if (fl.err) { console.warn('metabase', fl.err); $('loadErr').textContent = 'Could not load the Metabase data: ' + fl.err.message; }
+        else {
+          [FLEET, FDAY, FAG, POLICE] = fl;
+          FLEET_AT = FLEET.reduce((m, r) => r.synced_at > m ? r.synced_at : m, '') || null;
+        }
+        FLOW = await flowP; FS = await shiftP; FLOW_CLOSE = await closeP; FLOW_START = FLOW.reduce((m, r) => !m || r.day < m ? r.day : m, '');
+        FLOW_TODAY = new Date(Date.now() + 5.5 * 3600e3 - 7 * 3600e3).toISOString().slice(0, 10);   // inflow/outflow days run 7 am to 7 am
+        SHEET_LAST = DATA.filter(r => !r.app).reduce((m, r) => r.d > m ? r.d : m, '');
+        TODAY = new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10);
+        FIRST = [FDAY.length ? FDAY[0].day : TODAY, DATA.reduce((m, r) => r.d < m ? r.d : m, '9999')].sort()[0];
+        LAST = TODAY; loadedAt = Date.now();
+        ['fromDate', 'toDate'].forEach(id => { $(id).min = FIRST; $(id).max = TODAY; });
+        fillCities(); fillHubs(); fillModels(); render(); police(); loadMissing().catch(() => {});
+        $('dash').classList.remove('hidden');
+        if (!FLEET.length && !$('loadErr').textContent) $('loadErr').textContent = 'No Metabase data yet — the 30-minute refresh has not run.';
+      } catch (e) { $('loadErr').textContent = 'Could not load data: ' + e.message; }
+      loading = false;
+    }
+    let channel = null;
+    function listenForChanges() {
+      if (channel) return; let t;
+      channel = db.channel('recovery-updates').on('broadcast', { event: 'changed' }, () => { clearTimeout(t); t = setTimeout(load, 2000); }).subscribe();
+    }
+    setInterval(() => { if (DATA.length && document.visibilityState === 'visible') load(); }, 5 * 60 * 1000);
+    $('syncBtn').onclick = load;
+
+    async function showFor(session) {
+      const signedIn = !!session;
+      $('loginBox').classList.toggle('hidden', signedIn);
+      if (!signedIn) $('dash').classList.add('hidden');
+      $('authBox').innerHTML = signedIn ? `<span class="who">${esc(session.user.email)}</span><button type="button" id="signOutBtn">Sign Out</button>` : '<span class="who">Not signed in</span>';
+      if (signedIn) $('signOutBtn').onclick = () => db.auth.signOut();
+      const allowed = await applyRoles(session);   // Recovery team + admins only
+      if (signedIn && !allowed) { $('dash').classList.add('hidden'); return; }
+      if (signedIn) { load(); listenForChanges(); }
+    }
+    $('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); $('loginErr').textContent = '';
+      // Phone logins (no email): phone number + 6-digit PIN, same as the phone apps
+      const idv = $('email').value.trim(), digits = idv.replace(/\D/g, ''), pw = $('password').value;
+      const phoneLogin = !idv.includes('@') && digits.length >= 10;
+      const { error } = await db.auth.signInWithPassword(phoneLogin
+        ? { email: digits.slice(-10) + '@agent.bounce.invalid', password: /^\d{6}$/.test(pw.trim()) ? `Bnc!${pw.trim()}#rA` : pw }
+        : { email: idv, password: pw });
+      if (error) $('loginErr').textContent = error.message;
+    });
+    let lastUid;
+    db.auth.onAuthStateChange((_ev, session) => { const id = session?.user?.id || null; if (id === lastUid) return; lastUid = id; setTimeout(() => showFor(session), 0); });
+    // ---- Roles: who can see which page (the database enforces the same rules) ----
+    const PAGE_ROLES = { 'dashboard.html': ['admin', 'recovery'], 'dashboard-new.html': ['admin', 'recovery'], 'tracker.html': ['admin', 'recovery'], 'qc.html': ['admin', 'qc'], 'qc-new.html': ['admin', 'qc'], 'admin.html': ['admin'], 'agent.html': ['admin', 'agent', 'recovery', 'mfr'], 'areas.html': ['admin', 'recovery'] };
+    const ROLE_HOME = { manager: 'dashboard.html', qc: 'qc.html', recovery: 'dashboard.html', agent: 'agent.html', mfr: 'agent.html' };
+    let myRoleCache = { uid: null, roles: [] };
+    // Shows only the menu links this person may use. Returns true if they may use THIS page.
+    async function applyRoles(session) {
+      const here = (location.pathname.split('/').pop() || 'dashboard.html');
+      const links = document.querySelectorAll('.side .nav a, .tabs-top a, .newqc-btn');
+      const adminLink = document.getElementById('adminLink');
+      if (!session) { links.forEach(a => a.classList.remove('hidden')); adminLink && adminLink.classList.add('hidden'); showNoAccess(false); return false; }
+      let roles = myRoleCache.roles;
+      if (myRoleCache.uid !== session.user.id) {   // a person can have several roles (QC + Recovery + Police …)
+        let r = await db.rpc('my_roles');
+        if (r.error) { const o = await db.rpc('my_role'); r = { data: o.data ? [o.data] : [] }; }
+        roles = r.data || []; myRoleCache = { uid: session.user.id, roles };
+      }
+      const can = (page) => (PAGE_ROLES[page] || []).some(x => roles.includes(x));
+      links.forEach(a => { a.classList.toggle('hidden', !can(a.getAttribute('href'))); });
+      adminLink && adminLink.classList.toggle('hidden', !roles.includes('admin'));
+      const allowed = can(here), home = roles.map(x => ROLE_HOME[x]).find(Boolean);
+      if (!allowed && home && home !== here) { location.replace(home); return false; }
+      showNoAccess(!allowed, session.user.email);
+      return allowed;
+    }
+    function showNoAccess(on, email) {
+      let box = document.getElementById('noAccess');
+      if (on && !box) {
+        box = document.createElement('section'); box.id = 'noAccess'; box.className = 'panel';
+        box.style.cssText = 'max-width:520px;margin:40px auto;padding:24px;text-align:center';
+        box.innerHTML = `<h3 style="margin:0 0 8px">You don't have access yet</h3>
+          <p style="color:var(--muted);margin:0 0 14px">You're signed in as <b class="na-email"></b>, but your login hasn't been given a role for this page.</p>
+          <p style="margin:0 0 16px">Contact the admin, David Abraham:<br><a href="mailto:david.abraham@bounceshare.com">david.abraham@bounceshare.com</a> · <a href="tel:+919180260780">+91 91802 60780</a></p>
+          <button type="button" class="btn btn-light" id="naSignOut">Sign out</button>`;
+        document.querySelector('main').appendChild(box);
+        box.querySelector('#naSignOut').onclick = () => db.auth.signOut().then(() => location.reload());
+      }
+      if (box) { box.querySelector('.na-email').textContent = email || ''; box.classList.toggle('hidden', !on); }
+      document.body.classList.toggle('noacc', !!on);
+    }
+  </script>
+
+  <script>
+    // ===== New look: section tabs, period buttons, overview charts, click-to-filter, table search =====
+    (function () {
+      const $ = (id) => document.getElementById(id), main = document.querySelector('main');
+      const TABS = [['overview', 'Overview'], ['flow', 'Inflow & outflow'], ['move', 'Transport & outcomes'], ['agents', 'Agents'], ['mfr', 'MFR & fleet'],
+        ['app', 'Calls & follow-ups'], ['hubs', 'Hubs'], ['police', 'Police & FIR'], ['missing', 'Missing bikes']];
+      let cur = 'overview'; try { cur = sessionStorage.getItem('rt-tab') || 'overview'; } catch (e) {}
+      if (!TABS.some(t => t[0] === cur)) cur = 'overview';
+      const nav = $('stabs');
+      nav.innerHTML = TABS.map(([k, l]) => `<button type="button" data-go="${k}">${l}<i class="hidden" data-badge="${k}"></i></button>`).join('');
+      function show(k) {
+        cur = k; try { sessionStorage.setItem('rt-tab', k); } catch (e) {}
+        nav.querySelectorAll('[data-go]').forEach(b => b.classList.toggle('on', b.dataset.go === k));
+        document.querySelectorAll('#dash [data-tab]').forEach(el => { el.hidden = !el.dataset.tab.split(' ').includes(k); });
+        window.dispatchEvent(new Event('resize'));   // charts that were hidden size themselves now
+      }
+      nav.addEventListener('click', (e) => { const b = e.target.closest('[data-go]'); if (b) { show(b.dataset.go); nav.scrollIntoView({ block: 'nearest' }); } });
+      document.addEventListener('click', (e) => { const b = e.target.closest('[data-goto]'); if (b) { show(b.dataset.goto); window.scrollTo({ top: nav.offsetTop - 80, behavior: 'smooth' }); } });
+      show(cur);
+
+      // period: buttons instead of a drop-down (the drop-down stays and drives the page)
+      const pf = $('periodFilter'), seg = $('periodSeg');
+      seg.innerHTML = [...pf.options].map(o => `<button type="button" data-p="${o.value}">${o.value === 'custom' ? 'Dates…' : o.text.replace('Last ', '')}</button>`).join('');
+      const markP = () => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.p === pf.value));
+      seg.addEventListener('click', (e) => { const b = e.target.closest('[data-p]'); if (!b) return; pf.value = b.dataset.p; pf.dispatchEvent(new Event('change', { bubbles: true })); markP(); });
+      pf.addEventListener('change', markP); markP();
+
+      // chips showing the city / hub / model filter, with a × to clear
+      function fchips() {
+        const box = $('fchips'); if (!box) return;
+        box.innerHTML = ['cityFilter', 'hubFilter', 'modelFilter'].filter(id => $(id).value)
+          .map(id => `<span class="fchip">${$(id).value.replace(/</g, '&lt;')}<button type="button" data-clr="${id}" aria-label="Clear">×</button></span>`).join('');
+      }
+      $('fchips').addEventListener('click', (e) => { const b = e.target.closest('[data-clr]'); if (!b) return; $(b.dataset.clr).value = ''; $(b.dataset.clr).dispatchEvent(new Event('change', { bubbles: true })); });
+
+      // ---- chart look + click a city / hub on any chart to filter the whole page ----
+      Chart.defaults.font.family = '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+      Chart.defaults.font.size = 11.5; Chart.defaults.color = '#64748b';
+      Chart.defaults.elements.bar.borderRadius = 4; Chart.defaults.elements.bar.borderSkipped = 'start';
+      Chart.defaults.datasets.bar.maxBarThickness = 34; Chart.defaults.datasets.bar.borderColor = 'rgba(255,255,255,.9)'; Chart.defaults.datasets.bar.borderWidth = { top: 0, right: 0, bottom: 0, left: 0 };
+      Chart.defaults.elements.line.borderWidth = 2; Chart.defaults.elements.line.tension = .35; Chart.defaults.elements.point.radius = 0; Chart.defaults.elements.point.hoverRadius = 5;
+      Chart.defaults.interaction = { mode: 'index', intersect: false };
+      Object.assign(Chart.defaults.plugins.tooltip, { backgroundColor: '#0b1b33', titleColor: '#fff', bodyColor: '#dbe6f7', footerColor: '#fff', padding: 10, cornerRadius: 10,
+        titleFont: { weight: '700' }, bodySpacing: 4, boxPadding: 4, usePointStyle: true });
+      Chart.defaults.plugins.legend.position = 'bottom'; Chart.defaults.plugins.legend.labels.padding = 14;
+      Chart.defaults.animation = { duration: 500, easing: 'easeOutQuart' };
+      const optIn = (id, v) => [...$(id).options].some(o => o.value === v);
+      const pick = (chart, els) => { if (!els || !els.length) return null; const lab = chart.data.labels && chart.data.labels[els[0].index];
+        const v = Array.isArray(lab) ? lab.join(' ') : String(lab ?? ''); return optIn('cityFilter', v) ? ['cityFilter', v] : optIn('hubFilter', v) ? ['hubFilter', v] : null; };
+      Chart.defaults.onHover = (e, els, chart) => { chart.canvas.style.cursor = pick(chart, els) ? 'pointer' : 'default'; };
+      Chart.defaults.onClick = (e, els, chart) => { const p = pick(chart, chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false)); if (!p) return;
+        if (p[0] === 'cityFilter') $('hubFilter').value = '';
+        $(p[0]).value = p[1]; $(p[0]).dispatchEvent(new Event('change', { bubbles: true })); };
+
+      // ---- after every redraw: overview numbers, sparklines, mini charts, insights ----
+      const nf = (n) => Number(n || 0).toLocaleString('en-IN');
+      const ov = {}; const odraw = (id, cfg) => { if (ov[id]) ov[id].destroy(); ov[id] = new Chart($(id), cfg); };
+      function series(keys, n = 14) {   // last n days of the daily Metabase numbers (follows City / Hub / Model)
+        const days = []; for (let i = n - 1; i >= 0; i--) days.push(addDays(TODAY, -i));
+        const F = FDAY.filter(fleetMatch), byDay = new Map();
+        F.forEach(r => { const x = byDay.get(r.day) || {}; keys.forEach(k => { x[k] = (x[k] || 0) + (r[k] || 0); }); byDay.set(r.day, x); });
+        const bad = (d) => { const x = byDay.get(d); return x && (x.inflow || 0) + (x.outflow || 0) > 1500; };   // the broken refresh of 3 Nov
+        return { days, get: (k) => days.map(d => (byDay.has(d) && !bad(d) ? byDay.get(d)[k] || 0 : null)) };
+      }
+      function spark(cardId, values, color) {
+        const card = $(cardId)?.closest('.card'); if (!card) return; let c = card.querySelector('canvas.spark');
+        if (!c) { const box = document.createElement('div'); box.className = 'sparkbox'; c = document.createElement('canvas'); c.className = 'spark'; box.appendChild(c); card.appendChild(box); }
+        if (c._ch) c._ch.destroy();
+        c._ch = new Chart(c, { type: 'line', data: { labels: values.map((_, i) => i), datasets: [{ data: values, borderColor: color, borderWidth: 2, fill: true, spanGaps: true,
+          backgroundColor: (ctx) => { const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 34); g.addColorStop(0, color + '40'); g.addColorStop(1, color + '00'); return g; } }] },
+          options: { animation: false, events: [], plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false, beginAtZero: true } } } });
+      }
+      // in / out of MFR per day from our own 30-minute counting (adds up: MFR at 7 am + in − out = next 7 am)
+      function flowSeries(n = 14) {
+        const days = []; for (let i = n - 1; i >= 0; i--) days.push(addDays(TODAY, -i));
+        const fl = FLOW.filter(fleetMatch), f = (d, k, re) => fl.filter(r => r.day === d && r.kind === k && (!re || r.reason === re)).reduce((x, r) => x + r.n, 0);
+        const ok = (d) => FLOW_START && d >= FLOW_START;
+        return { days, inn: days.map(d => ok(d) ? f(d, 'in') : null), out: days.map(d => ok(d) ? f(d, 'out') : null), active: days.map(d => ok(d) ? f(d, 'out', 'renewed') : null) };
+      }
+      function overview() {
+        const s = series(['recovered', 'moved_hub']), fs = flowSeries();
+        spark('kInflow', fs.inn, '#e87ba4'); spark('kOutflow', fs.out, '#2a78d6');
+        spark('kRecovered', s.get('recovered'), '#eda100'); spark('kActive', fs.active, '#38bdf8'); spark('kHub', s.get('moved_hub'), '#6250d6');
+        // hero numbers
+        const t = (id) => $(id).textContent;
+        $('gMfr').textContent = t('kMfr'); $('gPct').textContent = t('kMfrPct'); $('gIn').textContent = t('kInflow'); $('gOut').textContent = t('kOutflow'); $('gRec').textContent = t('kRecovered');
+        $('gWhen').textContent = $('periodNote').textContent || 'Today';
+        // 14-day inflow vs outflow
+        odraw('ovTrend', { type: 'bar', data: { labels: fs.days.map(fmtDay), datasets: [
+          { label: 'Inflow', data: fs.inn, backgroundColor: '#e87ba4' }, { label: 'Outflow', data: fs.out, backgroundColor: '#2a78d6' },
+          { type: 'line', label: 'Renewed (back to active)', data: fs.active, borderColor: '#eda100', backgroundColor: '#eda100' }] },
+          options: { scales: axes(false), plugins: { tooltip: { callbacks: { footer: (it) => { const a = it.find(x => x.dataset.label === 'Inflow'), b = it.find(x => x.dataset.label === 'Outflow');
+            return a && b && a.raw != null && b.raw != null ? `Net change in MFR: ${a.raw - b.raw > 0 ? '+' : ''}${a.raw - b.raw}` : ''; } } } } } });
+        // MFR now, by city (click a bar to filter)
+        const F = FLEET.filter(r => (!$('hubFilter').value || hubKey(r.hub) === hubKey($('hubFilter').value)) && (!$('modelFilter').value || r.model === $('modelFilter').value));
+        const city = new Map(); F.forEach(r => city.set(r.city, (city.get(r.city) || 0) + (r.mfr || 0)));
+        const cs = [...city].filter(x => x[0]).sort((a, b) => b[1] - a[1]);
+        const sel = $('cityFilter').value;
+        odraw('ovCity', { type: 'bar', data: { labels: cs.map(x => x[0]), datasets: [{ label: 'Bikes in MFR now', data: cs.map(x => x[1]),
+          backgroundColor: cs.map(x => !sel || x[0] === sel ? '#2a78d6' : '#bfd3f8') }] },
+          options: { indexAxis: 'y', scales: axes(false, true), plugins: { legend: { display: false } } } });
+        // MFR by age (sequential: older = darker)
+        const age = new Map(); FLEET.filter(fleetMatch).forEach(r => { if (r.age_bucket) age.set(r.age_bucket, (age.get(r.age_bucket) || 0) + (r.mfr || 0)); });
+        const ages = AGE_ORDER.filter(a => age.has(a)), ramp = ['#dbe7fd', '#bcd2fb', '#93b5f6', '#6694ee', '#3f72e0', '#2556c4', '#173a8f'];
+        odraw('ovAge', { type: 'bar', data: { labels: ages.map(a => a.replace(' days', 'd').replace('Above 10d', '10d+')), datasets: [{ label: 'Bikes in MFR', data: ages.map(a => age.get(a)),
+          backgroundColor: ages.map(a => ramp[AGE_ORDER.indexOf(a)] || '#2556c4') }] }, options: { scales: axes(false), plugins: { legend: { display: false } } } });
+        // insights in plain words
+        const ins = [], totMfr = ages.reduce((x, a) => x + age.get(a), 0), old = (age.get('Above 10 days') || 0) + (age.get('5-10 days') || 0);
+        const inn = fs.inn.slice(-7).filter(v => v != null), out = fs.out.slice(-7).filter(v => v != null), sum = (a) => a.reduce((x, y) => x + y, 0);
+        if (inn.length && out.length) { const net = sum(inn) - sum(out);
+          ins.push([net > 0 ? 'bad' : 'good', `Last 7 days: <b>${nf(sum(inn))}</b> in, <b>${nf(sum(out))}</b> out — MFR ${net > 0 ? 'grew' : 'shrank'} by <b>${nf(Math.abs(net))}</b> bikes.`, 'flow']); }
+        if (totMfr) ins.push([old / totMfr > .25 ? 'warn' : 'info', `<b>${nf(old)}</b> of ${nf(totMfr)} MFR bikes (${Math.round(100 * old / totMfr)}%) have been in MFR for 5+ days.`, 'mfr']);
+        if (cs.length) ins.push(['info', `Most MFR bikes now: <b>${cs[0][0]}</b> (${nf(cs[0][1])})${cs[1] ? `, then ${cs[1][0]} (${nf(cs[1][1])})` : ''}.`, 'hubs']);
+        const pol = Number(($('kPolice').textContent || '0').replace(/\D/g, '')), fir = Number(($('kFir').textContent || '0').replace(/\D/g, ''));
+        if (pol || fir) ins.push(['warn', `<b>${nf(pol)}</b> bikes at police stations · <b>${nf(fir)}</b> with an FIR.`, 'police']);
+        const fu = ($('appFollowN')?.textContent || '').match(/\d+/); if (fu && Number(fu[0])) ins.push(['warn', `<b>${fu[0]}</b> follow-ups from agent calls are waiting.`, 'app']);
+        $('ovInsights').innerHTML = ins.map(([k, h, go]) => `<div class="insight ${k}"><span class="dot"></span><div>${h} <button class="linkbtn" type="button" data-goto="${go}">View →</button></div></div>`).join('')
+          || '<p class="note">Numbers appear once the data has loaded.</p>';
+        // badges on the tabs
+        const mb = document.querySelectorAll('#tMb tbody tr').length, mbB = document.querySelector('[data-badge="missing"]');
+        if (mbB) { mbB.textContent = mb || ''; mbB.classList.toggle('hidden', !mb || /No bikes|Loading/.test($('tMb').tBodies[0]?.textContent || '')); }
+        const pB = document.querySelector('[data-badge="police"]'); if (pB) { pB.textContent = nf(pol); pB.classList.toggle('hidden', !pol); }
+        fchips();
+      }
+      // search box above the long tables
+      function tableSearch(id, ph) {
+        const t = $(id); if (!t || t.dataset.s) return; t.dataset.s = 1;
+        const i = document.createElement('input'); i.type = 'search'; i.className = 'tsearch'; i.placeholder = ph;
+        t.closest('.table-wrap').before(i);
+        const run = () => { const q = i.value.trim().toLowerCase(); [...t.tBodies[0].rows].forEach(r => { r.hidden = !!q && !r.textContent.toLowerCase().includes(q); }); };
+        i.addEventListener('input', run); new MutationObserver(run).observe(t.tBodies[0], { childList: true });
+      }
+      [['agentTable', 'Search agent…'], ['hubTable', 'Search hub or city…'], ['tAppAgents', 'Search agent…'], ['tCalls', 'Search bike, agent or result…'], ['tAppFollow', 'Search bike or agent…'], ['tMb', 'Search bike or hub…']]
+        .forEach(([id, ph]) => tableSearch(id, ph));
+
+      const orig = window.render;
+      window.render = function () { const r = orig.apply(this, arguments); try { overview(); } catch (e) { console.warn('overview', e); } return r; };
+      // missing-bike list loads on its own: refresh the badge when it changes
+      const mbT = document.querySelector('#tMb tbody'); if (mbT) new MutationObserver(() => { try { overview(); } catch (e) {} }).observe(mbT, { childList: true });
+
+      // light / dark switch (remembered on this browser)
+      const thm = $('themeBtn'); let dark = false; try { dark = localStorage.getItem('rt-theme') === 'dark'; } catch (e) {}
+      const applyT = () => { document.documentElement.dataset.theme = dark ? 'dark' : 'light'; thm.textContent = dark ? '☀ Light' : '☾ Dark';
+        Chart.defaults.color = dark ? '#9fb0cc' : '#64748b'; Object.values(Chart.instances || {}).forEach(c => c.update('none')); };
+      thm.addEventListener('click', () => { dark = !dark; try { localStorage.setItem('rt-theme', dark ? 'dark' : 'light'); } catch (e) {} applyT(); }); applyT();
+    })();
+  </script>
+  <script>
+    // Sidebar collapse button («): remembers your choice on this browser
+    (function () {
+      const KEY = 'rt-side-min', btn = document.getElementById('sideToggle');
+      let min = false; try { min = localStorage.getItem(KEY) === '1'; } catch (e) {}
+      const apply = () => {
+        document.documentElement.classList.toggle('side-min', min);
+        btn.textContent = min ? '»' : '«';
+        btn.title = min ? 'Expand sidebar' : 'Collapse sidebar'; btn.setAttribute('aria-label', btn.title);
+      };
+      document.querySelectorAll('.side .nav a, .side .adminlink').forEach(a => a.title = a.textContent.trim());
+      apply();
+      btn.addEventListener('click', () => {
+        min = !min; apply();
+        try { localStorage.setItem(KEY, min ? '1' : '0'); } catch (e) {}
+        setTimeout(() => { if (typeof map !== 'undefined' && map.invalidateSize) map.invalidateSize(); window.dispatchEvent(new Event('resize')); }, 250);
+      });
+    })();
+  </script>
+  <script>
+    // Auto-update: when a new version of this page is published, everyone who has it open moves to it by itself
+    // (only when they are not in the middle of something: 20 s without a tap/typing, nothing open; unfinished QCs are saved anyway)
+    (function () {
+      try { const u = new URL(location.href); if (u.searchParams.has('_v')) { u.searchParams.delete('_v'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } } catch (e) {}
+      const page = location.pathname, hash = (t) => { let h = 0; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return h; };
+      const get = () => fetch(page + '?_v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : null).catch(() => null);
+      let base = null, lastAct = Date.now(), pending = false;
+      ['pointerdown', 'keydown', 'input', 'touchstart'].forEach(ev => addEventListener(ev, () => { lastAct = Date.now(); }, { capture: true, passive: true }));
+      get().then(t => { if (t) base = hash(t); });
+      const busy = () => { const s = document.getElementById('sheet'), a = document.activeElement;
+        return Date.now() - lastAct < 20000 || document.visibilityState !== 'visible' || (s && !s.classList.contains('hidden')) || (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); };
+      function apply() {
+        if (busy()) { setTimeout(apply, 5000); return; }
+        try { if (Date.now() - Number(sessionStorage.getItem('autoUpd') || 0) < 120000) return; sessionStorage.setItem('autoUpd', String(Date.now())); } catch (e) {}
+        const t = document.createElement('div'); t.textContent = '⟳ Updating to the latest version…';
+        t.style.cssText = 'position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:999px;font:600 13.5px system-ui,sans-serif;z-index:99999;box-shadow:0 6px 20px rgba(0,0,0,.3)';
+        document.body.appendChild(t);
+        setTimeout(() => { const u = new URL(location.href); u.searchParams.set('_v', Date.now()); location.replace(u.toString()); }, 1200);
+      }
+      async function check() {
+        if (pending) return; const t = await get(); if (!t) return;
+        if (base === null) { base = hash(t); return; }
+        if (hash(t) !== base) { pending = true; apply(); }
+      }
+      setInterval(check, 120000);
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+    })();
+  </script>
+</body>
+</html>
