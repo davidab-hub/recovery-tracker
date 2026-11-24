@@ -278,6 +278,8 @@
     .cards[data-tab] { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
     @media (max-width: 600px) { .cards[data-tab] { grid-template-columns: 1fr 1fr; } }
   
+    /* charts fill their panel when the panel next to them is taller (no empty space under a chart) */
+    .ovgrid > .panel { display: flex; flex-direction: column; } .ovgrid > .panel > .chart, .ovgrid > .panel > #ovHubBox { flex: 1 1 auto; min-height: 220px; }
     /* ---- QC overview box: grouped panels (compact) ---- */
     .hero .ov2 { display: grid; grid-template-columns: 1.05fr 1fr 1fr; gap: 10px; margin-top: 14px; }
     .hero .ov3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
