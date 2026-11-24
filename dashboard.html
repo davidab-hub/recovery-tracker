@@ -305,9 +305,9 @@
       <select id="hubFilter"><option value="">All Hubs</option></select>
       <label>Period</label><span class="seg" id="periodSeg" role="group" aria-label="Period"></span>
       <select id="periodFilter" autocomplete="off">
-        <option value="1" selected>Today</option>
+        <option value="1">Today</option>
         <option value="7">Last 7 days</option>
-        <option value="15">Last 15 days</option>
+        <option value="15" selected>Last 15 days</option>
         <option value="30">Last 30 days</option>
         <option value="custom">Pick dates…</option>
       </select>
@@ -895,7 +895,7 @@
       render();
     };
     ['fromDate', 'toDate'].forEach(id => $(id).addEventListener('change', render));
-    $('clearBtn').onclick = () => { $('cityFilter').value = ''; $('modelFilter').value = ''; fillHubs(); $('hubFilter').value = ''; $('periodFilter').value = '1'; $('rangeBox').classList.add('hidden'); $('fromDate').value = ''; $('toDate').value = ''; render(); police(); };
+    $('clearBtn').onclick = () => { $('cityFilter').value = ''; $('modelFilter').value = ''; fillHubs(); $('hubFilter').value = ''; $('periodFilter').value = '15'; document.querySelectorAll('#periodSeg button').forEach(b => b.classList.toggle('on', b.dataset.p === '15')); $('rangeBox').classList.add('hidden'); $('fromDate').value = ''; $('toDate').value = ''; render(); police(); };
     $('menuBtn').onclick = () => $('side').classList.toggle('open');
 
     // ---- Load from Supabase (Recovery team + admins only; the database checks the role) ----
