@@ -1068,7 +1068,7 @@
       Object.assign(Chart.defaults.plugins.tooltip, { backgroundColor: '#0b1b33', titleColor: '#fff', bodyColor: '#dbe6f7', footerColor: '#fff', padding: 10, cornerRadius: 10,
         titleFont: { weight: '700' }, bodySpacing: 4, boxPadding: 4, usePointStyle: true });
       Chart.defaults.plugins.legend.position = 'bottom'; Chart.defaults.plugins.legend.labels.padding = 14;
-      Chart.defaults.animation = { duration: 500, easing: 'easeOutQuart' };
+      Object.assign(Chart.defaults.animation, { duration: 500, easing: 'easeOutQuart' });   // only change speed: replacing the object breaks hover animations
       const optIn = (id, v) => [...$(id).options].some(o => o.value === v);
       const pick = (chart, els) => { if (!els || !els.length) return null; const lab = chart.data.labels && chart.data.labels[els[0].index];
         const v = Array.isArray(lab) ? lab.join(' ') : String(lab ?? ''); return optIn('cityFilter', v) ? ['cityFilter', v] : optIn('hubFilter', v) ? ['hubFilter', v] : null; };
