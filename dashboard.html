@@ -470,9 +470,9 @@
     </section>
     <section class="panel" data-tab="police">
       <h3>Police station &amp; FIR bikes <span class="note" id="polCount" style="font-weight:500"></span></h3>
-      <p class="note">From Metabase (police case type) · follows City and Hub</p>
+      <p class="note">From the team police sheet (synced every 10 minutes) · bike status, hub and dates from Metabase · follows City and Hub</p>
       <input id="pSearch" type="search" placeholder="Search vehicle, city or hub…" style="width:100%;max-width:360px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;background:var(--input);color:var(--text)">
-      <div class="table-wrap" style="max-height:420px;overflow:auto"><table id="tPol"><thead><tr><th>Vehicle</th><th>Case type</th><th>Bike status</th><th>City</th><th>Hub</th><th>Marked since</th><th class="num">Days</th></tr></thead><tbody></tbody></table></div>
+      <div class="table-wrap" style="max-height:420px;overflow:auto"><table id="tPol"><thead><tr><th>Vehicle</th><th>Case type</th><th>Police station / note</th><th>Bike status</th><th>City</th><th>Hub</th><th>Marked since</th><th class="num">Days</th></tr></thead><tbody></tbody></table></div>
     </section>
     </div>
   </main>
@@ -573,9 +573,9 @@
     function fleet(from, to, pName, days, labels) {
       const F = FLEET.filter(fleetMatch), S = (k, arr = F) => arr.reduce((s, r) => s + (r[k] || 0), 0);
       const at = FLEET_AT ? new Date(FLEET_AT).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
-      const tot = S('bikes'), mfr = S('mfr'), pol = S('mfr_police');
+      const tot = S('bikes'), mfr = S('mfr'), pol = polList().length;
       $('kTotal').textContent = FLEET.length ? num(tot) : '–'; $('kTotalSub').textContent = FLEET.length ? `all statuses · live ${at}` : 'live data not loaded yet';
-      $('kMfr').textContent = num(mfr); $('kMfrSub').textContent = `marked for recovery now · +${num(pol)} police-case bikes`;
+      $('kMfr').textContent = num(mfr); $('kMfrSub').textContent = `marked for recovery now · ${num(pol)} police cases (team sheet)`;
       $('kMfrPct').textContent = tot ? (100 * mfr / tot).toFixed(1) + '%' : '–'; $('kMfrPctSub').textContent = `${num(mfr)} of ${num(tot)} bikes`;
       // Period numbers from the daily history
       const fd = FDAY.filter(fleetMatch).filter(r => r.day >= from && r.day <= to), dN = new Set(fd.map(r => r.day)).size;
@@ -759,7 +759,7 @@
     }
     document.querySelectorAll('#agentTable th').forEach(th => { th.style.cursor = 'pointer'; th.onclick = () => { const k = th.dataset.k; sortDir = sortK === k ? -sortDir : (k === 'a' ? 1 : -1); sortK = k; agentTable(); }; });
 
-    // ---- Police-case bikes (Metabase police_case_type) ----
+    // ---- Police-case bikes: the team police sheet (police_cases), with live status / hub from Metabase ----
     const polList = () => { const c = $('cityFilter').value, h = $('hubFilter').value; return POLICE.filter(r => (!c || r.city === c) && (!h || hubKey(r.hub) === hubKey(h))); };
     // ---- Agent App: calls and bike updates ----
     function istDay(t) { return new Date(Date.parse(t) + 5.5 * 3600e3).toISOString().slice(0, 10); }
@@ -870,19 +870,19 @@
     setInterval(() => { if (!$('dash').classList.contains('hidden')) loadMissing().catch(() => {}); }, 2 * 60 * 1000);
     function police() {
       const P = polList(), cnt = (s) => P.filter(r => r.police_case_type === s).length;
-      $('kPolice').textContent = num(cnt('Police Station')); $('kPoliceSub').textContent = `held at a police station · live ${FLEET_AT ? new Date(FLEET_AT).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : ''}`;
+      $('kPolice').textContent = num(cnt('Police Station')); $('kPoliceSub').textContent = `held at a police station · team police sheet`;
       $('kFir').textContent = num(cnt('FIR Filed')); $('kFirSub').textContent = `FIR filed · ${cnt('Under Process')} more under process`;
       polTable(P);
     }
     function polTable(P) {
       const q = $('pSearch').value.trim().toLowerCase();
-      const L = q ? P.filter(r => [r.reg_number, r.police_case_type, r.status, r.city, r.hub].join(' ').toLowerCase().includes(q)) : P;
-      const ord = { 'Police Station': 0, 'FIR Filed': 1, 'Under Process': 2 };
+      const L = q ? P.filter(r => [r.reg_number, r.police_case_type, r.place, r.status, r.city, r.hub].join(' ').toLowerCase().includes(q)) : P;
+      const ord = { 'Police Station': 0, 'FIR Filed': 1, 'Under Process': 2, 'With Landlord': 3, 'Found': 4 };
       $('polCount').textContent = `· ${L.length} bikes`;
       $('tPol').tBodies[0].innerHTML = [...L].sort((p, q2) => (ord[p.police_case_type] ?? 9) - (ord[q2.police_case_type] ?? 9) || String(p.city).localeCompare(q2.city) || (q2.age_days || 0) - (p.age_days || 0)).map(r => {
         const s = r.police_case_type, tag = s === 'Police Station' ? 'tag-bad' : s === 'FIR Filed' ? 'tag-fir' : s === 'Under Process' ? 'tag-wait' : '';
         const since = r.mfr_since ? new Date(r.mfr_since).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit', timeZone: 'Asia/Kolkata' }) : '';
-        return `<tr><td><strong>${esc(r.reg_number)}</strong></td><td><span class="tag ${tag}">${esc(s)}</span></td><td>${esc(r.status || '')}</td><td>${esc(r.city || '')}</td><td>${esc(r.hub || '')}</td><td>${since}</td><td class="num">${r.age_days ?? ''}</td></tr>`; }).join('') || '<tr><td colspan="7">No matches.</td></tr>';
+        return `<tr><td><strong>${esc(r.reg_number)}</strong></td><td><span class="tag ${tag}">${esc(s)}</span></td><td>${esc(r.place || '')}</td><td>${esc(r.status || '')}</td><td>${esc(r.city || '')}</td><td>${esc(r.hub || '')}</td><td>${since}</td><td class="num">${r.age_days ?? ''}</td></tr>`; }).join('') || '<tr><td colspan="8">No matches.</td></tr>';
     }
     $('pSearch').oninput = () => polTable(polList());
     $('cityFilter').onchange = () => { fillHubs(); render(); police(); };
@@ -918,7 +918,17 @@
           db.rpc('fleet_summary').then(fs => { if (fs.error) throw fs.error; return fs.data || []; }),
           pageAll(() => db.from('fleet_daily').select('day, city, hub, model, inflow, outflow, recovered, moved_hub, moved_active, mfr_all').gte('day', since).order('day')),
           pageAll(() => db.from('fleet_agent_daily').select('day, agent, city, hub, outflow, recovered, moved_hub, moved_active').gte('day', since).order('day')),
-          pageAll(() => db.from('fleet_live').select('reg_number, city, hub, status, police_case_type, mfr_since, age_days').not('police_case_type', 'is', null).order('reg_number')),
+          (async () => {   // police cases = the team police sheet; bike status / hub / dates from Metabase
+            const pc = await pageAll(() => db.from('police_cases').select('reg_number, status, station, note, city').order('reg_number'));
+            const regs = pc.map(r => r.reg_number), live = new Map();
+            for (let i = 0; i < regs.length; i += 150) {
+              const { data, error } = await db.from('fleet_live').select('reg_number, city, hub, status, mfr_since, age_days').in('reg_number', regs.slice(i, i + 150));
+              if (error) throw error; (data || []).forEach(r => live.set(r.reg_number, r));
+            }
+            return pc.map(r => { const f = live.get(r.reg_number) || {};
+              return { reg_number: r.reg_number, police_case_type: r.status, place: r.station || r.note || '', city: f.city || (r.city === 'Delhi' ? 'NCR' : r.city) || '',
+                hub: f.hub || '', status: f.status || '', mfr_since: f.mfr_since || null, age_days: f.age_days ?? null }; });
+          })(),
         ]).catch(e => ({ err: e }));
         // Inflow / outflow counted by us (every 30-min refresh compared with the one before)
         const flowP = db.rpc('mfr_flow', { p_from: since, p_to: '2100-01-01' }).then(r => r.error ? [] : (r.data || [])).catch(() => []);
