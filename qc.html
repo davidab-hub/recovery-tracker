@@ -1,266 +1,282 @@
 <!doctype html>
-<html lang="en" data-theme="light" data-palette="blue">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>QC Dashboard</title>
   <script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* Inside the phone app: no sidebar / top tabs, the app has its own header and bottom bar */
+    /* ===== Recovery Dashboard · new look (Nov 2026) ===== */
     html.embed .side, html.embed .tabs-top { display: none !important; }
     html.embed main { padding-top: 8px !important; }
     :root {
-      /* Bounce brand */
-      --brand: #e3262b; --brand-dark: #b91c21; --brand-tint: #3a1517; --side: #16181d; --side-2: #1f2228; --side-text: #9aa0aa;
-      --page: #f4f5f8; --card: #ffffff; --text: #111827; --text-2: #4b5563; --muted: #6b7280;
-      --border: #e5e7eb; --grid: #e1e0d9; --axis: #c3c2b7;
-      --red: #e3262b; --blue: #2563eb; --green: #16a34a; --orange: #d97706; --dark: #1f2937;
-      --input: #ffffff; --soft: #f5f6f8; --hover: #eef4ff; --ring: #93c5fd; --label: #374151; --tip: #ffffff; --tip-text: #111827;
-      --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6;
+      --brand: #e3262b; --navy: #0b1b33; --navy-2: #13294b; --navy-3: #1d3a66; --side-text: #9fb2d0;
+      --page: #f3f6fb; --card: #ffffff; --text: #0f172a; --text-2: #475569; --muted: #64748b; --border: #e3e9f2; --soft: #f1f5fb; --hover: #eaf1fc;
+      --input: #ffffff; --ring: #93c5fd; --label: #334155;
+      --blue: #2563eb; --teal: #6250d6; --amber: #eda100; --red: #6250d6; --violet: #7c3aed; --green: #2a78d6; --orange: #eda100; --dark: #0f172a;
+      --radius: 16px; --shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.12);
     }
-
-    /* ===== Themes: switch with the buttons at the top right ===== */
     html[data-theme="dark"] {
-      --page: #0b1020; --card: #121a2f; --text: #e8ecf5; --text-2: #b4bdd0; --muted: #8590a8;
-      --border: #222c47; --grid: rgba(255,255,255,.07); --axis: #2f3a58; --dark: #2a3452;
-      --input: #0e1528; --soft: #18213a; --hover: #1d2848; --ring: #4f7ddb; --label: #dfe5f2; --tip: #1a2340; --tip-text: #e8ecf5;
-      --side: #080c18; --side-2: #121a2f; --brand-tint: #3a1219;
-      --s1: #4c95ef; --s2: #f07a45; --s3: #2cc28c; --s4: #f2b31b; --s5: #ef8fb3; --s6: #4fb84f; --s7: #8b7cf0;
-      --blue: #5b9df5; --green: #34d399; --orange: #f59e0b;
+      --page: #0a1222; --card: #111c31; --text: #e8eef8; --text-2: #b3c0d6; --muted: #8495b3; --border: #1f2d47; --soft: #16233b; --hover: #1a2a47;
+      --input: #0d172b; --ring: #3b6fd1; --label: #d4def0; --shadow: 0 10px 30px -14px rgba(0,0,0,.6);
     }
-    html[data-theme="dark"] .card, html[data-theme="dark"] .panel, html[data-theme="dark"] .bar {
-      background: linear-gradient(180deg, #141d34, #10172b); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
-    html[data-theme="dark"] .cards .card { border-top: 2px solid var(--k); }
-    html[data-theme="dark"] .cards .card .value { text-shadow: 0 0 18px color-mix(in srgb, var(--k) 55%, transparent); }
-    html[data-theme="dark"] .card .ico { box-shadow: 0 0 14px color-mix(in srgb, var(--k) 45%, transparent); }
-    html[data-theme="dark"] .page-title { color: #fff; }
-
-    html[data-theme="gradient"] .cards .card { background: linear-gradient(135deg, var(--k), color-mix(in srgb, var(--k) 62%, #1a0a2e));
-      border: none; color: #fff; box-shadow: 0 6px 18px color-mix(in srgb, var(--k) 35%, transparent); }
-    html[data-theme="gradient"] .cards .card .label, html[data-theme="gradient"] .cards .card .sub,
-    html[data-theme="gradient"] .cards .card .value, html[data-theme="gradient"] .cards .card .more { color: #fff !important; }
-    html[data-theme="gradient"] .cards .card .label, html[data-theme="gradient"] .cards .card .sub { opacity: .88; }
-    html[data-theme="gradient"] .card .ico { background: rgba(255,255,255,.22) !important; color: #fff !important; }
-    html[data-theme="gradient"] .card .delta { background: rgba(255,255,255,.22) !important; color: #fff !important; }
-    html[data-theme="gradient"] .card .meter { background: rgba(255,255,255,.25); }
-    html[data-theme="gradient"] .panel { box-shadow: 0 4px 14px rgba(17,24,39,.06); border-color: transparent; }
-
-    html[data-theme="light"] .cards .card, html[data-theme="light"] .panel { box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.05); }
-
-    /* Card extras: icon badge, change vs yesterday, sparkline, meter */
-    .card .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-    .card .ico { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      color: var(--k); background: color-mix(in srgb, var(--k) 14%, transparent); }
-    .card .ico svg { width: 16px; height: 16px; }
-    .card .vrow { display: flex; align-items: baseline; gap: 8px; }
-    .card .value { color: var(--k) !important; }
-    html[data-theme="light"] .card .value, html:not([data-theme]) .card .value { color: var(--text) !important; }
-    .card .delta { font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 999px; white-space: nowrap; }
-    .delta.good { color: #15803d; background: rgba(22,163,74,.12); } .delta.bad { color: #c81e1e; background: rgba(227,38,43,.12); }
-    .delta.flat { color: var(--muted); background: var(--soft); }
-    html[data-theme="dark"] .delta.good { color: #4ade80; } html[data-theme="dark"] .delta.bad { color: #ff7b7f; }
-    .card canvas.spark { display: block; width: 100%; height: 30px; margin-top: 6px; }
-    .card .meter { height: 6px; border-radius: 999px; background: var(--soft); margin-top: 8px; overflow: hidden; display: flex; }
-    .card .meter span { display: block; height: 100%; }
-    .themes { display: inline-flex; background: var(--soft); border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px; margin-left: auto; align-self: center; }
-    .themes button { border: none; background: transparent; color: var(--text-2); font: 600 12px inherit; font-family: inherit; padding: 4px 12px; border-radius: 999px; cursor: pointer; }
-    .themes button.on { background: var(--brand); color: #fff; }
-    .tabs-top { align-items: flex-end; flex-wrap: wrap; }
-    @media (max-width: 600px) { .themes { margin: 6px 0 8px; } }
-
-    /* ===== Colours: Bounce red, soft coral shades ===== */
-    :root { --a1: #86b6ef; --a2: #3987e5; --a3: #1c5cab; --a4: #0d366b; }
-    html[data-palette="blue"] {
-      --page: #f8fbff; --card: #ffffff; --border: #e6eef8; --input: #ffffff; --soft: #f1f6fd; --hover: #e8f0fb; --ring: #7fb3f8;
-      --text: #1b2538; --text-2: #4a5670; --muted: #7a879f; --label: #4a5670; --tip: #ffffff; --tip-text: #1b2538;
-      --grid: rgba(30,60,120,.06); --axis: #e6eef8;
-      --s1: #7fb3f8; --s2: #cfe2fd; --s3: #3b82f6; --s4: #eaf3fe; --s5: #5b9cf6; --s6: #a8cbfa; --s7: #2563eb; --red: #5b9cf6; --dark: #3b82f6;
-      --a1: #dbe9fe; --a2: #a8cbfa; --a3: #5b9cf6; --a4: #2563eb;
-    }
-    html[data-palette="blue"] .cards .card { --k: #7fb3f8 !important; }
-    html[data-palette="blue"] .card .value { color: var(--text) !important; }
-    html[data-palette="blue"] .card .delta { color: #2563eb !important; background: #e8f0fb !important; }
-    html[data-palette="blue"] .pill:not(.off) { background: #7fb3f8; border-color: #7fb3f8; color: #0b2a6f; }
-    html[data-palette="blue"] .page-title { color: var(--text); }
-    html[data-palette="blue"] .cards .card, html[data-palette="blue"] .panel, html[data-palette="blue"] .bar { box-shadow: 0 1px 2px rgba(20,40,90,.03), 0 6px 16px rgba(20,40,90,.05); }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--page); color: var(--text); }
+    body { margin: 0; font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--page); color: var(--text); -webkit-font-smoothing: antialiased; }
+    .hidden { display: none !important; }
+    .num, td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 
-    /* App layout: dark sidebar + content */
+    /* ---- sidebar (top bar on phones) ---- */
     .app { display: flex; min-height: 100vh; }
-    .side { width: 220px; flex-shrink: 0; background: var(--side); color: #fff; display: flex; flex-direction: column;
-            position: sticky; top: 0; height: 100vh; }
-    .side .collapse { text-align: right; padding: 10px 14px; color: var(--side-text); font-size: 15px; border-bottom: 1px solid #262930; }
-    .brandrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #262930; }
-    .logo { width: 38px; height: 38px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center;
-            justify-content: center; text-align: center; font-size: 8px; font-weight: 800; line-height: 1.1; letter-spacing: .03em; overflow: hidden; flex-shrink: 0; }
+    .side { width: 232px; flex-shrink: 0; background: linear-gradient(180deg, var(--navy), #08142a); color: #fff; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; transition: width .2s; z-index: 30; }
+    .side button.collapse { display: block; width: 100%; background: none; border: none; border-bottom: 1px solid rgba(255,255,255,.06); cursor: pointer; text-align: right; padding: 10px 14px; color: var(--side-text); font: inherit; font-size: 15px; }
+    .side button.collapse:hover { color: #fff; }
+    .brandrow { display: flex; align-items: center; gap: 10px; padding: 14px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .logo { width: 38px; height: 38px; border-radius: 12px; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; overflow: hidden; flex-shrink: 0; box-shadow: 0 6px 16px -6px rgba(0,0,0,.5); }
     .logo img { width: 100%; height: 100%; object-fit: cover; }
-    .brandname { font-size: 14px; font-weight: 700; }
-    .brandname span { color: var(--brand); }
-    .navsec { padding: 12px 0 4px 16px; font-size: 10.5px; font-weight: 700; letter-spacing: .12em; color: #6b717c; }
-    .nav a { display: flex; align-items: center; gap: 10px; padding: 8px 16px; color: var(--side-text); text-decoration: none; font-size: 13.5px;
-             border-left: 3px solid transparent; }
-    .nav a:hover { background: var(--side-2); color: #fff; }
-    .nav a.active { background: var(--brand-tint); color: #fff; font-weight: 700; border-left-color: var(--brand); }
+    .brandname { font-size: 14.5px; font-weight: 800; letter-spacing: -.01em; color: #fff; }
+    .brandname span { color: #fff; opacity: .7; font-weight: 600; }
+    .navsec { padding: 14px 0 6px 18px; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; color: #5f7397; }
+    .nav a { display: flex; align-items: center; gap: 10px; margin: 2px 10px; padding: 9px 12px; color: var(--side-text); text-decoration: none; font-size: 13.5px; border-radius: 10px; }
+    .nav a:hover { background: rgba(255,255,255,.06); color: #fff; }
+    .nav a.active { background: linear-gradient(90deg, rgba(59,130,246,.35), rgba(59,130,246,.08)); color: #fff; font-weight: 700; box-shadow: inset 3px 0 0 #60a5fa; }
     .nav svg { width: 16px; height: 16px; flex-shrink: 0; }
-    .side .foot { margin-top: auto; border-top: 1px solid #262930; padding: 10px 14px; font-size: 12px; color: var(--side-text); }
-    .side .foot .live { display: flex; align-items: center; gap: 8px; }
-    .side .foot .live i { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block; }
-    .content { flex: 1; min-width: 0; }
-    main { max-width: 1520px; margin: 0 auto; padding: 4px 24px 28px; }
-    .tabs-top { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin: 0 0 14px; padding-top: 12px; }
-    .tabs-top a { padding: 8px 14px; font-size: 14.5px; font-weight: 600; color: var(--text-2); text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; }
-    .tabs-top a.active { color: var(--brand); border-bottom-color: var(--brand); }
-    .page-title { margin: 0; font-size: 21px; font-weight: 800; }
-    .page-sub { margin: 3px 0 14px; color: var(--muted); font-size: 13px; }
+    .side .foot { margin-top: auto; border-top: 1px solid rgba(255,255,255,.06); padding: 12px 14px; font-size: 12px; color: var(--side-text); }
+    .side .foot .live { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--side-text); background: none; padding: 0; }
+    .side .foot .live i { width: 8px; height: 8px; border-radius: 50%; background: #60a5fa; box-shadow: 0 0 0 4px rgba(96,165,250,.2); display: inline-block; }
+    .contact-side { font-size: 11.5px; line-height: 1.5; color: var(--side-text); padding: 0 0 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,.06); word-break: break-all; }
+    .contact-side a { color: #cbd7ea; text-decoration: none; }
+    .adminlink { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin: 0 -4px 10px; border-radius: 10px; color: var(--side-text); text-decoration: none; font-size: 13px; font-weight: 600; }
+    .adminlink svg { width: 15px; height: 15px; }
+    .adminlink:hover, .adminlink.active { background: rgba(255,255,255,.08); color: #fff; }
+    .authbox { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .authbox .who { color: #d6e0f0; word-break: break-all; }
+    .authbox button { width: 100%; padding: 7px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.12); color: #cfe0ff; font-size: 12.5px; font-weight: 600; border-radius: 10px; cursor: pointer; font-family: inherit; }
     .menu-btn { display: none; }
+    @media (min-width: 901px) {
+      html.side-min .side { width: 68px; }
+      html.side-min .side button.collapse { text-align: center; }
+      html.side-min .brandrow { justify-content: center; padding: 12px 0; }
+      html.side-min .brandname, html.side-min .navsec, html.side-min #authBox, html.side-min .side .foot .live, html.side-min .contact-side { display: none; }
+      html.side-min .nav a, html.side-min .adminlink { font-size: 0; justify-content: center; padding: 10px 0; gap: 0; }
+      html.side-min .nav a svg, html.side-min .adminlink svg { width: 18px; height: 18px; }
+    }
     @media (max-width: 900px) {
       .app { flex-direction: column; }
-      .side { width: 100%; height: auto; position: static; }
-      .side .collapse, .side .foot, .navsec { display: none; }
-      .side .nav { display: none; }
-      .side.open .nav { display: block; }
-      .brandrow { justify-content: space-between; padding: 12px 16px; }
-      .menu-btn { display: inline-block; background: none; border: 1px solid #3a3d44; color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 18px; }
-      main { padding: 8px 16px 32px; }
+      .side { width: 100%; height: auto; position: sticky; top: 0; }
+      .side button.collapse, .side .foot, .navsec { display: none; }
+      .side .nav { display: none; padding-bottom: 8px; }
+      .side.open .nav, .side.open .foot { display: block; }
+      .brandrow { justify-content: space-between; padding: 10px 16px; }
+      .menu-btn { display: inline-block; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: #fff; border-radius: 10px; padding: 6px 10px; font-size: 18px; }
     }
-    /* Show / hide pills for chart lines (brand red when on) */
+
+    /* ---- page ---- */
+    .content { flex: 1; min-width: 0; }
+    main { max-width: 1560px; margin: 0 auto; padding: 8px 28px 40px; }
+    @media (max-width: 900px) { main { padding: 6px 14px 32px; } }
+    .tabs-top { display: flex; gap: 6px; margin: 10px 0 6px; }
+    .tabs-top a { padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--text-2); text-decoration: none; border-radius: 999px; }
+    .tabs-top a.active { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+    .page-title { margin: 6px 0 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+    .page-sub { margin: 4px 0 14px; color: var(--muted); font-size: 13px; }
+    .err { color: #4c3bc2; }
+
+    /* ---- hero header ---- */
+    .hero { position: relative; overflow: hidden; border-radius: 22px; padding: 22px 24px; margin: 10px 0 14px; color: #fff;
+      background: radial-gradient(1200px 300px at 85% -40%, rgba(96,165,250,.45), transparent 60%), radial-gradient(600px 240px at 0% 120%, rgba(98,80,214,.35), transparent 60%), linear-gradient(120deg, #0b1b33, #13305c); box-shadow: 0 20px 40px -24px rgba(11,27,51,.8); }
+    .hero h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+    .hero p { margin: 4px 0 0; color: #b9c9e4; font-size: 13px; }
+    .hero .hrow { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .hero .hact { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .hero .synced { color: #cfe0ff; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); padding: 6px 12px; border-radius: 999px; font-size: 12px; max-width: 520px; }
+    .hero .btn-sync { background: #fff !important; color: var(--navy) !important; }
+    .hero .tbtn { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.16); }
+    .hero .glance { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 18px; }
+    .hero .glance div b { display: block; font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+    .hero .glance div span { font-size: 12px; color: #b9c9e4; }
+    .synced { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+    .synced i { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; display: inline-block; flex-shrink: 0; }
+    .synced.ok i { background: #60a5fa; box-shadow: 0 0 0 4px rgba(96,165,250,.25); } .synced.err i { background: var(--red); }
+
+    /* ---- filter bar ---- */
+    .bar { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--card) 88%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 12px; box-shadow: var(--shadow); }
+    @media (max-width: 900px) { .bar { position: static; } }
+    .bar label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .bar select, .section-head select, .dl-row select { padding: 8px 30px 8px 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 13px; font-weight: 600; background: var(--input) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; color: var(--text); -webkit-appearance: none; appearance: none; font-family: inherit; min-width: 130px; cursor: pointer; }
+    .bar select:hover { border-color: var(--ring); }
+    .bar .spacer { flex: 1; }
+    .bar .range { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+    .bar .range input { padding: 7px 8px; border: 1px solid var(--border); border-radius: 10px; font-size: 12.5px; background: var(--input); color: var(--text); font-family: inherit; }
+    .seg { display: inline-flex; background: var(--soft); border: 1px solid var(--border); border-radius: 12px; padding: 3px; gap: 2px; overflow-x: auto; max-width: 100%; }
+    .seg button { border: 0; background: transparent; color: var(--text-2); font: 600 12.5px inherit; font-family: inherit; padding: 6px 12px; border-radius: 9px; cursor: pointer; white-space: nowrap; }
+    .seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 2px 8px -2px rgba(15,23,42,.12); }
+    .seg { scrollbar-width: none; } .seg::-webkit-scrollbar { display: none; }
+    #periodFilter { display: none; }
+    .fchip { display: inline-flex; align-items: center; gap: 6px; background: #e8f0fe; color: #1d4ed8; border-radius: 999px; padding: 4px 6px 4px 10px; font-size: 12px; font-weight: 700; }
+    .fchip button { border: 0; background: rgba(29,78,216,.12); color: inherit; width: 18px; height: 18px; border-radius: 50%; cursor: pointer; line-height: 1; font-size: 12px; }
+    @media (max-width: 600px) { .bar select { min-width: 0; flex: 1 1 130px; } .bar label { display: none; } }
+
+    /* ---- buttons ---- */
+    .btn { border: none; border-radius: 12px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; transition: transform .1s, box-shadow .15s; }
+    .btn:active { transform: translateY(1px); }
+    .btn-clear { background: var(--soft); color: var(--text-2); border: 1px solid var(--border); }
+    .btn-sync { background: var(--navy); color: #fff; }
+    .btn-light { background: var(--input); border: 1px solid var(--border); color: var(--text); }
+    .btn-dl { background: var(--soft); color: var(--text); border: 1px solid var(--border); }
+    .btn-dl:hover { border-color: var(--ring); background: var(--hover); }
+    .btn-dl svg { width: 14px; height: 14px; }
+    .dl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+    .dl-row .note { margin: 0; }
+
+    /* ---- section tabs ---- */
+    .stabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 4px 0 14px; padding: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); }
+    .stabs::-webkit-scrollbar { display: none; }
+    .stabs button { flex: none; border: 0; background: transparent; color: var(--text-2); font: 650 13px inherit; font-family: inherit; padding: 9px 14px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+    .stabs button:hover { background: var(--soft); color: var(--text); }
+    .stabs button.on { background: var(--navy); color: #fff; }
+    .stabs button i { font-style: normal; font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: rgba(98,80,214,.12); color: var(--red); }
+    .stabs button.on i { background: rgba(255,255,255,.18); color: #fff; }
+    [hidden] { display: none !important; }
+
+    /* ---- KPI cards ---- */
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+    .card { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px 12px; min-height: 118px; box-shadow: var(--shadow); overflow: hidden;
+      transition: transform .15s, box-shadow .15s, border-color .15s; --k: var(--blue); }
+    .card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--k); opacity: .9; }
+    .card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--k) 40%, var(--border)); box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--k) 60%, transparent); }
+    .card .label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; display: flex; align-items: center; gap: 6px; }
+    .card .value { font-size: 30px; font-weight: 800; margin-top: 6px; line-height: 1.05; letter-spacing: -.02em; color: var(--text); font-variant-numeric: tabular-nums; }
+    .card .sub { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+    .card .sparkbox { position: relative; height: 34px; margin-top: 8px; }
+    .card canvas.spark { display: block; }
+    .card.k-red { --k: #e87ba4; } .card.k-orange { --k: #e87ba4; } .card.k-sky { --k: #38bdf8; } .card.k-blue { --k: #2563eb; } .card.k-teal { --k: #6250d6; } .card.k-amber { --k: #eda100; } .card.k-violet { --k: #7c3aed; } .card.k-slate { --k: #475569; } .card.k-green { --k: #2a78d6; } .card.k-pink { --k: #e87ba4; }
+    .c-red, .c-blue, .c-green, .c-orange, .c-dark { color: var(--text); }
+    .live, .sheet { font-size: 9px; font-weight: 800; letter-spacing: .06em; border-radius: 6px; padding: 2px 6px; }
+    .live { color: #1d4ed8; background: rgba(42,120,214,.12); } .sheet { color: #64748b; background: var(--soft); }
+    .card.na { background: repeating-linear-gradient(135deg, var(--card), var(--card) 8px, var(--soft) 8px, var(--soft) 16px); }
+    .card.na .value { color: #cbd5e1; } .card.na .sub { font-style: italic; }
+    .na-box { height: 230px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #94a3b8; font-style: italic; border: 1.5px dashed #cbd5e1; border-radius: 12px; }
+    .na-col { color: #cbd5e1 !important; }
+    @media (max-width: 600px) { .cards { grid-template-columns: 1fr 1fr; gap: 10px; } .card { min-height: 0; padding: 12px 12px 10px; } .card .value { font-size: 24px; } .card .label { font-size: 10px; letter-spacing: .04em; flex-wrap: wrap; } .hero { padding: 18px; } .hero .glance { gap: 14px 20px; } .hero .glance div b { font-size: 24px; } }
+    .kgroup { font-size: 11px; font-weight: 800; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; margin: 18px 2px 8px; }
+
+    /* ---- overview ---- */
+    .ovgrid { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-top: 12px; }
+    .ovgrid .wide { grid-column: 1 / -1; }
+    @media (max-width: 1000px) { .ovgrid { grid-template-columns: 1fr; } }
+    .insights { display: grid; gap: 8px; }
+    .insight { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: var(--soft); font-size: 13px; line-height: 1.45; }
+    .insight b { font-weight: 800; }
+    .insight .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; background: var(--blue); }
+    .insight.warn .dot { background: var(--amber); } .insight.bad .dot { background: var(--red); } .insight.good .dot { background: var(--blue); }
+    .linkbtn { border: 0; background: none; color: var(--blue); font: 700 12px inherit; font-family: inherit; cursor: pointer; padding: 0; }
+
+    /* ---- panels, charts, tables ---- */
+    .section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 2px 10px; }
+    .section-head h2 { margin: 0; font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 12px; }
+    @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; min-width: 0; box-shadow: var(--shadow); }
+    .panel + .panel, section.panel { margin-top: 12px; }
+    .grid2 > .panel { margin-top: 0; }
+    .panel h3 { margin: 0 0 2px; font-size: 15px; font-weight: 750; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .panel .note { margin: 2px 0 10px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+    .chart { position: relative; height: 260px; }
+    .chart.tall { height: 440px; }
+    .counts { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+    .count { background: var(--soft); border: 1px solid transparent; border-radius: 12px; padding: 8px 12px; min-width: 86px; }
+    .count .n { font-size: 19px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+    .count .t { font-size: 11.5px; color: var(--muted); margin-top: 3px; display: flex; align-items: center; gap: 6px; }
+    .count .t i { width: 8px; height: 8px; border-radius: 3px; display: inline-block; }
+    button.count { text-align: left; font-family: inherit; color: inherit; cursor: pointer; }
+    button.count:hover, button.count:focus-visible { border-color: var(--ring); background: var(--hover); outline: none; }
     .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
-    .pill { border: 1.5px solid var(--brand); background: var(--brand); color: #fff; border-radius: 999px; padding: 4px 12px;
-            font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; }
+    .pill { border: 1.5px solid var(--blue); background: var(--blue); color: #fff; border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; }
     .pill i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; border: 1.5px solid #fff; }
     .pill.off { background: var(--input); color: var(--text-2); border-color: var(--border); }
-    .pill.off i { border-color: transparent; }
-
-    /* Top filter bar (matches the design) */
-    .bar { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px;
-           display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 14px; }
-    .bar label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
-    .bar select { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;
-                  background: var(--input); color: var(--text); min-width: 120px; }
-    .bar .spacer { flex: 1; }
-    .btn { border: none; border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .btn-clear { background: var(--red); color: #fff; }
-    .btn-sync { background: var(--dark); color: #fff; }
-    .synced { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
-    .synced i { width: 9px; height: 9px; border-radius: 50%; background: #9ca3af; display: inline-block; }
-    .synced.ok i { background: #22c55e; }
-    .synced.err i { background: var(--red); }
-    .bar a { font-size: 12.5px; color: var(--blue); }
-
-    /* KPI cards */
-    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 10px; }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; min-height: 92px; }
-    .card .label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-    .card .value { font-size: 24px; font-weight: 800; margin-top: 3px; line-height: 1.1; }
-    .card .sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
-    .c-red { color: var(--red); } .c-blue { color: var(--blue); } .c-green { color: var(--green); }
-    .c-orange { color: var(--orange); } .c-dark { color: var(--text); }
-
-    /* Detail section below the cards */
-    .section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 20px 0 8px; }
-    .section-head h2 { margin: 0; font-size: 13px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .05em; }
-    .section-head select { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: var(--input); color: var(--text); }
-    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 10px; }
-    @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .bar select { min-width: 0; flex: 1 1 120px; } }
-    .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; min-width: 0; }
-    .panel h3 { margin: 0 0 2px; font-size: 13.5px; font-weight: 600; }
-    .panel .note { margin: 0 0 6px; font-size: 11px; color: var(--muted); }
-    .chart { position: relative; height: 230px; }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
-    th { font-size: 11px; color: var(--text-2); text-transform: uppercase; letter-spacing: .03em; background: var(--soft); }
-    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: 12px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+    th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { position: sticky; top: 0; z-index: 1; font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; background: var(--soft); font-weight: 800; }
+    th[data-k] { cursor: pointer; } th[data-k]:hover { color: var(--text); }
+    tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--soft) 45%, transparent); }
+    tbody tr:hover td { background: var(--hover); }
     tr:last-child td { border-bottom: none; }
-    .bad { color: var(--red); font-weight: 600; }
-    td.parts { white-space: normal; min-width: 180px; max-width: 320px; line-height: 1.35; }
-    td.parts b { color: #c5221f; }
-    .gap { display: inline-block; min-width: 26px; text-align: center; border-radius: 6px; padding: 1px 6px; font-weight: 700; background: var(--soft); }
-    .gap.hot { background: #fde2e1; color: #a50e0e; }
-    /* Count strip at the top of each panel */
-    .counts { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
-    .count { background: var(--soft); border-radius: 8px; padding: 5px 10px; min-width: 76px; }
-    .count .n { font-size: 17px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
-    .count .t { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
-    .count .t i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-    button.count { border: 1px solid transparent; text-align: left; font-family: inherit; color: inherit; cursor: pointer; }
-    button.count:hover, button.count:focus-visible { border-color: var(--ring); background: var(--hover); outline: none; }
-    /* Clickable KPI cards */
-    .cards .card { cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
-    .cards .card:hover, .cards .card:focus-visible { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 35%, transparent); outline: none; transform: translateY(-1px); }
+    .tsearch { width: 100%; max-width: 320px; padding: 8px 12px 8px 34px; border: 1px solid var(--border); border-radius: 12px; margin: 0 0 8px; background: var(--input) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.4'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 12px center; color: var(--text); font: 13px inherit; font-family: inherit; }
+    #pSearch { padding-left: 34px !important; border-radius: 12px !important; background: var(--input) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.4'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 12px center !important; }
+    .bad { color: var(--red); font-weight: 700; }
+    .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; background: var(--soft); color: var(--text-2); }
+    .tag-bad { background: rgba(98,80,214,.12); color: #4c3bc2; } .tag-fir { background: rgba(59,47,158,.12); color: #3b2f9e; } .tag-wait { background: rgba(217,119,6,.14); color: #a15c00; }
+    html[data-theme="dark"] .tag-bad { color: #c4b5fd; } html[data-theme="dark"] .tag-wait { color: #fcd34d; }
+
+    /* ---- missing bikes ---- */
+    .mb-alert { display: flex; align-items: center; gap: 12px; background: linear-gradient(90deg, rgba(98,80,214,.12), rgba(98,80,214,.04)); border: 1px solid rgba(98,80,214,.35); color: #3b2f9e; border-radius: var(--radius); padding: 12px 16px; margin: 0 0 12px; font-size: 13.5px; }
+    html[data-theme="dark"] .mb-alert { color: #ddd6fe; }
+    .mb-alert b { font-size: 14.5px; } .mb-alert .x { margin-left: auto; }
+    .mb-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 12px; }
+    .mb-add input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 13px; background: var(--input); color: var(--text); text-transform: uppercase; width: 170px; font-family: inherit; }
+    tr.mb-new td { background: rgba(98,80,214,.07) !important; }
+
+    /* ---- sign in, dialog, misc ---- */
+    .login { max-width: 440px; margin: 20px 0; }
+    .login label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; font-weight: 600; }
+    .login input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
+    .login button { margin-top: 14px; width: 100%; padding: 11px; justify-content: center; background: var(--navy); color: #fff; }
+    .login .err { font-size: 13px; min-height: 1em; margin: 8px 0 0; }
+    .contact { margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: var(--soft); font-size: 12.5px; line-height: 1.6; color: var(--text-2); }
+    .contact a { color: var(--blue); font-weight: 600; text-decoration: none; }
+    dialog#detail { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 18px; padding: 0; width: min(900px, 94vw); max-height: 86vh; }
+    dialog#detail::backdrop { background: rgba(2,6,23,.5); }
+    body.noacc main > *:not(#noAccess):not(.tabs-top) { display: none !important; }
+    .panel.flash { box-shadow: 0 0 0 3px var(--ring); transition: box-shadow .3s; }
+    @media (prefers-reduced-motion: reduce) { .card, .btn { transition: none; } }
+@media (max-width: 600px) { .seg { display: flex; width: 100%; overflow: visible; } .seg button { flex: 1 1 0; min-width: 0; padding: 6px 2px; font-size: 12px; white-space: nowrap; } .stabs { flex-wrap: wrap; overflow: visible; gap: 6px; } .stabs > * { flex: 0 0 auto; } }
+    /* ===== QC Dashboard extras (same look as the Recovery Dashboard) ===== */
+    :root { --s1: #2a78d6; --s2: #6250d6; --s3: #e87ba4; --s4: #eda100; --s5: #38bdf8; --s6: #475569; --s7: #6250d6;
+      --grid: #e8edf5; --axis: #cbd5e1; --tip: #0b1b33; --tip-text: #ffffff; }
+    html[data-theme="dark"] { --grid: rgba(255,255,255,.07); --axis: #2f3a58; --tip: #0b1b33; --tip-text: #ffffff; }
+    .card { cursor: pointer; }
+    .card:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+    .card .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .card .ico { width: 30px; height: 30px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      color: var(--k); background: color-mix(in srgb, var(--k) 14%, transparent); }
+    .card .ico svg { width: 16px; height: 16px; }
+    .card .vrow { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .card .value.small { font-size: 17px; line-height: 1.25; letter-spacing: -.01em; }
+    .card .delta { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
+    .delta.good { color: #1d4ed8; background: rgba(42,120,214,.12); } .delta.bad { color: #b4417a; background: rgba(232,123,164,.16); }
+    .delta.flat { color: var(--muted); background: var(--soft); }
+    html[data-theme="dark"] .delta.good { color: #93c5fd; } html[data-theme="dark"] .delta.bad { color: #f9a8c9; }
+    .card canvas.spark { display: block; width: 100%; height: 30px; margin-top: 6px; }
+    .card .meter { height: 6px; border-radius: 999px; background: var(--soft); margin-top: 10px; overflow: hidden; display: flex; gap: 2px; }
+    .card .meter span { display: block; height: 100%; }
     .cards .card .more { font-size: 11px; color: var(--blue); margin-top: 4px; opacity: 0; transition: opacity .15s; }
     .cards .card:hover .more, .cards .card:focus-visible .more { opacity: 1; }
-    .panel.flash { box-shadow: 0 0 0 3px var(--ring); transition: box-shadow .3s; }
-    /* Details pop-up */
-    dialog#detail { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 14px; padding: 0; width: min(900px, 94vw); max-height: 86vh; }
-    dialog#detail::backdrop { background: rgba(0,0,0,.4); }
+    @media (hover: none) { .cards .card .more { display: none; } }
     .dhead { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
     .dhead h2 { margin: 0; font-size: 16px; flex: 1; }
     .dhead .big { font-size: 22px; font-weight: 800; }
     .dbody { padding: 0 18px 16px; max-height: 64vh; overflow: auto; }
     .dbody p { color: var(--muted); font-size: 13px; }
-    .btn-light { background: var(--input); border: 1px solid var(--border); color: var(--text); }
-    .hidden { display: none !important; }
-      /* QC page extras */
-    .login { max-width: 420px; margin: 20px 0; }
-    .login label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
-    .login input { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--input); color: var(--text); font-family: inherit; }
-    .login button { margin-top: 14px; width: 100%; padding: 9px; }
-    .login .err { color: var(--s3); font-size: 13px; min-height: 1em; margin: 8px 0 0; }
-    .authbox { display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #262930; }
-    .authbox .who { color: #d1d5db; word-break: break-all; }
-    .authbox button { width: 100%; padding: 6px; background: transparent; border: 1px solid #3a3d44; color: var(--brand); font-size: 12.5px; font-weight: 600; border-radius: 8px; cursor: pointer; font-family: inherit; }
-    .card .value.small { font-size: 15px !important; line-height: 1.25; margin-top: 6px; }
-    td.wrap { white-space: normal; min-width: 260px; max-width: 420px; }
-    tr.click { cursor: pointer; } tr.click:hover td { background: var(--hover); }
-    /* Admin link at the bottom of the sidebar */
-    .adminlink { display: flex; align-items: center; gap: 8px; padding: 7px 8px; margin: 0 -4px 10px; border-radius: 8px; color: var(--side-text); text-decoration: none; font-size: 13px; font-weight: 600; }
-    @media (max-width: 900px) { .side.open .foot { display: block; } }
-    .adminlink svg { width: 15px; height: 15px; }
-    .adminlink:hover, .adminlink.active { background: var(--brand-tint); color: #fff; }
-    /* Collapse button at the top of the sidebar (desktop) */
-    .side { transition: width .2s; }
-    .side button.collapse { display: block; width: 100%; background: none; border: none; border-bottom: 1px solid #262930; cursor: pointer;
-      text-align: right; padding: 10px 14px; color: var(--side-text); font: inherit; font-size: 15px; }
-    @media (max-width: 900px) { .side button.collapse { display: none; } }
-    .side button.collapse:hover { color: #fff; background: var(--side-2); }
-    @media (min-width: 901px) {
-      html.side-min .side { width: 64px; }
-      html.side-min .side button.collapse { text-align: center; }
-      html.side-min .brandrow { justify-content: center; padding: 12px 0; }
-      html.side-min .brandname, html.side-min .navsec, html.side-min #authBox, html.side-min .side .foot .live { display: none; }
-      html.side-min .nav a, html.side-min .adminlink { font-size: 0; justify-content: center; padding: 10px 0; gap: 0; }
-      html.side-min .nav a svg, html.side-min .adminlink svg { width: 18px; height: 18px; }
-      html.side-min .nav { padding-top: 8px; }
-      html.side-min .side .foot { padding: 10px 8px; }
-      html.side-min .adminlink { margin: 0; }
-    }
-    .period-note { background: var(--s4); color: var(--s3); border-radius: 10px; padding: 8px 12px; font-size: 13px; margin: 0 0 10px; }
-    .bar .range { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
-    .bar input[type=date] { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--input); color: var(--text); font-family: inherit; }
-    /* Admin contact details */
-    .contact { margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: var(--soft); font-size: 12.5px; line-height: 1.6; color: var(--text-2, var(--muted)); }
-    .contact a { color: var(--accent, var(--brand)); font-weight: 600; text-decoration: none; }
-    .contact-side { font-size: 11.5px; line-height: 1.5; color: var(--side-text); padding: 0 0 10px; margin-bottom: 10px; border-bottom: 1px solid #262930; word-break: break-all; }
-    .contact-side a { color: #d1d5db; text-decoration: none; }
-    .contact-side a:hover { color: #fff; }
-    @media (min-width: 901px) { html.side-min .contact-side { display: none; } }
-    /* ===== Blue theme: only the Bounce logo stays red ===== */
-    .brandname, .brandname span { color: #fff !important; }
-    .side { background: #0f1e36 !important; }
-    :root { --side: #0f1e36; --side-2: #172a48; --side-text: #a9b8d0; --brand-tint: #1e3a66; }
-    .side .collapse, .side button.collapse, .brandrow, .side .foot, .authbox, #authBox, .contact-side { border-color: #1d3050 !important; }
-    .nav a.active { background: #1e3a66 !important; color: #fff !important; border-left-color: #7fb3f8 !important; }
-    .adminlink:hover, .adminlink.active { background: #1e3a66 !important; }
-    .tabs-top a.active { color: #2563eb !important; border-bottom-color: #5b9cf6 !important; }
-    .authbox button, #authBox button { color: #9cc5fa !important; border-color: #2a4166 !important; }
-    .btn-clear { background: #5b9cf6 !important; color: #fff !important; }
-    .btn-sync { background: #2563eb !important; color: #fff !important; }
-    .contact a { color: #2563eb !important; }
+    td.wrap { white-space: normal; min-width: 220px; }
+    td.parts { white-space: normal; min-width: 180px; max-width: 320px; line-height: 1.35; }
+    td.parts b { color: #b4417a; }
+    html[data-theme="dark"] td.parts b { color: #f9a8c9; }
+    .gap { display: inline-block; min-width: 26px; text-align: center; border-radius: 6px; padding: 1px 6px; font-weight: 700; background: var(--soft); }
+    .gap.hot { background: rgba(232,123,164,.18); color: #b4417a; }
+    tr.click { cursor: pointer; }
+    td.bad { color: #b4417a; }
+    html[data-theme="dark"] td.bad { color: #f9a8c9; }
     .titlerow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .newqc-btn { text-decoration: none; padding: 8px 14px; }
-      body.noacc main > *:not(#noAccess):not(.tabs-top) { display: none !important; }
+    .hero .newqc { background: #fff; color: var(--navy); text-decoration: none; }
+    .period-note { background: var(--soft); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: var(--text-2); }
+    body:has(#dash:not(.hidden)) .titlerow, body:has(#dash:not(.hidden)) #pageSub { display: none; }
+    .grid2 + section.panel { margin-top: 12px; }
+    .cards[data-tab] { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+    @media (max-width: 600px) { .cards[data-tab] { grid-template-columns: 1fr 1fr; } }
   </style>
 </head>
 <body>
@@ -315,12 +331,20 @@
     </section>
 
     <div id="dash" class="hidden">
+    <section class="hero">
+      <div class="hrow"><div><h1>QC overview</h1><p><span id="gWhen">Last 30 days</span> · <span id="gSub">Vehicle QC checks</span></p></div>
+        <div class="hact"><a class="btn newqc" href="qc-new.html">+ New QC</a><button class="btn tbtn" type="button" id="themeBtn">☾ Dark</button></div></div>
+      <div class="glance">
+        <div><b id="gTotal">–</b><span>QCs</span></div><div><b id="gAppr">–</b><span>Approved</span></div><div><b id="gRej">–</b><span>Rejected</span></div>
+        <div><b id="gPct">–</b><span>Rejection %</span></div><div><b id="gHold">–</b><span>On hold</span></div>
+      </div>
+    </section>
     <section class="bar">
       <label for="cityFilter">City</label>
       <select id="cityFilter"><option value="">All Cities</option></select>
       <label for="hubFilter">Hub</label>
       <select id="hubFilter"><option value="">All Hubs</option></select>
-      <label for="periodFilter">Period</label>
+      <label>Period</label><span class="seg" id="periodSeg" role="group" aria-label="Period"></span>
       <select id="periodFilter">
         <option value="today">Today</option>
         <option value="7">Last 7 days</option>
@@ -331,57 +355,63 @@
       <span class="range hidden" id="rangeBox">
         <input type="date" id="fromDate" aria-label="From date"><span>to</span><input type="date" id="toDate" aria-label="To date">
       </span>
-      <span class="spacer"></span>
+      <span id="fchips" style="display:inline-flex;gap:6px;flex-wrap:wrap"></span><span class="spacer"></span>
       <button class="btn btn-clear" id="clearBtn" type="button">Clear</button>
       <button class="btn btn-sync" id="syncBtn" type="button">↻ Sync</button>
       <span class="synced" id="synced"><i></i><span>Loading…</span></span>
     </section>
 
+    <nav class="stabs" id="stabs" aria-label="Dashboard sections"></nav>
     <p class="period-note hidden" id="periodNote"></p>
-    <section class="cards">
-      <div class="card"><div class="label">Total QCs</div><div class="value" id="kTotal">–</div><div class="sub" id="kTotalSub"></div></div>
-      <div class="card"><div class="label">Approved</div><div class="value" id="kAppr">–</div><div class="sub" id="kApprSub"></div></div>
-      <div class="card"><div class="label">Rejected</div><div class="value" id="kRej">–</div><div class="sub" id="kRejSub"></div></div>
-      <div class="card"><div class="label">Rejection %</div><div class="value" id="kPct">–</div><div class="sub">rejected ÷ total QCs</div></div>
-      <div class="card"><div class="label">On Hold</div><div class="value" id="kHold">–</div><div class="sub">waiting for a decision</div></div>
-      <div class="card"><div class="label">Technicians</div><div class="value" id="kTech">–</div><div class="sub" id="kTechSub"></div></div>
-      <div class="card"><div class="label">Mistakes Found</div><div class="value" id="kMis">–</div><div class="sub" id="kMisSub"></div></div>
-      <div class="card"><div class="label">Top Mistake</div><div class="value small" id="kTop">–</div><div class="sub" id="kTopSub"></div></div>
+    <section class="cards" data-tab="overview">
+      <div class="card k-blue"><div class="label">Total QCs</div><div class="value" id="kTotal">–</div><div class="sub" id="kTotalSub"></div></div>
+      <div class="card k-green"><div class="label">Approved</div><div class="value" id="kAppr">–</div><div class="sub" id="kApprSub"></div></div>
+      <div class="card k-pink"><div class="label">Rejected</div><div class="value" id="kRej">–</div><div class="sub" id="kRejSub"></div></div>
+      <div class="card k-pink"><div class="label">Rejection %</div><div class="value" id="kPct">–</div><div class="sub">rejected ÷ total QCs</div></div>
+      <div class="card k-violet"><div class="label">On Hold</div><div class="value" id="kHold">–</div><div class="sub">waiting for a decision</div></div>
+      <div class="card k-slate"><div class="label">Technicians</div><div class="value" id="kTech">–</div><div class="sub" id="kTechSub"></div></div>
+      <div class="card k-amber"><div class="label">Mistakes Found</div><div class="value" id="kMis">–</div><div class="sub" id="kMisSub"></div></div>
+      <div class="card k-amber"><div class="label">Top Mistake</div><div class="value small" id="kTop">–</div><div class="sub" id="kTopSub"></div></div>
     </section>
 
-    <div class="section-head"><h2>Details</h2></div>
+    <section class="ovgrid" data-tab="overview">
+      <div class="panel"><h3>QCs per day · last 14 days</h3><p class="note">Approved, rejected and on hold · follows City and Hub</p><div class="chart"><canvas id="ovTrend"></canvas></div></div>
+      <div class="panel"><h3>What stands out</h3><p class="note">Worked out from the numbers on this page</p><div class="insights" id="ovInsights"></div></div>
+      <div class="panel"><h3>Rejection % by hub</h3><p class="note">Tap a hub to filter the whole dashboard</p><div class="chart" id="ovHubBox"><canvas id="ovHub"></canvas></div></div>
+      <div class="panel"><h3>Top mistakes</h3><p class="note">Rejected / hold QCs with each problem · tap a bar for the list</p><div class="chart"><canvas id="ovMis"></canvas></div></div>
+    </section>
     <section class="grid2">
-      <div class="panel">
+      <div class="panel" data-tab="daily">
         <h3>QCs per day</h3>
         <p class="note">Approved, rejected and on hold · total on each bar</p>
         <div class="counts" id="dayCounts"></div>
         <div class="chart"><canvas id="dayChart" aria-label="Stacked bar chart of QCs per day by result"></canvas></div>
       </div>
-      <div class="panel">
+      <div class="panel" data-tab="hubs">
         <h3>Rejection % by hub</h3>
         <p class="note">Rejected ÷ total QCs at each hub</p>
         <div class="counts" id="hubCounts"></div>
         <div class="chart"><canvas id="hubChart" aria-label="Bar chart of rejection percent by hub"></canvas></div>
       </div>
-      <div class="panel">
+      <div class="panel" data-tab="mistakes">
         <h3>Top mistakes</h3>
         <p class="note">Number of rejected / hold QCs with each problem · click a bar for the list</p>
         <div class="counts" id="misCounts"></div>
         <div class="chart" id="misBox"><canvas id="misChart" aria-label="Bar chart of the most common QC mistakes"></canvas></div>
       </div>
-      <div class="panel">
+      <div class="panel" data-tab="daily">
         <h3>QC results</h3>
         <p class="note">Share of all QCs in the period</p>
         <div class="counts" id="resCounts"></div>
         <div class="chart"><canvas id="resChart" aria-label="Donut chart of QC results"></canvas></div>
       </div>
     </section>
-    <section class="panel" style="margin-top:10px">
+    <section class="panel" style="margin-top:10px" data-tab="techs">
       <h3>Technicians: approved vs rejected</h3>
       <p class="note">Most QCs first · click a bar to see that technician's QCs</p>
       <div class="chart" id="techBox"><canvas id="techChart" aria-label="Stacked bar chart of QCs per technician"></canvas></div>
     </section>
-    <section class="panel" style="margin-top:10px">
+    <section class="panel" style="margin-top:10px" data-tab="techs">
       <h3>Technician table</h3>
       <p class="note">Click a row to see that technician's QCs · highest rejection % first (min. 5 QCs)</p>
       <div class="counts" id="techCounts"></div>
@@ -393,9 +423,9 @@
         </table>
       </div>
     </section>
-    <section class="panel" style="margin-top:10px">
+    <section class="panel" style="margin-top:10px" data-tab="repeat">
       <h3>Back in service within 7 days</h3>
-      <p class="note">Bikes that got a new job card less than 7 days after the last one · same hub and dates as above · <b style="color:#c5221f">⚠ red</b> = a part from the last visit was replaced again</p>
+      <p class="note">Bikes that got a new job card less than 7 days after the last one · same hub and dates as above · <b style="color:#b4417a">⚠ pink</b> = a part from the last visit was replaced again</p>
       <div class="counts" id="repCounts"></div>
       <div class="table-wrap">
         <table>
@@ -451,7 +481,7 @@
       Chart.defaults.color = C.muted;
       Object.assign(Chart.defaults.plugins.tooltip, { backgroundColor: C.tip, titleColor: C.tip_text, bodyColor: C.tip_text, borderColor: C.border });
     }
-    Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+    Chart.defaults.font.family = '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
     Chart.defaults.font.size = 11;
     Object.assign(Chart.defaults.plugins.tooltip, { borderWidth: 1, padding: 10 });
     readColours();
@@ -667,7 +697,7 @@
           <td>${dd(r.card_time)} · ${esc(r.job_card_number)}<br><span style="color:var(--muted)">${esc(r.technician || '—')}</span></td>
           <td class="parts">${list(now, hitNow)}</td></tr>`;
       });
-      chips('repCounts', [{ n: R.length, t: 'Back within 7 days' }, { n: again, t: 'Same part replaced again', color: '#c5221f' }, { n: sameDay, t: 'Same day' }]);
+      chips('repCounts', [{ n: R.length, t: 'Back within 7 days' }, { n: again, t: 'Same part replaced again', color: C.s3 }, { n: sameDay, t: 'Same day' }]);
       $('repRows').innerHTML = rows.slice(0, 300).join('') || '<tr><td colspan="7" style="color:var(--muted)">No bikes back in service within 7 days for this filter.</td></tr>';
     }
     function fillFilters() {
@@ -702,7 +732,7 @@
       $('periodNote').innerHTML = `No QCs for <strong>${esc(pName)}</strong>${city || hub ? ' with these filters' : ''}. The latest QC data is from <strong>${fmtDay(lastDay)}</strong> — load newer QC data into Supabase to see it here.`;
       const ids = new Set(Q.map(q => q.id));
       const M = mistakes.filter(m => ids.has(m.qc_id));
-      const RES = { APPROVED: C.s2, REJECTED: C.s1, HOLD: C.s7 };
+      const RES = { APPROVED: C.s1, REJECTED: C.s3, HOLD: C.s2 };
       const byRes = (r) => Q.filter(q => q.result === r);
       const newestFirst = (arr) => [...arr].sort((a, b) => (a.qc_at < b.qc_at ? 1 : -1));
       const rej = byRes('REJECTED'), ok = byRes('APPROVED'), hold = byRes('HOLD');
@@ -741,8 +771,8 @@
       [['total', null, true], ['appr', 'APPROVED', true], ['rej', 'REJECTED', false]].forEach(([k, r, good]) => {
         const a = of(r); spark(card(k), trendDays.map(d => dayN(a, d))); delta(card(k), dayN(a, today), dayN(a, yday), good);
       });
-      meter(card('pct'), [{ t: 'Rejected', n: rej.length, c: C.s1 }, { t: 'Hold', n: hold.length, c: C.s7 }, { t: 'Approved', n: ok.length, c: C.s4 }]);
-      meter(card('mis'), misList.slice(0, 5).map(([k, v], i) => ({ t: k, n: v, c: [C.s3, C.s5, C.s1, C.s6, C.s2][i] })));
+      meter(card('pct'), [{ t: 'Rejected', n: rej.length, c: C.s3 }, { t: 'Hold', n: hold.length, c: C.s2 }, { t: 'Approved', n: ok.length, c: C.s1 }]);
+      meter(card('mis'), misList.slice(0, 5).map(([k, v], i) => ({ t: k, n: v, c: [C.s3, C.s1, C.s2, C.s4, C.s5][i] })));
 
       // ---- What clicks open ----
       Object.keys(DETAILS).forEach(k => delete DETAILS[k]);
@@ -943,6 +973,142 @@
     $('dClose').addEventListener('click', () => $('detail').close());
     $('dSearch').addEventListener('input', showDetailRows);
     $('dXlsx').addEventListener('click', downloadExcel);
+  </script>
+
+  <script>
+    // ===== New look: section tabs, period buttons, overview charts, click-to-filter, table search =====
+    (function () {
+      const $ = (id) => document.getElementById(id);
+      const TABS = [['overview', 'Overview'], ['daily', 'QCs per day'], ['hubs', 'Hubs'], ['mistakes', 'Mistakes'], ['techs', 'Technicians'], ['repeat', 'Back in service']];
+      let cur = 'overview'; try { cur = sessionStorage.getItem('qc-tab') || 'overview'; } catch (e) {}
+      if (!TABS.some(t => t[0] === cur)) cur = 'overview';
+      const nav = $('stabs');
+      nav.innerHTML = TABS.map(([k, l]) => `<button type="button" data-go="${k}">${l}<i class="hidden" data-badge="${k}"></i></button>`).join('');
+      function show(k) {
+        cur = k; try { sessionStorage.setItem('qc-tab', k); } catch (e) {}
+        nav.querySelectorAll('[data-go]').forEach(b => b.classList.toggle('on', b.dataset.go === k));
+        document.querySelectorAll('#dash [data-tab]').forEach(el => { el.hidden = !el.dataset.tab.split(' ').includes(k); });
+        window.dispatchEvent(new Event('resize'));   // charts that were hidden size themselves now
+      }
+      nav.addEventListener('click', (e) => { const b = e.target.closest('[data-go]'); if (b) { show(b.dataset.go); nav.scrollIntoView({ block: 'nearest' }); } });
+      document.addEventListener('click', (e) => { const b = e.target.closest('[data-goto]'); if (b) { show(b.dataset.goto); window.scrollTo({ top: nav.offsetTop - 80, behavior: 'smooth' }); } });
+      show(cur);
+
+      // period: buttons instead of a drop-down (the drop-down stays and drives the page)
+      const pf = $('periodFilter'), seg = $('periodSeg');
+      seg.innerHTML = [...pf.options].map(o => `<button type="button" data-p="${o.value}">${o.value === 'custom' ? 'Dates…' : o.text.replace('Last ', '')}</button>`).join('');
+      const markP = () => seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.p === pf.value));
+      seg.addEventListener('click', (e) => { const b = e.target.closest('[data-p]'); if (!b) return; pf.value = b.dataset.p; pf.dispatchEvent(new Event('change', { bubbles: true })); markP(); });
+      pf.addEventListener('change', markP); $('clearBtn').addEventListener('click', () => setTimeout(markP)); markP();
+
+      // chips showing the city / hub filter, with a × to clear
+      function fchips() {
+        $('fchips').innerHTML = ['cityFilter', 'hubFilter'].filter(id => $(id).value)
+          .map(id => `<span class="fchip">${esc($(id).value)}<button type="button" data-clr="${id}" aria-label="Clear">×</button></span>`).join('');
+      }
+      $('fchips').addEventListener('click', (e) => { const b = e.target.closest('[data-clr]'); if (!b) return; $(b.dataset.clr).value = ''; $(b.dataset.clr).dispatchEvent(new Event('change', { bubbles: true })); });
+
+      // ---- chart look + click a city / hub on any chart to filter the whole page ----
+      Chart.defaults.font.family = '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+      Chart.defaults.font.size = 11.5;
+      Chart.defaults.elements.bar.borderRadius = 4;
+      Chart.defaults.elements.line.borderWidth = 2; Chart.defaults.elements.line.tension = .35; Chart.defaults.elements.point.radius = 0; Chart.defaults.elements.point.hoverRadius = 5;
+      Object.assign(Chart.defaults.plugins.tooltip, { padding: 10, cornerRadius: 10, titleFont: { weight: '700' }, bodySpacing: 4, boxPadding: 4, usePointStyle: true, borderWidth: 0 });
+      Chart.defaults.plugins.legend.labels.padding = 14;
+      Chart.defaults.animation = { duration: 500, easing: 'easeOutQuart' };
+      const optIn = (id, v) => [...$(id).options].some(o => o.value === v);
+      const pick = (chart, els) => { if (!els || !els.length || chart.config.options.onClick) return null; const lab = chart.data.labels && chart.data.labels[els[0].index];
+        const v = String(lab ?? ''); return optIn('cityFilter', v) ? ['cityFilter', v] : optIn('hubFilter', v) ? ['hubFilter', v] : null; };
+      Chart.defaults.onHover = (e, els, chart) => { chart.canvas.style.cursor = chart.config.options.onClick && els.length ? 'pointer' : pick(chart, els) ? 'pointer' : 'default'; };
+      Chart.defaults.onClick = (e, els, chart) => { const p = pick(chart, chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false)); if (!p) return;
+        if (p[0] === 'cityFilter') $('hubFilter').value = '';
+        $(p[0]).value = p[1]; $(p[0]).dispatchEvent(new Event('change', { bubbles: true })); };
+
+      // ---- after every redraw: hero numbers, overview charts, insights, tab badges ----
+      const BLUE = '#2a78d6', PINK = '#e87ba4', VIOLET = '#6250d6';
+      const ov = {}; const odraw = (id, cfg) => { if (ov[id]) ov[id].destroy(); ov[id] = new Chart($(id), cfg); };
+      const today = () => istDay(new Date().toISOString()), back = (n) => new Date(Date.parse(today()) - n * 864e5).toISOString().slice(0, 10);
+      function period() {   // same dates as the page's render()
+        const p = $('periodFilter').value; let from, to = today();
+        if (p === 'custom') { from = $('fromDate').value || (qcs[0] ? qcs[0].day : to); to = $('toDate').value || to; if (from > to) [from, to] = [to, from]; }
+        else from = p === 'today' ? to : back(Number(p) - 1);
+        return { from, to, n: daysBetween(from, to).length };
+      }
+      function overview() {
+        if (!qcs.length) return;
+        const city = $('cityFilter').value, hub = $('hubFilter').value;
+        const base = qcs.filter(q => (!city || q.city === city) && (!hub || q.hub === hub));
+        const { from, to, n } = period(), Q = base.filter(q => q.day >= from && q.day <= to);
+        const pFrom = new Date(Date.parse(from) - n * 864e5).toISOString().slice(0, 10), pTo = new Date(Date.parse(from) - 864e5).toISOString().slice(0, 10);
+        const P = base.filter(q => q.day >= pFrom && q.day <= pTo);
+        const rejOf = (a) => a.filter(q => q.result === 'REJECTED').length, rp = (a) => a.length ? 100 * rejOf(a) / a.length : null;
+        // hero numbers
+        const t = (id) => $(id).textContent;
+        $('gTotal').textContent = t('kTotal'); $('gAppr').textContent = t('kAppr'); $('gRej').textContent = t('kRej'); $('gPct').textContent = t('kPct'); $('gHold').textContent = t('kHold');
+        $('gWhen').textContent = $('periodFilter').value === 'custom' ? `${fmtDay(from)} – ${fmtDay(to)}` : $('periodFilter').selectedOptions[0].text;
+        $('gSub').textContent = $('pageSub').textContent.replace(/ · real data.*$/, '');
+        // last 14 days: approved / rejected / on hold per day
+        const d14 = daysBetween(back(13), today());
+        const per = (r) => d14.map(d => base.filter(q => q.day === d && q.result === r).length);
+        odraw('ovTrend', { type: 'bar', data: { labels: d14.map(fmtDay), datasets: [
+          { label: 'Approved', data: per('APPROVED'), backgroundColor: BLUE }, { label: 'Rejected', data: per('REJECTED'), backgroundColor: PINK },
+          { label: 'On hold', data: per('HOLD'), backgroundColor: VIOLET }] },
+          options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom' },
+            tooltip: { callbacks: { footer: (it) => { const tot = it.reduce((s, x) => s + x.raw, 0), rj = (it.find(x => x.dataset.label === 'Rejected') || {}).raw || 0;
+              return tot ? `${tot} QCs · ${(100 * rj / tot).toFixed(0)}% rejected` : ''; } } } }, scales: axes(true) } });
+        // rejection % by hub (click a bar to filter)
+        const H = new Map(); base.filter(q => q.day >= from && q.day <= to && (!hub || true)).forEach(q => { const x = H.get(q.hub) || { n: 0, r: 0 }; x.n++; if (q.result === 'REJECTED') x.r++; H.set(q.hub, x); });
+        const hs = [...H].filter(([h, x]) => h && x.n).map(([h, x]) => [h, +(100 * x.r / x.n).toFixed(1), x.n]).sort((a, b) => b[1] - a[1]);
+        $('ovHubBox').style.height = Math.max(200, hs.length * 30 + 40) + 'px';
+        odraw('ovHub', { type: 'bar', data: { labels: hs.map(x => x[0]), datasets: [{ label: 'Rejection %', data: hs.map(x => x[1]),
+          backgroundColor: hs.map(x => (!hub || x[0] === hub) ? (x[1] >= 50 ? PINK : BLUE) : '#cbd9f3'), maxBarThickness: 18 }] },
+          options: { indexAxis: 'y', maintainAspectRatio: false, layout: { padding: { right: 34 } },
+            plugins: { legend: { display: false }, valueLabels: { mode: 'total', suffix: '%' }, tooltip: { callbacks: { label: (c) => `${c.raw}% rejected of ${hs[c.dataIndex][2]} QCs` } } },
+            scales: { ...axes(false, true, true), x: { ...axes(false, true, true).x, max: 100 } } } });
+        // top mistakes (click a bar for the list)
+        const ids = new Set(Q.map(q => q.id)), mc = new Map(); mistakes.forEach(m => { if (ids.has(m.qc_id)) mc.set(m.mistake, (mc.get(m.mistake) || 0) + 1); });
+        const ms = [...mc].sort((a, b) => b[1] - a[1]).slice(0, 6);
+        odraw('ovMis', { type: 'bar', data: { labels: ms.map(x => { const w = x[0].split(/\s*\/\s*|\s+/), out = ['']; w.forEach(t => { if ((out[out.length - 1] + ' ' + t).trim().length > 18 && out[out.length - 1]) out.push(t); else out[out.length - 1] = (out[out.length - 1] + ' ' + t).trim(); }); return out.slice(0, 2); }), datasets: [{ label: 'QCs', data: ms.map(x => x[1]),
+          backgroundColor: ms.map((_, i) => i < 3 ? PINK : BLUE), maxBarThickness: 18 }] },
+          options: { indexAxis: 'y', maintainAspectRatio: false, layout: { padding: { right: 28 } }, onClick: (e, el) => el[0] && openDetail('m:' + ms[el[0].index][0]),
+            plugins: { legend: { display: false }, valueLabels: { mode: 'total' }, tooltip: { callbacks: { title: (it) => ms[it[0].dataIndex][0] } } }, scales: axes(false, true) } });
+        // insights in plain words
+        const ins = [], nf = (x) => Number(x).toLocaleString('en-IN'), r0 = rp(Q), r1 = rp(P);
+        if (r0 != null) ins.push([r1 != null && r0 > r1 + 2 ? 'bad' : 'good', `<b>${r0.toFixed(1)}%</b> of ${nf(Q.length)} QCs rejected` +
+          (r1 != null ? ` — ${Math.abs(r0 - r1) < 0.5 ? 'about the same as' : r0 > r1 ? `up from <b>${r1.toFixed(1)}%</b> in` : `down from <b>${r1.toFixed(1)}%</b> in`} the ${n} days before.` : '.'), 'daily']);
+        const worst = hs.filter(x => x[2] >= 10)[0]; if (worst) ins.push([worst[1] >= 50 ? 'bad' : 'warn', `Highest rejection: <b>${esc(worst[0])}</b> — ${worst[1]}% of ${worst[2]} QCs.`, 'hubs']);
+        const rejHold = Q.filter(q => q.result !== 'APPROVED').length;
+        if (ms[0] && rejHold) ins.push(['warn', `Most common mistake: <b>${esc(ms[0][0])}</b> — in ${nf(ms[0][1])} of ${nf(rejHold)} rejected / hold QCs (${Math.round(100 * ms[0][1] / rejHold)}%).`, 'mistakes']);
+        const T = new Map(); Q.forEach(q => { const x = T.get(q.technician) || { n: 0, r: 0 }; x.n++; if (q.result === 'REJECTED') x.r++; T.set(q.technician, x); });
+        const badT = [...T].filter(([k, x]) => k && k !== 'Not recorded' && x.n >= 5 && x.r / x.n > .5);
+        if (badT.length) ins.push(['bad', `<b>${badT.length}</b> technician${badT.length > 1 ? 's have' : ' has'} more than half of their QCs rejected (min. 5 QCs).`, 'techs']);
+        const rc = $('repCounts').querySelectorAll('.count .n'); if (rc.length > 1 && Number(rc[1].textContent.replace(/\D/g, ''))) ins.push(['warn', `<b>${rc[0].textContent}</b> bikes came back within 7 days · <b>${rc[1].textContent}</b> had the same part replaced again.`, 'repeat']);
+        $('ovInsights').innerHTML = ins.map(([k, h, go]) => `<div class="insight ${k}"><span class="dot"></span><div>${h} <button class="linkbtn" type="button" data-goto="${go}">View →</button></div></div>`).join('')
+          || '<p class="note">Nothing stands out for this filter.</p>';
+        // badges on the tabs
+        const badge = (k, v) => { const b = document.querySelector(`[data-badge="${k}"]`); if (b) { b.textContent = v || ''; b.classList.toggle('hidden', !v); } };
+        badge('techs', badT.length); badge('repeat', rc.length > 1 ? Number(rc[1].textContent.replace(/\D/g, '')) : 0);
+        fchips();
+      }
+      // search box above the long tables
+      function tableSearch(tbodyId, ph) {
+        const tb = $(tbodyId); if (!tb || tb.dataset.s) return; tb.dataset.s = 1;
+        const i = document.createElement('input'); i.type = 'search'; i.className = 'tsearch'; i.placeholder = ph;
+        tb.closest('.table-wrap').before(i);
+        const run = () => { const q = i.value.trim().toLowerCase(); [...tb.rows].forEach(r => { r.hidden = !!q && !r.textContent.toLowerCase().includes(q); }); };
+        i.addEventListener('input', run); new MutationObserver(run).observe(tb, { childList: true });
+      }
+      tableSearch('techRows', 'Search technician or hub…'); tableSearch('repRows', 'Search bike, hub or part…');
+
+      const orig = window.render;
+      window.render = function () { const r = orig.apply(this, arguments); try { overview(); } catch (e) { console.warn('overview', e); } return r; };
+
+      // light / dark switch (remembered on this browser; same setting as the Recovery Dashboard)
+      const thm = $('themeBtn'); let dark = false; try { dark = localStorage.getItem('rt-theme') === 'dark'; } catch (e) {}
+      const applyT = (redraw) => { document.documentElement.dataset.theme = dark ? 'dark' : 'light'; thm.textContent = dark ? '☀ Light' : '☾ Dark';
+        readColours(); if (redraw && qcs.length) render(); };
+      thm.addEventListener('click', () => { dark = !dark; try { localStorage.setItem('rt-theme', dark ? 'dark' : 'light'); } catch (e) {} applyT(true); }); applyT(false);
+    })();
   </script>
   <script>
     // Sidebar collapse button («): remembers your choice on this browser
