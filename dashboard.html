@@ -339,7 +339,7 @@
     </section>
 
     <section class="ovgrid" data-tab="overview">
-      <div class="panel"><h3>Inflow vs outflow · last 14 days</h3><p class="note">Bars = bikes in and out of MFR per day (7 am – 7 am) · line = renewed (back to active) · follows City, Hub and Model</p><div class="chart"><canvas id="ovTrend"></canvas></div></div>
+      <div class="panel"><h3>Inflow vs outflow · last 15 days</h3><p class="note">Bars = bikes in and out of MFR per day (7 am – 7 am) · line = renewed (back to active) · follows City, Hub and Model</p><div class="chart"><canvas id="ovTrend"></canvas></div></div>
       <div class="panel"><h3>What stands out</h3><p class="note">Worked out from the numbers on this page</p><div class="insights" id="ovInsights"></div></div>
       <div class="panel"><h3>MFR now by city <span class="live">LIVE</span></h3><p class="note">Tap a city to filter the whole dashboard</p><div class="chart"><canvas id="ovCity"></canvas></div></div>
       <div class="panel"><h3>MFR now by age <span class="live">LIVE</span></h3><p class="note">Days since marked for recovery · darker = older</p><div class="chart"><canvas id="ovAge"></canvas></div></div>
@@ -1080,7 +1080,7 @@
       // ---- after every redraw: overview numbers, sparklines, mini charts, insights ----
       const nf = (n) => Number(n || 0).toLocaleString('en-IN');
       const ov = {}; const odraw = (id, cfg) => { if (ov[id]) ov[id].destroy(); ov[id] = new Chart($(id), cfg); };
-      function series(keys, n = 14) {   // last n days of the daily Metabase numbers (follows City / Hub / Model)
+      function series(keys, n = 15) {   // last n days of the daily Metabase numbers (follows City / Hub / Model)
         const days = []; for (let i = n - 1; i >= 0; i--) days.push(addDays(TODAY, -i));
         const F = FDAY.filter(fleetMatch), byDay = new Map();
         F.forEach(r => { const x = byDay.get(r.day) || {}; keys.forEach(k => { x[k] = (x[k] || 0) + (r[k] || 0); }); byDay.set(r.day, x); });
@@ -1096,7 +1096,7 @@
           options: { animation: false, events: [], plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false, beginAtZero: true } } } });
       }
       // in / out of MFR per day from our own 30-minute counting (adds up: MFR at 7 am + in − out = next 7 am)
-      function flowSeries(n = 14) {
+      function flowSeries(n = 15) {
         const days = []; for (let i = n - 1; i >= 0; i--) days.push(addDays(TODAY, -i));
         const fl = FLOW.filter(fleetMatch), f = (d, k, re) => fl.filter(r => r.day === d && r.kind === k && (!re || r.reason === re)).reduce((x, r) => x + r.n, 0);
         const ok = (d) => FLOW_START && d >= FLOW_START;
