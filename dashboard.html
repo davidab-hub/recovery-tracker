@@ -585,7 +585,7 @@
       // Inflow / outflow: our own count (from FLOW_START); falls back to Metabase's figures before tracking started
       // our days are calendar days, 12 am to 12 am India time
       const fTo = to >= TODAY ? FLOW_TODAY : to, fFrom = from > fTo ? fTo : from;
-      const fl = FLOW.filter(fleetMatch).filter(r => r.day >= fFrom && r.day <= fTo), fx = (k, re) => fl.filter(r => r.kind === k && (!re || r.reason === re)).reduce((s, r) => s + r.n, 0);
+      const fl = FLOW.filter(fleetMatch).filter(r => r.day >= (FLOW_START && fFrom < FLOW_START ? FLOW_START : fFrom) && r.day <= fTo), fx = (k, re) => fl.filter(r => r.kind === k && (!re || r.reason === re)).reduce((s, r) => s + r.n, 0);
       const flowOn = !!FLOW_START && fTo >= FLOW_START;
       const fIn = fx('in'), fOut = fx('out'), since = FLOW_START && fFrom < FLOW_START ? ` · counted since ${fmtDay(FLOW_START)}` : '';
       const fWhen = fFrom === fTo ? `${fmtDay(fTo)} (12 am – 12 am)${fTo === FLOW_TODAY ? ' · so far, ' + at : ''}` : `${fmtDay(FLOW_START && fFrom < FLOW_START ? FLOW_START : fFrom)} – ${fmtDay(fTo)} (calendar days)`;
