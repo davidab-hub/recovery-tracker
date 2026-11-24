@@ -235,6 +235,8 @@
     .panel.flash { box-shadow: 0 0 0 3px var(--ring); transition: box-shadow .3s; }
     @media (prefers-reduced-motion: reduce) { .card, .btn { transition: none; } }
   
+    /* charts fill their panel when the panel next to them is taller (no empty space under a chart) */
+    .ovgrid > .panel { display: flex; flex-direction: column; } .ovgrid > .panel > .chart, .ovgrid > .panel > #ovHubBox { flex: 1 1 auto; min-height: 220px; }
     /* ---- Recovery overview box: grouped panels ---- */
     .hero .ov2 { display: grid; grid-template-columns: 1.05fr 1fr 1.35fr; gap: 12px; margin-top: 18px; }
     .hero .blk { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.11); border-radius: 16px; padding: 14px 16px; }
