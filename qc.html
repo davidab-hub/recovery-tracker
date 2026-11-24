@@ -1015,7 +1015,7 @@
       Chart.defaults.elements.line.borderWidth = 2; Chart.defaults.elements.line.tension = .35; Chart.defaults.elements.point.radius = 0; Chart.defaults.elements.point.hoverRadius = 5;
       Object.assign(Chart.defaults.plugins.tooltip, { padding: 10, cornerRadius: 10, titleFont: { weight: '700' }, bodySpacing: 4, boxPadding: 4, usePointStyle: true, borderWidth: 0 });
       Chart.defaults.plugins.legend.labels.padding = 14;
-      Chart.defaults.animation = { duration: 500, easing: 'easeOutQuart' };
+      Object.assign(Chart.defaults.animation, { duration: 500, easing: 'easeOutQuart' });   // only change speed: replacing the object breaks hover animations
       const optIn = (id, v) => [...$(id).options].some(o => o.value === v);
       const pick = (chart, els) => { if (!els || !els.length || chart.config.options.onClick) return null; const lab = chart.data.labels && chart.data.labels[els[0].index];
         const v = String(lab ?? ''); return optIn('cityFilter', v) ? ['cityFilter', v] : optIn('hubFilter', v) ? ['hubFilter', v] : null; };
