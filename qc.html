@@ -277,6 +277,29 @@
     .grid2 + section.panel { margin-top: 12px; }
     .cards[data-tab] { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
     @media (max-width: 600px) { .cards[data-tab] { grid-template-columns: 1fr 1fr; } }
+  
+    /* ---- QC overview box: grouped panels (compact) ---- */
+    .hero .ov2 { display: grid; grid-template-columns: 1.05fr 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .hero .ov3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+    .hero .blk { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.11); border-radius: 14px; padding: 10px 14px; min-width: 0; }
+    .hero .k { font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: #9fb3d6; }
+    .hero .big { font-size: 34px; font-weight: 800; letter-spacing: -.03em; line-height: 1; margin-top: 6px; color: #fff; font-variant-numeric: tabular-nums; }
+    .hero .sub { font-size: 12.5px; color: #c9d7ee; margin-top: 5px; }
+    .hero .sub.dim { opacity: .8; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hero .chip { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 1px 8px; border-radius: 999px; margin-left: 4px; }
+    .hero .chip.up { background: rgba(232,123,164,.2); color: #ffb3cf; } .hero .chip.down { background: rgba(127,224,176,.18); color: #9ff0c6; } .hero .chip.flat { background: rgba(255,255,255,.12); color: #dbe6f7; }
+    .hero .seg3 { height: 10px; border-radius: 99px; display: flex; overflow: hidden; margin-top: 10px; gap: 2px; background: rgba(255,255,255,.08); }
+    .hero .lg { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; }
+    .hero .lg div { font-size: 12.5px; color: #c9d7ee; display: flex; align-items: center; gap: 6px; }
+    .hero .lg i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; } .hero .lg b { color: #fff; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .hero .rk { margin-top: 7px; display: flex; flex-direction: column; gap: 4px; }
+    .hero .rk div { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #dbe6f7; min-width: 0; }
+    .hero .rk b { min-width: 18px; text-align: right; color: #fff; font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .hero .rk .rkb { flex: 0 0 46px; height: 5px; border-radius: 99px; background: rgba(255,255,255,.1); overflow: hidden; } .hero .rk .rkb i { display: block; height: 100%; }
+    .hero .rk span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hero .rk .none { color: #9fb3d6; }
+    .hero .blk.pink { background: rgba(232,123,164,.10); border-color: rgba(232,123,164,.32); } .hero .blk.amber { background: rgba(237,161,0,.09); border-color: rgba(237,161,0,.32); } .hero .blk.violet { background: rgba(139,124,246,.11); border-color: rgba(139,124,246,.35); }
+    @media (max-width: 700px) { .hero .ov2, .hero .ov3 { grid-template-columns: 1fr; } .hero .big { font-size: 30px; } }
   </style>
 </head>
 <body>
@@ -334,9 +357,17 @@
     <section class="hero">
       <div class="hrow"><div><h1>QC overview</h1><p><span id="gWhen">Last 30 days</span> · <span id="gSub">Vehicle QC checks</span></p></div>
         <div class="hact"><a class="btn newqc" href="qc-new.html">+ New QC</a><button class="btn tbtn" type="button" id="themeBtn">☾ Dark</button></div></div>
-      <div class="glance">
-        <div><b id="gTotal">–</b><span>QCs</span></div><div><b id="gAppr">–</b><span>Approved</span></div><div><b id="gRej">–</b><span>Rejected</span></div>
-        <div><b id="gPct">–</b><span>Rejection %</span></div><div><b id="gHold">–</b><span>On hold</span></div>
+      <div class="ov2">
+        <div class="blk"><div class="k">QCs done today</div><div class="big" id="gTotal">–</div><div class="sub" id="gTotalSub"></div><div class="sub dim" id="gBy"></div></div>
+        <div class="blk"><div class="k">Results today</div>
+          <div class="seg3"><div id="gSegA" style="flex:1;background:#5b8def"></div><div id="gSegR" style="flex:1;background:#e87ba4"></div><div id="gSegH" style="flex:0;background:#8b7cf6"></div></div>
+          <div class="lg"><div><i style="background:#5b8def"></i><b id="gAppr">–</b> approved</div><div><i style="background:#e87ba4"></i><b id="gRej">–</b> rejected</div><div><i style="background:#8b7cf6"></i><b id="gHold">–</b> on hold</div></div></div>
+        <div class="blk"><div class="k">Rejection rate today</div><div class="big" id="gPct" style="color:#ff9cc2">–</div><div class="sub"><span id="gPctAvg"></span> <span class="chip" id="gChip"></span></div></div>
+      </div>
+      <div class="ov3">
+        <div class="blk pink"><div class="k" style="color:#ffc2d8">Top rejection reasons today</div><div class="rk" id="gMis"></div></div>
+        <div class="blk amber"><div class="k" style="color:#ffd98a">Most rejections by technician</div><div class="rk" id="gTech"></div></div>
+        <div class="blk violet"><div class="k" style="color:#cfc6ff">Comebacks today</div><div class="big" id="gCome" style="color:#b7acff">–</div><div class="sub" id="gComeSub">bikes back within 7 days of their last job card</div></div>
       </div>
     </section>
     <section class="bar">
@@ -1034,6 +1065,35 @@
         else from = p === 'today' ? to : back(Number(p) - 1);
         return { from, to, n: daysBetween(from, to).length };
       }
+      // the overview box: today (12 am – 12 am), follows City / Hub
+      let QC_HCH = null;
+      function heroQC(base) {
+        const d = today(), T = base.filter(q => q.day === d), Y = base.filter(q => q.day === back(1));
+        const L = base.filter(q => q.day >= back(15) && q.day <= back(1)), cnt = (a, r) => a.filter(q => q.result === r).length, nf = (x) => Number(x).toLocaleString('en-IN');
+        const a = cnt(T, 'APPROVED'), r = cnt(T, 'REJECTED'), h = cnt(T, 'HOLD');
+        const last = T.reduce((m, q) => q.qc_at > m ? q.qc_at : m, '');
+        $('gWhen').textContent = `Today, ${fmtDay(d)}${last ? ' · last QC ' + new Date(last).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : ''}`; $('gSub').textContent = 'Vehicle QC checks';
+        $('gTotal').textContent = nf(T.length); $('gTotalSub').textContent = `${nf(Y.length)} yesterday · ${nf(Math.round(L.length / 15))} a day on average (last 15 days)`;
+        const by = new Map(); T.forEach(q => by.set(q.qc_name || 'Unknown', (by.get(q.qc_name || 'Unknown') || 0) + 1));
+        $('gBy').textContent = by.size ? 'By ' + [...by].sort((x, y) => y[1] - x[1]).map(([n, c]) => `${n.charAt(0) + n.slice(1).toLowerCase()} ${c}`).join(' · ') : 'No QCs yet today';
+        $('gSegA').style.flex = a; $('gSegR').style.flex = r; $('gSegH').style.flex = h;
+        $('gAppr').textContent = nf(a); $('gRej').textContent = nf(r); $('gHold').textContent = nf(h);
+        const rr = T.length ? 100 * r / T.length : null, ra = L.length ? 100 * cnt(L, 'REJECTED') / L.length : null;
+        $('gPct').textContent = rr == null ? '–' : Math.round(rr) + '%'; $('gPctAvg').textContent = ra == null ? '' : `${Math.round(ra)}% on average (last 15 days)`;
+        const df = rr == null || ra == null ? null : Math.round(rr - ra);
+        $('gChip').className = 'chip ' + (df == null ? 'flat' : df > 0 ? 'up' : df < 0 ? 'down' : 'flat'); $('gChip').textContent = df == null ? '' : `${df > 0 ? '+' : df < 0 ? '−' : ''}${Math.abs(df)} pts`;
+        const row = (n, w, col, txt) => `<div><b>${n}</b><span class="rkb"><i style="width:${w}%;background:${col}"></i></span><span title="${esc(txt)}">${esc(txt)}</span></div>`;
+        const mc = new Map(); T.forEach(q => (misByQc.get(q.id) || []).forEach(m => mc.set(m.mistake, (mc.get(m.mistake) || 0) + 1)));
+        const ms = [...mc].sort((x, y) => y[1] - x[1]).slice(0, 3);
+        $('gMis').innerHTML = ms.length ? ms.map(([m, c]) => row(c, 100 * c / ms[0][1], '#e87ba4', m)).join('') : '<div class="none">No rejections yet today</div>';
+        const tc = new Map(); T.forEach(q => { const x = tc.get(q.technician || 'Unknown') || { n: 0, r: 0 }; x.n++; if (q.result === 'REJECTED') x.r++; tc.set(q.technician || 'Unknown', x); });
+        const ts = [...tc].filter(([, x]) => x.r).sort((x, y) => y[1].r - x[1].r || y[1].r / y[1].n - x[1].r / x[1].n).slice(0, 3);
+        $('gTech').innerHTML = ts.length ? ts.map(([t, x]) => row(x.r, 100 * x.r / x.n, '#eda100', `${t} · ${x.r} of ${x.n} QCs`)).join('') : '<div class="none">No rejections yet today</div>';
+        const city = $('cityFilter').value, hub = $('hubFilter').value;
+        const R = Array.isArray(repeats) ? repeats.filter(x => (!hub || x.hub === hub) && (!city || (HUB_CITY[x.hub] || 'Other') === city)) : null;
+        $('gCome').textContent = R ? nf(R.filter(x => x.day === d).length) : '–';
+        $('gComeSub').textContent = R ? `bikes back within 7 days of their last job card · ${nf(R.filter(x => x.day >= back(6)).length)} in the last 7 days` : 'bikes back within 7 days of their last job card';
+      }
       function overview() {
         if (!qcs.length) return;
         const city = $('cityFilter').value, hub = $('hubFilter').value;
@@ -1043,10 +1103,7 @@
         const P = base.filter(q => q.day >= pFrom && q.day <= pTo);
         const rejOf = (a) => a.filter(q => q.result === 'REJECTED').length, rp = (a) => a.length ? 100 * rejOf(a) / a.length : null;
         // hero numbers
-        const t = (id) => $(id).textContent;
-        $('gTotal').textContent = t('kTotal'); $('gAppr').textContent = t('kAppr'); $('gRej').textContent = t('kRej'); $('gPct').textContent = t('kPct'); $('gHold').textContent = t('kHold');
-        $('gWhen').textContent = $('periodFilter').value === 'custom' ? `${fmtDay(from)} – ${fmtDay(to)}` : $('periodFilter').selectedOptions[0].text;
-        $('gSub').textContent = $('pageSub').textContent.replace(/ · real data.*$/, '');
+        heroQC(base);
         // last 15 days: approved / rejected / on hold per day
         const d14 = daysBetween(back(14), today());
         const per = (r) => d14.map(d => base.filter(q => q.day === d && q.result === r).length);
