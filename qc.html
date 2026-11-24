@@ -348,8 +348,8 @@
       <select id="periodFilter">
         <option value="today">Today</option>
         <option value="7">Last 7 days</option>
-        <option value="15">Last 15 days</option>
-        <option value="30" selected>Last 30 days</option>
+        <option value="15" selected>Last 15 days</option>
+        <option value="30">Last 30 days</option>
         <option value="custom">Pick dates…</option>
       </select>
       <span class="range hidden" id="rangeBox">
@@ -375,7 +375,7 @@
     </section>
 
     <section class="ovgrid" data-tab="overview">
-      <div class="panel"><h3>QCs per day · last 14 days</h3><p class="note">Approved, rejected and on hold · follows City and Hub</p><div class="chart"><canvas id="ovTrend"></canvas></div></div>
+      <div class="panel"><h3>QCs per day · last 15 days</h3><p class="note">Approved, rejected and on hold · follows City and Hub</p><div class="chart"><canvas id="ovTrend"></canvas></div></div>
       <div class="panel"><h3>What stands out</h3><p class="note">Worked out from the numbers on this page</p><div class="insights" id="ovInsights"></div></div>
       <div class="panel"><h3>Rejection % by hub</h3><p class="note">Tap a hub to filter the whole dashboard</p><div class="chart" id="ovHubBox"><canvas id="ovHub"></canvas></div></div>
       <div class="panel"><h3>Top mistakes</h3><p class="note">Rejected / hold QCs with each problem · tap a bar for the list</p><div class="chart"><canvas id="ovMis"></canvas></div></div>
@@ -934,7 +934,7 @@
       render();
     });
     ['fromDate', 'toDate'].forEach(id => $(id).addEventListener('change', render));
-    $('clearBtn').addEventListener('click', () => { $('cityFilter').value = ''; $('hubFilter').value = ''; $('periodFilter').value = '30'; $('rangeBox').classList.add('hidden'); $('fromDate').value = ''; $('toDate').value = ''; fillFilters(); render(); });
+    $('clearBtn').addEventListener('click', () => { $('cityFilter').value = ''; $('hubFilter').value = ''; $('periodFilter').value = '15'; $('rangeBox').classList.add('hidden'); $('fromDate').value = ''; $('toDate').value = ''; fillFilters(); render(); });
     $('syncBtn').addEventListener('click', load);
     // Live: when the Google Sheet sync changes anything (new QC, edit, delete), reload within a few seconds
     let liveCh = null, liveTimer = null;
@@ -1047,8 +1047,8 @@
         $('gTotal').textContent = t('kTotal'); $('gAppr').textContent = t('kAppr'); $('gRej').textContent = t('kRej'); $('gPct').textContent = t('kPct'); $('gHold').textContent = t('kHold');
         $('gWhen').textContent = $('periodFilter').value === 'custom' ? `${fmtDay(from)} – ${fmtDay(to)}` : $('periodFilter').selectedOptions[0].text;
         $('gSub').textContent = $('pageSub').textContent.replace(/ · real data.*$/, '');
-        // last 14 days: approved / rejected / on hold per day
-        const d14 = daysBetween(back(13), today());
+        // last 15 days: approved / rejected / on hold per day
+        const d14 = daysBetween(back(14), today());
         const per = (r) => d14.map(d => base.filter(q => q.day === d && q.result === r).length);
         odraw('ovTrend', { type: 'bar', data: { labels: d14.map(fmtDay), datasets: [
           { label: 'Approved', data: per('APPROVED'), backgroundColor: BLUE }, { label: 'Rejected', data: per('REJECTED'), backgroundColor: PINK },
