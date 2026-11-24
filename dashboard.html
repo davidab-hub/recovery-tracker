@@ -290,13 +290,14 @@
 
     <div id="dash" class="hidden">
     <section class="hero">
-      <div class="hrow"><div><h1>Recovery overview</h1><p>Live from Metabase every 30 minutes · <span id="gWhen">Today</span></p></div>
-        <div class="hact"><button class="btn tbtn" type="button" id="themeBtn">☾ Dark</button></div></div>
+      <div class="hrow"><div><h1>Recovery overview</h1><p><span id="gWhen">Today</span></p></div>
+        <div class="hact"><span class="seg" id="gDaySeg" role="group" aria-label="Day"><button type="button" data-d="0" class="on">Today</button><button type="button" data-d="1">Yesterday</button></span><button class="btn tbtn" type="button" id="themeBtn">☾ Dark</button></div></div>
       <div class="glance">
-        <div><b id="gMfr">–</b><span>Bikes in MFR now</span></div><div><b id="gPct">–</b><span>of the fleet</span></div>
-        <div><b id="gIn">–</b><span>Inflow</span></div><div><b id="gOut">–</b><span>Outflow</span></div><div><b id="gAct">–</b><span>Moved to active</span></div><div><b id="gRec">–</b><span>Recovered</span></div>
+        <div><b id="gStart">–</b><span>MFR at start of day</span></div><div><b id="gIn">–</b><span>Inflow</span></div><div><b id="gOut">–</b><span>Outflow</span></div><div><b id="gEnd">–</b><span id="gEndL">MFR now</span></div>
+        <div><b id="gAct">–</b><span>Moved to active</span></div><div><b id="gRec">–</b><span>Recovered</span></div><div><b id="gHub">–</b><span>To hub</span></div><div><b id="gReal" style="color:#ff9cc2">–</b><span>Real recovery cases</span></div>
       </div>
-      <div id="gEq" style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18);font-size:13px;line-height:1.7;color:#dbe6f7"></div>
+      <div id="gEq" style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18);font-size:13px;line-height:1.75;color:#dbe6f7"></div>
+      <div style="margin-top:10px;font-size:12px;color:#b9c9e4" id="gHourT">Hour by hour</div><div style="height:150px"><canvas id="gHour"></canvas></div>
     </section>
 
     <section class="bar">
@@ -340,7 +341,7 @@
     </section>
 
     <section class="ovgrid" data-tab="overview">
-      <div class="panel"><h3>Inflow vs outflow · last 15 days</h3><p class="note">Bars = bikes in and out of MFR per day (7 am – 7 am) · line = renewed (back to active) · follows City, Hub and Model</p><div class="chart"><canvas id="ovTrend"></canvas></div></div>
+      <div class="panel"><h3>Inflow vs outflow · last 15 days</h3><p class="note">Bars = bikes in and out of MFR per calendar day (12 am – 12 am, our 30-minute count) · line = moved to active (renewed) · follows City, Hub and Model</p><div class="chart"><canvas id="ovTrend"></canvas></div></div>
       <div class="panel"><h3>What stands out</h3><p class="note">Worked out from the numbers on this page</p><div class="insights" id="ovInsights"></div></div>
       <div class="panel"><h3>MFR now by city <span class="live">LIVE</span></h3><p class="note">Tap a city to filter the whole dashboard</p><div class="chart"><canvas id="ovCity"></canvas></div></div>
       <div class="panel"><h3>MFR now by age <span class="live">LIVE</span></h3><p class="note">Days since marked for recovery · darker = older</p><div class="chart"><canvas id="ovAge"></canvas></div></div>
@@ -488,7 +489,7 @@
     const num = (n) => Number(n).toLocaleString('en-IN');
     const rs = (n) => '₹' + (n >= 1e5 ? (n / 1e5).toFixed(2) + ' L' : num(Math.round(n)));
     const fmtDay = (d) => new Date(d + 'T00:00:00Z').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-    let APP_CALLS = [], APP_UPD = [], DATA = [], POLICE = [], LAST = '', FIRST = '', FLEET = [], FDAY = [], FAG = [], FLEET_AT = null, SHEET_LAST = '', FLOW = [], FLOW_START = '', FLOW_CLOSE = [], FLOW_TODAY = '', FS = [];
+    let APP_CALLS = [], APP_UPD = [], DATA = [], POLICE = [], LAST = '', FIRST = '', FLEET = [], FDAY = [], FAG = [], FLEET_AT = null, SHEET_LAST = '', FLOW = [], FLOW_START = '', FLOW_CLOSE = [], FLOW_TODAY = '', FS = [], FLOWC = [], FLOWC_START = '';
     const hubKey = (s) => String(s || '').toLowerCase().replace(/[^a-z]/g, '').replace('yeshwanthpur', 'yeswanthpur');
     const AGE_ORDER = ['0-1 days', '1-2 days', '2-3 days', '3-4 days', '4-5 days', '5-10 days', 'Above 10 days'];
     const ageSort = (a, b) => { const i = AGE_ORDER.indexOf(a), j = AGE_ORDER.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j) || a.localeCompare(b); };
@@ -612,6 +613,18 @@
         $('kActive').textContent = num(sh('moved_active')); $('kActiveSub').textContent = `${dn('moved_active')} · renewed (rent paid)`;
         $('kRecovered').textContent = num(sh('recovered')); $('kRecoveredSub').textContent = `${dn('recovered')} · ${fWhen}`;
         $('kHub').textContent = num(sh('moved_hub')); $('kHubSub').textContent = `${dn('moved_hub')} · ${fWhen}`;
+      }
+      // calendar days (12 am – 12 am), one count all day: the overview cards
+      const cTo = to > TODAY ? TODAY : to, cFrom = FLOWC_START && from < FLOWC_START ? FLOWC_START : from;
+      if (FLOWC_START && cTo >= FLOWC_START) {
+        const cl = FLOWC.filter(fleetMatch).filter(r => r.day >= cFrom && r.day <= cTo), cx = (k, re) => cl.filter(r => r.kind === k && (!re || [].concat(re).includes(r.reason))).reduce((a, r) => a + r.n, 0);
+        const ci = cx('in'), co = cx('out'), ca = cx('out', 'renewed'), cr = cx('out', 'recovered'), ch = cx('out', ['to_hub', 'at_hub']);
+        const cWhen = cFrom === cTo ? `${fmtDay(cTo)} (12 am – 12 am)${cTo === TODAY ? ' · so far, ' + at : ''}` : `${fmtDay(cFrom)} – ${fmtDay(cTo)} (calendar days)${from < FLOWC_START ? ' · counted since ' + fmtDay(FLOWC_START) : ''}`;
+        $('kInflow').textContent = num(ci); $('kInflowSub').textContent = `bikes marked for recovery · ${cWhen}`;
+        $('kOutflow').textContent = num(co); $('kOutflowSub').textContent = `${num(ca)} moved to active · ${num(cr)} recovered · ${num(ch)} to hub${co - ca - cr - ch ? ' · ' + num(co - ca - cr - ch) + ' other' : ''} · ${cWhen}`;
+        $('kActive').textContent = num(ca); $('kActiveSub').textContent = `renewed (rent paid) · ${cWhen}`;
+        $('kRecovered').textContent = num(cr); $('kRecoveredSub').textContent = cWhen;
+        $('kHub').textContent = num(ch); $('kHubSub').textContent = `left MFR to a hub · ${cWhen}`;
       }
       shiftTable(fFrom, fTo);
       // Agents (Metabase "outflow agent"; renewals by the customer are not counted as an agent)
@@ -933,6 +946,8 @@
         ]).catch(e => ({ err: e }));
         // Inflow / outflow counted by us (every 30-min refresh compared with the one before)
         const flowP = db.rpc('mfr_flow', { p_from: since, p_to: '2100-01-01' }).then(r => r.error ? [] : (r.data || [])).catch(() => []);
+        // the same count per calendar day (12 am – 12 am India time): overview cards, charts and the overview box
+        const flowCP = pageAll(() => db.rpc('mfr_flow_cal', { p_from: since, p_to: '2100-01-01' }).order('day')).catch(() => []);
         // Day (7 am–7 pm, Metabase) and night (7 pm–7 am, our count) figures per 7 am–7 am day
         const shiftP = pageAll(() => db.rpc('flow_shifts', { p_from: since, p_to: '2100-01-01' }).order('day').order('city').order('hub').order('shift')).catch(() => []);
         const closeP = pageAll(() => db.from('mfr_flow_daily').select('day, city, hub, model, mfr').gte('day', since).order('day')).catch(() => []);
@@ -950,6 +965,7 @@
           [FLEET, FDAY, FAG, POLICE] = fl;
           FLEET_AT = FLEET.reduce((m, r) => r.synced_at > m ? r.synced_at : m, '') || null;
         }
+        FLOWC = await flowCP; { const m = FLOWC.reduce((x, r) => !x || r.day < x ? r.day : x, ''); FLOWC_START = m && m === (FLOW.reduce((x, r) => !x || r.day < x ? r.day : x, '')) ? addDays(m, 1) : m; }
         FLOW = await flowP; FS = await shiftP; FLOW_CLOSE = await closeP; FLOW_START = FLOW.reduce((m, r) => !m || r.day < m ? r.day : m, '');
         FLOW_TODAY = new Date(Date.now() + 5.5 * 3600e3 - 7 * 3600e3).toISOString().slice(0, 10);   // inflow/outflow days run 7 am to 7 am
         SHEET_LAST = DATA.filter(r => !r.app).reduce((m, r) => r.d > m ? r.d : m, '');
@@ -1109,37 +1125,49 @@
       // in / out of MFR per day from our own 30-minute counting (adds up: MFR at 7 am + in − out = next 7 am)
       function flowSeries(n = 15) {
         const days = []; for (let i = n - 1; i >= 0; i--) days.push(addDays(TODAY, -i));
-        const fl = FLOW.filter(fleetMatch), f = (d, k, re) => fl.filter(r => r.day === d && r.kind === k && (!re || r.reason === re)).reduce((x, r) => x + r.n, 0);
-        const ok = (d) => FLOW_START && d >= FLOW_START;
-        return { days, inn: days.map(d => ok(d) ? f(d, 'in') : null), out: days.map(d => ok(d) ? f(d, 'out') : null), active: days.map(d => ok(d) ? f(d, 'out', 'renewed') : null) };
+        const fl = FLOWC.filter(fleetMatch), f = (d, k, re) => fl.filter(r => r.day === d && r.kind === k && (!re || [].concat(re).includes(r.reason))).reduce((x, r) => x + r.n, 0);
+        const ok = (d) => FLOWC_START && d >= FLOWC_START;
+        return { days, inn: days.map(d => ok(d) ? f(d, 'in') : null), out: days.map(d => ok(d) ? f(d, 'out') : null), active: days.map(d => ok(d) ? f(d, 'out', 'renewed') : null),
+          rec: days.map(d => ok(d) ? f(d, 'out', 'recovered') : null), hub: days.map(d => ok(d) ? f(d, 'out', ['to_hub', 'at_hub']) : null) };
       }
-      // the overview box always shows today (the 7 am – 7 am day so far), whatever period is picked; follows City / Hub
-      function heroToday() {
-        const d = FLOW_TODAY, c = $('cityFilter').value, h = $('hubFilter').value;
-        const ok = (r) => (!c || r.city === c) && (!h || hubKey(r.hub) === hubKey(h));
-        const fs = FS.filter(ok).filter(r => r.day === d), sh = (k) => fs.reduce((a, r) => a + (r[k] || 0), 0);
-        const fl = FLOW.filter(fleetMatch).filter(r => r.day === d), fx = (k, re) => fl.filter(r => r.kind === k && (!re || r.reason === re)).reduce((s, r) => s + r.n, 0);
-        const v = fs.length && !$('modelFilter').value ? { i: sh('inflow'), o: sh('outflow'), a: sh('moved_active'), r: sh('recovered') }
-          : { i: fx('in'), o: fx('out'), a: fx('out', 'renewed'), r: fx('out', 'recovered') };
-        $('gIn').textContent = nf(v.i); $('gOut').textContent = nf(v.o); $('gAct').textContent = nf(v.a); $('gRec').textContent = nf(v.r);
-        const at = FLEET_AT ? new Date(FLEET_AT).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
-        $('gWhen').textContent = d ? `Today, ${fmtDay(d)} (7 am – 7 am) · so far, ${at}` : 'Today';
-        const oth = v.o - v.a - v.r, net = v.i - v.o;
-        $('gEq').innerHTML = `<div><b style="color:#fff">Outflow ${nf(v.o)}</b> = Moved to active ${nf(v.a)} + Recovered ${nf(v.r)}${oth > 0 ? ` + Other ${nf(oth)}` : ''}</div>`
-          + `<div><b style="color:#fff">Inflow ${nf(v.i)} − Outflow ${nf(v.o)} = ${net > 0 ? '+' : net < 0 ? '−' : ''}${nf(Math.abs(net))}</b> · MFR ${net > 0 ? 'grew' : net < 0 ? 'went down' : 'did not change'}${net ? ` by ${nf(Math.abs(net))} bikes` : ''} today</div>`;
+      // the overview box: one calendar day (12 am – 12 am India time), counted one way all day (our 30-minute check); follows City / Hub
+      let HERO_D = 0, HERO_KEY = '', HERO_AT = 0, HERO_CH = null;
+      document.querySelectorAll('#gDaySeg button').forEach(b => b.onclick = () => { HERO_D = Number(b.dataset.d); document.querySelectorAll('#gDaySeg button').forEach(x => x.classList.toggle('on', x === b)); heroDay(true); });
+      async function heroDay(force) {
+        const day = addDays(TODAY || new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10), -HERO_D), c = $('cityFilter').value || null, h = $('hubFilter').value || null;
+        const key = [day, c, h].join('|'); if (!force && key === HERO_KEY && Date.now() - HERO_AT < 60e3) return; HERO_KEY = key; HERO_AT = Date.now();
+        const { data: v, error } = await db.rpc('mfr_day_summary', { p_day: day, p_city: c, p_hub: h });
+        if (error || !v || key !== HERO_KEY) { if (error) console.warn('day summary', error); return; }
+        const W = 'color:#fff;font-weight:700', today = HERO_D === 0, real = v.ins - v.renewed_24h, oth = v.outs - v.out_active - v.out_recovered - v.out_hub, net = v.ins - v.outs;
+        const at = v.synced_at ? new Date(v.synced_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+        $('gWhen').textContent = `${today ? 'Today' : 'Yesterday'}, ${fmtDay(day)} (12 am – 12 am)${today ? ' · so far, ' + at : ''} · counted every 30 minutes${$('modelFilter').value ? ' · all models' : ''}`;
+        $('gStart').textContent = nf(v.mfr_start); $('gIn').textContent = nf(v.ins); $('gOut').textContent = nf(v.outs); $('gEnd').textContent = nf(v.mfr_end);
+        $('gEndL').textContent = today ? 'MFR now' : 'MFR at end of day';
+        $('gAct').textContent = nf(v.out_active); $('gRec').textContent = nf(v.out_recovered); $('gHub').textContent = nf(v.out_hub); $('gReal').textContent = nf(real);
+        $('gEq').innerHTML = `<div><span style="${W}">MFR ${nf(v.mfr_start)} + Inflow ${nf(v.ins)} − Outflow ${nf(v.outs)} = ${nf(v.mfr_end)}</span> · MFR ${net > 0 ? 'went up by ' + nf(net) + ' bikes' : net < 0 ? 'went down by ' + nf(-net) + ' bikes' : 'did not change'}${today ? ' so far' : ''}</div>`
+          + `<div><span style="${W}">Outflow ${nf(v.outs)}</span> = Moved to active ${nf(v.out_active)} + Recovered ${nf(v.out_recovered)} + To hub ${nf(v.out_hub)}${oth > 0 ? ' + Other ' + nf(oth) : ''}</div>`
+          + `<div><span style="${W}">Inflow ${nf(v.ins)}</span> = Renewed within 24 hours ${nf(v.renewed_24h)} <span style="opacity:.75">(no action needed)</span> + <span style="color:#ff9cc2;font-weight:700">Real recovery cases ${nf(real)}</span></div>`
+          + `<div style="opacity:.85;font-size:12px">Real recovery cases ${nf(real)} = Recovered ${nf(v.in_recovered)} + To hub ${nf(v.in_hub)} + Renewed after 24 hours ${nf(v.renewed_later)}${v.in_other ? ' + Other ' + nf(v.in_other) : ''} + Still in MFR now ${nf(v.in_still)}`
+          + `${v.settled ? '' : ' · still settling: bikes marked in the last 24 hours can still be renewed'}</div>`;
+        $('gHourT').textContent = `Hour by hour, ${fmtDay(day)}`;
+        const H = v.hourly || [], lab = (i) => i === 0 ? '12a' : i < 12 ? i + 'a' : i === 12 ? '12p' : (i - 12) + 'p';
+        if (HERO_CH) HERO_CH.destroy();
+        HERO_CH = new Chart($('gHour'), { type: 'bar', data: { labels: H.map(x => lab(x[0])), datasets: [{ label: 'In (marked for recovery)', data: H.map(x => x[1]), backgroundColor: '#e87ba4', borderRadius: 3 },
+          { label: 'Out', data: H.map(x => x[2]), backgroundColor: '#7fb2ff', borderRadius: 3 }] },
+          options: { animation: false, maintainAspectRatio: false, plugins: { legend: { position: 'top', align: 'end', labels: { color: '#dbe6f7', boxWidth: 10, font: { size: 11 } } } },
+            scales: { x: { ticks: { color: '#b9c9e4', font: { size: 10 } }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: '#b9c9e4', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,.08)' } } } } });
       }
       function overview() {
         const s = series(['recovered', 'moved_hub']), fs = flowSeries();
         spark('kInflow', fs.inn, '#e87ba4'); spark('kOutflow', fs.out, '#2a78d6');
-        spark('kRecovered', s.get('recovered'), '#eda100'); spark('kActive', fs.active, '#38bdf8'); spark('kHub', s.get('moved_hub'), '#6250d6');
+        spark('kRecovered', fs.rec, '#eda100'); spark('kActive', fs.active, '#38bdf8'); spark('kHub', fs.hub, '#6250d6');
         // hero numbers
         const t = (id) => $(id).textContent;
-        $('gMfr').textContent = t('kMfr'); $('gPct').textContent = t('kMfrPct');
-        heroToday();
+        heroDay();
         // 14-day inflow vs outflow
         odraw('ovTrend', { type: 'bar', data: { labels: fs.days.map(fmtDay), datasets: [
           { label: 'Inflow', data: fs.inn, backgroundColor: '#e87ba4' }, { label: 'Outflow', data: fs.out, backgroundColor: '#2a78d6' },
-          { type: 'line', label: 'Renewed (back to active)', data: fs.active, borderColor: '#eda100', backgroundColor: '#eda100' }] },
+          { type: 'line', label: 'Moved to active (renewed)', data: fs.active, borderColor: '#eda100', backgroundColor: '#eda100' }] },
           options: { scales: axes(false), plugins: { tooltip: { callbacks: { footer: (it) => { const a = it.find(x => x.dataset.label === 'Inflow'), b = it.find(x => x.dataset.label === 'Outflow');
             return a && b && a.raw != null && b.raw != null ? `Net change in MFR: ${a.raw - b.raw > 0 ? '+' : ''}${a.raw - b.raw}` : ''; } } } } } });
         // MFR now, by city (click a bar to filter)
