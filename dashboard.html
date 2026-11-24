@@ -294,8 +294,9 @@
         <div class="hact"><button class="btn tbtn" type="button" id="themeBtn">☾ Dark</button></div></div>
       <div class="glance">
         <div><b id="gMfr">–</b><span>Bikes in MFR now</span></div><div><b id="gPct">–</b><span>of the fleet</span></div>
-        <div><b id="gIn">–</b><span>Inflow</span></div><div><b id="gOut">–</b><span>Outflow</span></div><div><b id="gRec">–</b><span>Recovered</span></div>
+        <div><b id="gIn">–</b><span>Inflow</span></div><div><b id="gOut">–</b><span>Outflow</span></div><div><b id="gAct">–</b><span>Moved to active</span></div><div><b id="gRec">–</b><span>Recovered</span></div>
       </div>
+      <div id="gEq" style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18);font-size:13px;line-height:1.7;color:#dbe6f7"></div>
     </section>
 
     <section class="bar">
@@ -1112,14 +1113,29 @@
         const ok = (d) => FLOW_START && d >= FLOW_START;
         return { days, inn: days.map(d => ok(d) ? f(d, 'in') : null), out: days.map(d => ok(d) ? f(d, 'out') : null), active: days.map(d => ok(d) ? f(d, 'out', 'renewed') : null) };
       }
+      // the overview box always shows today (the 7 am – 7 am day so far), whatever period is picked; follows City / Hub
+      function heroToday() {
+        const d = FLOW_TODAY, c = $('cityFilter').value, h = $('hubFilter').value;
+        const ok = (r) => (!c || r.city === c) && (!h || hubKey(r.hub) === hubKey(h));
+        const fs = FS.filter(ok).filter(r => r.day === d), sh = (k) => fs.reduce((a, r) => a + (r[k] || 0), 0);
+        const fl = FLOW.filter(fleetMatch).filter(r => r.day === d), fx = (k, re) => fl.filter(r => r.kind === k && (!re || r.reason === re)).reduce((s, r) => s + r.n, 0);
+        const v = fs.length && !$('modelFilter').value ? { i: sh('inflow'), o: sh('outflow'), a: sh('moved_active'), r: sh('recovered') }
+          : { i: fx('in'), o: fx('out'), a: fx('out', 'renewed'), r: fx('out', 'recovered') };
+        $('gIn').textContent = nf(v.i); $('gOut').textContent = nf(v.o); $('gAct').textContent = nf(v.a); $('gRec').textContent = nf(v.r);
+        const at = FLEET_AT ? new Date(FLEET_AT).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+        $('gWhen').textContent = d ? `Today, ${fmtDay(d)} (7 am – 7 am) · so far, ${at}` : 'Today';
+        const oth = v.o - v.a - v.r, net = v.i - v.o;
+        $('gEq').innerHTML = `<div><b style="color:#fff">Outflow ${nf(v.o)}</b> = Moved to active ${nf(v.a)} + Recovered ${nf(v.r)}${oth > 0 ? ` + Other ${nf(oth)}` : ''}</div>`
+          + `<div><b style="color:#fff">Inflow ${nf(v.i)} − Outflow ${nf(v.o)} = ${net > 0 ? '+' : net < 0 ? '−' : ''}${nf(Math.abs(net))}</b> · MFR ${net > 0 ? 'grew' : net < 0 ? 'went down' : 'did not change'}${net ? ` by ${nf(Math.abs(net))} bikes` : ''} today</div>`;
+      }
       function overview() {
         const s = series(['recovered', 'moved_hub']), fs = flowSeries();
         spark('kInflow', fs.inn, '#e87ba4'); spark('kOutflow', fs.out, '#2a78d6');
         spark('kRecovered', s.get('recovered'), '#eda100'); spark('kActive', fs.active, '#38bdf8'); spark('kHub', s.get('moved_hub'), '#6250d6');
         // hero numbers
         const t = (id) => $(id).textContent;
-        $('gMfr').textContent = t('kMfr'); $('gPct').textContent = t('kMfrPct'); $('gIn').textContent = t('kInflow'); $('gOut').textContent = t('kOutflow'); $('gRec').textContent = t('kRecovered');
-        $('gWhen').textContent = $('periodNote').textContent || 'Today';
+        $('gMfr').textContent = t('kMfr'); $('gPct').textContent = t('kMfrPct');
+        heroToday();
         // 14-day inflow vs outflow
         odraw('ovTrend', { type: 'bar', data: { labels: fs.days.map(fmtDay), datasets: [
           { label: 'Inflow', data: fs.inn, backgroundColor: '#e87ba4' }, { label: 'Outflow', data: fs.out, backgroundColor: '#2a78d6' },
