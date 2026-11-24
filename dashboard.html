@@ -234,6 +234,28 @@
     body.noacc main > *:not(#noAccess):not(.tabs-top) { display: none !important; }
     .panel.flash { box-shadow: 0 0 0 3px var(--ring); transition: box-shadow .3s; }
     @media (prefers-reduced-motion: reduce) { .card, .btn { transition: none; } }
+  
+    /* ---- Recovery overview box: grouped panels ---- */
+    .hero .ov2 { display: grid; grid-template-columns: 1.05fr 1fr 1.35fr; gap: 12px; margin-top: 18px; }
+    .hero .blk { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.11); border-radius: 16px; padding: 14px 16px; }
+    .hero .k { font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: #9fb3d6; }
+    .hero .big { font-size: 46px; font-weight: 800; letter-spacing: -.03em; line-height: 1; margin-top: 8px; color: #fff; font-variant-numeric: tabular-nums; }
+    .hero .sub { font-size: 13px; color: #c9d7ee; margin-top: 8px; }
+    .hero .chip { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
+    .hero .chip.up { background: rgba(232,123,164,.2); color: #ffb3cf; } .hero .chip.down { background: rgba(127,224,176,.18); color: #9ff0c6; } .hero .chip.flat { background: rgba(255,255,255,.12); color: #dbe6f7; }
+    .hero .io { display: flex; gap: 18px; margin-top: 8px; }
+    .hero .io b { display: block; font-size: 30px; font-weight: 800; color: #fff; line-height: 1.05; font-variant-numeric: tabular-nums; }
+    .hero .io .lbl { font-size: 12.5px; color: #c9d7ee; } .hero .io .ar { font-size: 16px; margin-right: 4px; }
+    .hero .cmp { height: 6px; border-radius: 99px; background: rgba(255,255,255,.1); margin-top: 12px; display: flex; overflow: hidden; }
+    .hero .seg3 { height: 12px; border-radius: 99px; display: flex; overflow: hidden; margin-top: 12px; gap: 2px; }
+    .hero .lg { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; }
+    .hero .lg div { font-size: 12.5px; color: #c9d7ee; display: flex; align-items: center; gap: 6px; }
+    .hero .lg i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; } .hero .lg b { color: #fff; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .hero .ov2b { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .hero .ov2b .blk { display: flex; align-items: center; gap: 14px; } .hero .ov2b .big { font-size: 40px; margin: 0; min-width: 84px; }
+    .hero .ov2b .pink { background: rgba(232,123,164,.12); border-color: rgba(232,123,164,.35); } .hero .ov2b .pink .big { color: #ff9cc2; }
+    .hero .ov2b .green { background: rgba(127,224,176,.1); border-color: rgba(127,224,176,.35); } .hero .ov2b .green .big { color: #7fe0b0; }
+    @media (max-width: 700px) { .hero .ov2, .hero .ov2b { grid-template-columns: 1fr; } .hero .big { font-size: 40px; } }
   </style>
 </head>
 <body>
@@ -292,9 +314,18 @@
     <section class="hero">
       <div class="hrow"><div><h1>Recovery overview</h1><p><span id="gWhen">Today</span></p></div>
         <div class="hact"><button class="btn tbtn" type="button" id="themeBtn">☾ Dark</button></div></div>
-      <div class="glance">
-        <div><b id="gStart">–</b><span>MFR at start of day</span></div><div><b id="gIn">–</b><span>Inflow</span></div><div><b id="gOut">–</b><span>Outflow</span></div><div><b id="gEnd">–</b><span id="gEndL">MFR now</span></div>
-        <div><b id="gAct">–</b><span>Moved to active</span></div><div><b id="gRec">–</b><span>Recovered</span></div><div><b id="gHub">–</b><span>To hub</span></div><div><b id="gReal" style="color:#ff9cc2">–</b><span>Real recovery cases (new)</span></div><div><b id="gClr" style="color:#7fe0b0">–</b><span>Cleared by team (recovered + to hub)</span></div>
+      <div class="ov2">
+        <div class="blk"><div class="k">Bikes in MFR now</div><div class="big" id="gEnd">–</div><div class="sub"><span id="gStartT">–</span> <span class="chip" id="gChip"></span></div></div>
+        <div class="blk"><div class="k">In and out today</div>
+          <div class="io"><div><b><span class="ar" style="color:#e87ba4">↓</span><span id="gIn">–</span></b><span class="lbl">newly marked MFR</span></div><div><b><span class="ar" style="color:#7fb2ff">↑</span><span id="gOut">–</span></b><span class="lbl">left MFR</span></div></div>
+          <div class="cmp"><div id="gCmpIn" style="width:50%;background:#e87ba4"></div><div style="flex:1;background:#7fb2ff"></div></div></div>
+        <div class="blk"><div class="k" id="gWentK">Where they went</div>
+          <div class="seg3"><div id="gSegA" style="flex:1;background:#38bdf8"></div><div id="gSegR" style="flex:1;background:#eda100"></div><div id="gSegH" style="flex:1;background:#8b7cf6"></div></div>
+          <div class="lg"><div><i style="background:#38bdf8"></i><b id="gAct">–</b> moved to active</div><div><i style="background:#eda100"></i><b id="gRec">–</b> recovered</div><div><i style="background:#8b7cf6"></i><b id="gHub">–</b> to hub</div></div></div>
+      </div>
+      <div class="ov2b">
+        <div class="blk pink"><div class="big" id="gReal">–</div><div><div class="k" style="color:#ffc2d8">New cases needing recovery</div><div class="sub" id="gRealSub" style="margin-top:4px"></div></div></div>
+        <div class="blk green"><div class="big" id="gClr">–</div><div><div class="k" style="color:#b9f3d6">Cleared by team today</div><div class="sub" id="gClrSub" style="margin-top:4px"></div></div></div>
       </div>
       <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18);font-size:12px;color:#b9c9e4" id="gHourT">Hour by hour</div><div style="height:150px"><canvas id="gHour"></canvas></div>
     </section>
@@ -1139,9 +1170,15 @@
         const today = HERO_D === 0, real = v.ins - v.renewed_24h;
         const at = v.synced_at ? new Date(v.synced_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
         $('gWhen').textContent = `${today ? 'Today' : 'Yesterday'}, ${fmtDay(day)} (12 am – 12 am)${today ? ' · so far, ' + at : ''} · counted every 30 minutes${$('modelFilter').value ? ' · all models' : ''}`;
-        $('gStart').textContent = nf(v.mfr_start); $('gIn').textContent = nf(v.ins); $('gOut').textContent = nf(v.outs); $('gEnd').textContent = nf(v.mfr_end);
-        $('gEndL').textContent = today ? 'MFR now' : 'MFR at end of day';
-        $('gAct').textContent = nf(v.out_active); $('gRec').textContent = nf(v.out_recovered); $('gHub').textContent = nf(v.out_hub); $('gReal').textContent = nf(real); $('gClr').textContent = nf(v.out_recovered + v.out_hub);
+        const dd = v.mfr_end - v.mfr_start, ab = v.out_active + v.out_recovered + v.out_hub;
+        $('gEnd').textContent = nf(v.mfr_end); $('gStartT').textContent = `${nf(v.mfr_start)} at 12 am`;
+        $('gChip').className = 'chip ' + (dd > 0 ? 'up' : dd < 0 ? 'down' : 'flat'); $('gChip').textContent = `${dd > 0 ? '+' : dd < 0 ? '−' : ''}${nf(Math.abs(dd))} today`;
+        $('gIn').textContent = nf(v.ins); $('gOut').textContent = nf(v.outs); $('gCmpIn').style.width = (v.ins + v.outs ? 100 * v.ins / (v.ins + v.outs) : 50) + '%';
+        $('gWentK').textContent = `Where the ${nf(v.outs)} went`;
+        $('gSegA').style.flex = ab ? v.out_active : 1; $('gSegR').style.flex = ab ? v.out_recovered : 1; $('gSegH').style.flex = ab ? v.out_hub : 1;
+        $('gAct').textContent = nf(v.out_active); $('gRec').textContent = nf(v.out_recovered); $('gHub').textContent = nf(v.out_hub);
+        $('gReal').textContent = nf(real); $('gRealSub').textContent = `of today's ${nf(v.ins)} newly marked · the rest were renewed by the customer`;
+        $('gClr').textContent = nf(v.out_recovered + v.out_hub); $('gClrSub').textContent = `${nf(v.out_recovered)} recovered + ${nf(v.out_hub)} moved to hub`;
         $('gHourT').textContent = `Hour by hour, ${fmtDay(day)}`;
         const H = v.hourly || [], lab = (i) => i === 0 ? '12a' : i < 12 ? i + 'a' : i === 12 ? '12p' : (i - 12) + 'p';
         if (HERO_CH) HERO_CH.destroy();
