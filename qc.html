@@ -1160,7 +1160,9 @@
       tableSearch('techRows', 'Search technician or hub…'); tableSearch('repRows', 'Search bike, hub or part…');
 
       const orig = window.render;
-      window.render = function () { const r = orig.apply(this, arguments); try { overview(); } catch (e) { console.warn('overview', e); } return r; };
+      window.render = function () { const r = orig.apply(this, arguments); try { overview(); } catch (e) { console.warn('overview', e); } fitCharts(); return r; };
+      // charts re-measure once the panel next to them has filled in, so they fill their panel
+      function fitCharts() { [80, 600, 1500].forEach(t => setTimeout(() => document.querySelectorAll('.ovgrid canvas').forEach(c => { const ch = window.Chart && Chart.getChart(c); if (ch) ch.resize(); }), t)); }
 
       // light / dark switch (remembered on this browser; same setting as the Recovery Dashboard)
       const thm = $('themeBtn'); let dark = false; try { dark = localStorage.getItem('rt-theme') === 'dark'; } catch (e) {}
