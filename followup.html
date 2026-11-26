@@ -254,7 +254,7 @@
       box.innerHTML = cities.map(ct => { const g = cs.filter(c => c.city === ct), on = g.filter(c => !c.off);
         return `<div class="hd"><span><b>${esc(cityLabel(ct))} calls ${dayTxt}:</b> shared by ${on.length} of ${g.length}${on.length < g.length ? ' · off: ' + g.filter(c => c.off).map(c => esc(c.name)).join(', ') : ''}</span>
           <button data-cedit>${cOpen ? 'Done' : 'Leave / week off'}</button></div>
-          ${cOpen ? `<div class="who2">${g.map(c => `<span>${esc(c.name)} <small>${c.bikes} bikes</small></span>
+          ${cOpen ? `<div class="who2">${g.map(c => `<span>${esc(c.name)} <small>${g.some(x => x.bikes) ? c.bikes + ' bikes' : 'list comes at 5:30 PM'}</small></span>
             <select data-off="${c.agent_id}" class="${c.off ? 'off' : ''}"><option value="">Working</option><option value="leave" ${c.off === 'leave' ? 'selected' : ''}>On leave</option><option value="week_off" ${c.off === 'week_off' ? 'selected' : ''}>Week off</option></select>`).join('')}</div>` : ''}`; }).join('')
         + (cOpen ? `<div class="dsel"><button data-cday="0" class="${cDay === istDay(0) ? 'on' : ''}">Today</button><button data-cday="1" class="${cDay === istDay(1) ? 'on' : ''}">Tomorrow</button></div>` : '');
     }
