@@ -9,6 +9,7 @@
   <link rel="manifest" href="agent.webmanifest">
   <style>
     :root { --brand: #e3262b; --brand-dark: #b91c21; --bg: #f4f5f7; --card: #fff; --text: #111827; --muted: #6b7280; --border: #e5e7eb;
+      --ok: #15803d; --bad: #d93025; --hub: #7c3aed; --rec: #b45309; --oth: #6b7280;
       --renew: #1d67bc; --submit: #7c3aed; --recover: #d93025; --noreach: #6b7280; }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif; font-size: 15px; }
@@ -68,6 +69,23 @@
     .msg a { color: var(--brand); font-weight: 700; }
     .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: #111827; color: #fff; padding: 10px 16px; border-radius: 999px; font-size: 14px; z-index: 20; }
     .daysel { border: 1.5px solid var(--border); border-radius: 999px; padding: 6px 10px; background: #fff; font-weight: 600; font-size: 13px; }
+    .live { justify-self: start; font-size: 13px; font-weight: 700; border-radius: 8px; padding: 4px 9px; background: color-mix(in srgb, var(--c) 14%, #fff); color: var(--c); }
+    .live small { font-weight: 500; color: #374151; margin-left: 4px; }
+    .sum .big { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .sum .big div { border-radius: 10px; padding: 8px 10px; background: color-mix(in srgb, var(--c) 10%, #fff); }
+    .sum .big b { display: block; font-size: 22px; color: var(--c); font-variant-numeric: tabular-nums; } .sum .big span { font-size: 12.5px; color: #374151; }
+    .daysel { border: 1.5px solid var(--border); border-radius: 999px; padding: 6px 10px; background: #fff; font-weight: 600; font-size: 13px; }
+    .card { gap: 7px; padding: 11px 12px; }
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .tags .live { font-size: 12.5px; padding: 3px 8px; }
+    .tags .ag { font-size: 12.5px; color: #374151; background: #f4f5f7; border-radius: 8px; padding: 3px 8px; }
+    .res { display: grid; grid-template-columns: 1fr auto; gap: 6px; }
+    .res select, .res input { border: 1.5px solid var(--border); border-radius: 10px; padding: 9px 10px; font-size: 14px; background: #fff; min-width: 0; }
+    .res select.set { border-color: #111827; font-weight: 600; }
+    .res select:not(.set) ~ input { display: none; }
+    .res input { grid-column: 1 / -1; padding: 7px 10px; font-size: 13.5px; }
+    .res button { border: 0; border-radius: 10px; background: #d1d5db; color: #fff; padding: 0 16px; font-weight: 700; }
+    .res button.dirty { background: var(--brand); }
     .pv { background: #fbd977; color: #3d2c00; text-align: center; font-size: 12.5px; font-weight: 600; padding: 6px; }
   </style>
 </head>
@@ -81,6 +99,7 @@
   <div class="pv hidden" id="pv">Preview with today's real bikes – rider numbers hidden. Nothing here is saved.</div>
   <div class="wrap">
     <div class="alertbar hidden" id="alertbar"><p id="alertTxt"></p><button id="alertBtn"></button></div>
+    <div class="chips"><select class="daysel" id="day" aria-label="List date"></select></div>
     <div class="chips" id="cities"></div>
     <div class="chips hidden" id="agents"></div>
     <div class="sum" id="sum"></div>
@@ -98,11 +117,20 @@
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const OUT = [
-      { k: 'renew', label: 'Will renew', c: 'var(--renew)' },
-      { k: 'submit', label: 'Will submit bike', c: 'var(--submit)' },
-      { k: 'recover', label: 'Need to recover', c: 'var(--recover)' },
-      { k: 'noreach', label: 'Not reachable', c: 'var(--noreach)' }];
+      { k: 'will_pay', label: 'Will Pay Rent' }, { k: 'will_submit', label: 'Will Submit Vehicle' }, { k: 'asked_recovery', label: 'Asked for Recovery' },
+      { k: 'already_paid', label: 'Already Paid Rent' }, { k: 'not_with_customer', label: 'Vehicle Not With Customer' }, { k: 'vehicle_missing', label: 'Vehicle Missing' },
+      { k: 'in_ps', label: 'Vehicle in PS' }, { k: 'not_connected', label: 'Not Connected' }, { k: 'not_answering', label: 'Not Answering' }, { k: 'switched_off', label: 'Switched Off' }];
     const outOf = (k) => OUT.find(o => o.k === k);
+    // What actually happened after the evening call (live from Metabase)
+    const LIVE = [
+      { k: 'not_renewed', label: 'Not renewed yet', long: 'Not renewed yet', c: 'var(--bad)' },
+      { k: 'renewed', label: 'Renewed', long: 'Renewed', c: 'var(--ok)' },
+      { k: 'at_hub', label: 'Bike at hub', long: 'Bike at hub / submitted', c: 'var(--hub)' },
+      { k: 'recovered', label: 'Recovered', long: 'Recovered', c: 'var(--rec)' },
+      { k: 'other', label: 'Other', long: 'Left recovery list', c: 'var(--oth)' }];
+    const liveOf = (k) => LIVE.find(o => o.k === k) || LIVE[4];
+    const fmtD = (d) => new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+    let day = null;
     const CITY_LABEL = { NCR: 'Delhi' };
     const cityLabel = (c) => CITY_LABEL[c] || c || 'Unknown';
     const fmtT = (s) => s ? new Date(s).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '';
@@ -120,12 +148,14 @@
         else {
           const { data: s } = await db.auth.getSession();
           if (!s.session) { $('list').innerHTML = '<div class="msg">Please sign in first.<br><br><a href="agent.html">Open the Recovery app and sign in</a></div>'; $('sub').textContent = ''; return; }
-          const { data, error } = await db.rpc('followup_list', { p_day: null });
+          const { data, error } = await db.rpc('followup_list', { p_day: day });
           if (error) throw error;
           rows = data.rows || []; meta = data.meta || {}; me = data.me || {};
         }
         if (me.city && !me.team) city = me.city;
-        $('sub').textContent = meta.list_at ? `0–1 day bikes · list of ${fmtT(meta.list_at)} · ${rows.length} bikes` : 'No list yet – it is made every day at 5:30 PM';
+        $('sub').textContent = meta.list_at ? `List of ${fmtT(meta.list_at)} · ${rows.length} bikes${meta.synced_at ? ' · status as of ' + fmtT(meta.synced_at) : ''}` : 'No list yet – it is made every day at 5:30 PM';
+        const days = meta.days || []; day = meta.list_day;
+        $('day').innerHTML = days.map(d => `<option value="${d}" ${d === meta.list_day ? 'selected' : ''}>${d === days[0] ? 'Latest list · ' : ''}${fmtD(d)} evening</option>`).join('');
         draw(); alertBar();
       } catch (e) { $('list').innerHTML = `<div class="msg">Could not load the list: ${esc(e.message || e)}</div>`; }
       finally { $('reload').disabled = false; }
@@ -142,34 +172,38 @@
       if (!showAg || (agent !== 'All' && !agents.includes(agent))) agent = 'All';
       $('agents').classList.toggle('hidden', !showAg);
       $('agents').innerHTML = showAg ? ['All', ...agents].map(a => { const rs = a === 'All' ? inCity : inCity.filter(r => agentOf(r) === a);
-        return `<button class="chip ag ${agent === a ? 'on' : ''}" data-agent="${esc(a)}">${a === 'All' ? 'All agents' : esc(a)}<i>${rs.filter(r => r.outcome).length}/${rs.length}</i></button>`; }).join('') : '';
+        return `<button class="chip ag ${agent === a ? 'on' : ''}" data-agent="${esc(a)}">${a === 'All' ? 'All agents' : esc(a)}<i>${rs.filter(r => r.live === 'renewed').length}/${rs.length}</i></button>`; }).join('') : '';
       const inC = inCity.filter(r => agent === 'All' || agentOf(r) === agent);
-      const done = inC.filter(r => r.outcome);
-      const cnt = (k) => inC.filter(r => r.outcome === k).length;
-      $('sum').innerHTML = `<div class="top"><b>${done.length} of ${inC.length} called</b><span>${city === 'All' ? 'All cities' : esc(cityLabel(city))}${agent !== 'All' ? ' · ' + esc(agent) : ''}</span></div>
-        <div class="bar">${OUT.map(o => `<i style="width:${inC.length ? 100 * cnt(o.k) / inC.length : 0}%;background:${o.c}"></i>`).join('')}</div>
-        <div class="legend">${OUT.map(o => `<span style="--c:${o.c}">${o.label} ${cnt(o.k)}</span>`).join('')}<span style="--c:#d1d5db">To call ${inC.length - done.length}</span></div>`;
-      const F = [{ k: 'all', l: 'All' }, { k: 'todo', l: 'To call' }, ...OUT.map(o => ({ k: o.k, l: o.label }))];
-      $('outF').innerHTML = F.map(f => `<button class="chip ${outF === f.k ? 'on' : ''}" data-out="${f.k}">${f.l}<i>${f.k === 'all' ? inC.length : f.k === 'todo' ? inC.length - done.length : cnt(f.k)}</i></button>`).join('');
-      const list = inC.filter(r => outF === 'all' || (outF === 'todo' ? !r.outcome : r.outcome === outF))
-        .sort((a, b) => (!!a.outcome - !!b.outcome) || new Date(a.mfr_since) - new Date(b.mfr_since));
+      const cnt = (k) => inC.filter(r => (r.live || 'other') === k).length;
+      const pct = (n) => inC.length ? Math.round(100 * n / inC.length) + '%' : '–';
+      const shown = LIVE.filter(o => cnt(o.k) || o.k === 'renewed' || o.k === 'not_renewed');
+      $('sum').innerHTML = `<div class="top"><b>${inC.length} bikes on the list</b><span>${city === 'All' ? 'All cities' : esc(cityLabel(city))}${agent !== 'All' ? ' · ' + esc(agent) : ''}</span></div>
+        <div class="big"><div style="--c:var(--ok)"><b>${cnt('renewed')} <small style="font-size:13px">${pct(cnt('renewed'))}</small></b><span>Renewed</span></div>
+          <div style="--c:var(--bad)"><b>${cnt('not_renewed')} <small style="font-size:13px">${pct(cnt('not_renewed'))}</small></b><span>Not renewed – moving to 1–2 day recovery</span></div></div>
+        <div class="bar">${LIVE.map(o => `<i style="width:${inC.length ? 100 * cnt(o.k) / inC.length : 0}%;background:${o.c}"></i>`).join('')}</div>
+        <div class="legend">${shown.map(o => `<span style="--c:${o.c}">${o.label} ${cnt(o.k)}</span>`).join('')}</div>`;
+      const F = [{ k: 'all', l: 'All' }, ...shown.map(o => ({ k: o.k, l: o.label }))];
+      if (!F.some(f => f.k === outF)) outF = 'all';
+      $('outF').innerHTML = F.map(f => `<button class="chip ${outF === f.k ? 'on' : ''}" data-out="${f.k}">${f.l}<i>${f.k === 'all' ? inC.length : cnt(f.k)}</i></button>`).join('');
+      const ord = (r) => LIVE.findIndex(o => o.k === (r.live || 'other'));
+      const list = inC.filter(r => outF === 'all' || (r.live || 'other') === outF)
+        .sort((a, b) => ord(a) - ord(b) || new Date(a.mfr_since) - new Date(b.mfr_since));
       $('list').innerHTML = list.length ? list.map(card).join('') : `<div class="empty">${rows.length ? 'No bikes here.' : 'No bikes in the 0–1 day list.'}</div>`;
     }
 
     function card(r) {
-      const o = outOf(r.outcome), h = hoursSince(r.mfr_since), ph = (r.rider_phone || '').replace(/\D/g, '').slice(-10);
-      const facts = [h !== null ? `<span class="${h >= 18 ? 'hot' : ''}">In MFR ${h} h</span>` : '', r.plan_expired_at ? `<span>Plan ended ${esc(fmtT(r.plan_expired_at))}</span>` : '',
-        r.booking_amount ? `<span>Rent ₹${Math.round(r.booking_amount).toLocaleString('en-IN')}</span>` : '', r.plan_type ? `<span>${esc(r.plan_type)}</span>` : ''].join('');
-      return `<div class="card ${o ? 'done' : ''}" style="${o ? '--c:' + o.c : ''}" data-bike="${r.bike_id}">
-        <div class="row1"><div class="id"><b>${esc(r.reg_number)}</b><small>${esc(r.model || '')} · ${esc(r.hub || '')}${me.team ? ' · ' + esc(cityLabel(r.city)) : ''}</small></div>
-          <a class="call ${ph ? '' : 'off'}" href="${ph ? 'tel:+91' + ph : '#'}" data-call="${r.bike_id}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>Call</a></div>
-        <div class="rider">${esc(r.rider_name || 'Rider name not known')} <span>· ${ph ? (PREVIEW ? ph.slice(0, 2) + 'xxxxxx' + ph.slice(-2) : ph) : 'no number'}</span></div>
-        ${me.team ? (r.agent_name ? `<div class="owner">Calling: <b>${esc(r.agent_name)}</b>${r.zone_name ? ' · ' + esc(r.zone_name) : ''}</div>` : `<div class="owner none">Calling: any ${esc(cityLabel(r.city))} agent${r.zone_name ? ' · ' + esc(r.zone_name) : ''}</div>`) : ''}
-        <div class="facts">${facts}</div>
-        <div class="outs">${OUT.map(x => `<button style="--c:${x.c}" class="${selOf(r) === x.k ? 'sel' : ''}" data-set="${x.k}">${x.label}</button>`).join('')}</div>
-        ${r.outcome ? `<div class="who">${esc(o.label)} · ${esc(r.called_by_name || '')} · ${esc(fmtT(r.called_at))}${r.note ? ' · “' + esc(r.note) + '”' : ''}</div>` : ''}
-        <form class="note" data-note="${r.bike_id}"><input name="n" placeholder="Note (e.g. will pay tomorrow 11 am)" value="${esc(r.note || '')}"><button class="${(r.bike_id in pending) ? 'dirty' : ''}">Save</button></form>
-        <div class="pend ${(r.bike_id in pending) ? '' : 'hidden'}">Not saved yet – tap Save</div>
+      const o = outOf(r.outcome), ph = (r.rider_phone || '').replace(/\D/g, '').slice(-10), lv = liveOf(r.live), sel = selOf(r), dirty = r.bike_id in pending;
+      const line = [r.rider_name || 'Rider', r.hub, r.booking_amount ? '₹' + Math.round(r.booking_amount).toLocaleString('en-IN') : ''].filter(Boolean).map(esc).join(' · ');
+      return `<div class="card done" style="--c:${lv.c}" data-bike="${r.bike_id}">
+        <div class="row1"><div class="id"><b>${esc(r.reg_number)}</b><small>${line}</small></div>
+          <a class="call ${ph ? '' : 'off'}" href="${ph ? 'tel:+91' + ph : '#'}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>Call</a></div>
+        <div class="tags"><span class="live" style="--c:${lv.c}">${esc(lv.label)}</span>${me.team ? `<span class="ag">${r.agent_name ? esc(r.agent_name) : 'No agent'}</span>` : ''}</div>
+        <form class="res" data-note="${r.bike_id}">
+          <select name="o" class="${sel ? 'set' : ''}"><option value="">Call result…</option>${OUT.map(x => `<option value="${x.k}" ${sel === x.k ? 'selected' : ''}>${x.label}</option>`).join('')}</select>
+          <button class="${dirty ? 'dirty' : ''}" ${dirty ? '' : 'disabled'}>Save</button>
+          <input name="n" placeholder="Note (optional)" value="${esc(r.note || '')}">
+        </form>
+        ${o && !dirty ? `<div class="who">${esc(r.called_by_name || '')} · ${esc(fmtT(r.called_at))}</div>` : ''}
       </div>`;
     }
 
@@ -185,17 +219,17 @@
       const c = e.target.closest('[data-city]'); if (c) { city = c.dataset.city; agent = 'All'; draw(); return; }
       const ag = e.target.closest('[data-agent]'); if (ag) { agent = ag.dataset.agent; draw(); return; }
       const f = e.target.closest('[data-out]'); if (f) { outF = f.dataset.out; draw(); return; }
-      const s = e.target.closest('[data-set]'); if (s) { const card = s.closest('[data-bike]'); const r = rows.find(x => String(x.bike_id) === card.dataset.bike);
-        if (!r) return;   // picking a result only marks it; nothing is saved until Save is tapped
-        const nv = selOf(r) === s.dataset.set ? null : s.dataset.set;
-        if (nv === (r.outcome || null)) delete pending[r.bike_id]; else pending[r.bike_id] = nv;
-        const dirty = r.bike_id in pending, sel = selOf(r);
-        card.querySelectorAll('[data-set]').forEach(b => b.classList.toggle('sel', b.dataset.set === sel));
-        card.querySelector('.note button').classList.toggle('dirty', dirty); card.querySelector('.pend').classList.toggle('hidden', !dirty); return; }
     });
+    const markDirty = (f) => { const r = rows.find(x => String(x.bike_id) === f.dataset.note); if (!r) return;
+      const nv = f.o.value || null; if (nv === (r.outcome || null) && (f.n.value.trim() || null) === (r.note || null)) delete pending[r.bike_id]; else pending[r.bike_id] = nv;
+      const d = r.bike_id in pending; f.querySelector('button').classList.toggle('dirty', d); f.querySelector('button').disabled = !d; f.o.classList.toggle('set', !!f.o.value); };
+    document.addEventListener('change', (e) => { const f = e.target.closest('[data-note]'); if (f) markDirty(f); });
+    document.addEventListener('input', (e) => { const f = e.target.closest('[data-note]'); if (f && e.target.name === 'n') markDirty(f); });
     document.addEventListener('submit', (e) => { const f = e.target.closest('[data-note]'); if (!f) return; e.preventDefault();
-      const r = rows.find(x => String(x.bike_id) === f.dataset.note); setOutcome(f.dataset.note, r && (r.bike_id in pending) ? pending[r.bike_id] : (r?.outcome || null), f.n.value.trim() || null); });
+      if (!f.o.value) { toast('Pick a call result first'); return; }
+      setOutcome(f.dataset.note, f.o.value, f.n.value.trim() || null); });
     $('reload').onclick = load;
+    $('day').onchange = (e) => { day = e.target.value; city = 'All'; agent = 'All'; outF = 'all'; load(); };
 
     // ---------- Alerts with sound (push notifications) ----------
     const b64 = (s) => { const p = '='.repeat((4 - s.length % 4) % 4); const r = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...r].map(ch => ch.charCodeAt(0))); };
