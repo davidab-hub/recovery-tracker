@@ -86,6 +86,13 @@
     .res input { grid-column: 1 / -1; padding: 7px 10px; font-size: 13.5px; }
     .res button { border: 0; border-radius: 10px; background: #d1d5db; color: #fff; padding: 0 16px; font-weight: 700; }
     .res button.dirty { background: var(--brand); }
+    .callers { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 9px 12px; font-size: 13.5px; display: grid; gap: 8px; }
+    .callers .hd { display: flex; align-items: center; gap: 8px; } .callers .hd span { flex: 1; color: #374151; } .callers .hd b { color: var(--text); }
+    .callers .hd button, .callers .dsel button { border: 1.5px solid var(--border); background: #fff; border-radius: 999px; padding: 5px 11px; font-weight: 600; font-size: 12.5px; }
+    .callers .dsel { display: flex; gap: 6px; } .callers .dsel button.on { background: #111827; border-color: #111827; color: #fff; }
+    .callers .who2 { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; }
+    .callers .who2 small { color: var(--muted); } .callers .who2 select { border: 1.5px solid var(--border); border-radius: 10px; padding: 6px 8px; font-size: 13.5px; background: #fff; }
+    .callers .who2 select.off { border-color: var(--bad); color: var(--bad); font-weight: 600; }
     .pv { background: #fbd977; color: #3d2c00; text-align: center; font-size: 12.5px; font-weight: 600; padding: 6px; }
   </style>
 </head>
@@ -101,6 +108,7 @@
     <div class="alertbar hidden" id="alertbar"><p id="alertTxt"></p><button id="alertBtn"></button></div>
     <div class="chips"><select class="daysel" id="day" aria-label="List date"></select></div>
     <div class="chips" id="cities"></div>
+    <div class="callers hidden" id="callers"></div>
     <div class="chips hidden" id="agents"></div>
     <div class="sum" id="sum"></div>
     <div class="chips" id="outF"></div>
@@ -156,7 +164,7 @@
         $('sub').textContent = meta.list_at ? `List of ${fmtT(meta.list_at)} · ${rows.length} bikes${meta.synced_at ? ' · status as of ' + fmtT(meta.synced_at) : ''}` : 'No list yet – it is made every day at 5:30 PM';
         const days = meta.days || []; day = meta.list_day;
         $('day').innerHTML = days.map(d => `<option value="${d}" ${d === meta.list_day ? 'selected' : ''}>${d === days[0] ? 'Latest list · ' : ''}${fmtD(d)} evening</option>`).join('');
-        draw(); alertBar();
+        draw(); alertBar(); loadCallers();
       } catch (e) { $('list').innerHTML = `<div class="msg">Could not load the list: ${esc(e.message || e)}</div>`; }
       finally { $('reload').disabled = false; }
     }
@@ -216,7 +224,7 @@
     }
 
     document.addEventListener('click', (e) => {
-      const c = e.target.closest('[data-city]'); if (c) { city = c.dataset.city; agent = 'All'; draw(); return; }
+      const c = e.target.closest('[data-city]'); if (c) { city = c.dataset.city; agent = 'All'; draw(); drawCallers(); return; }
       const ag = e.target.closest('[data-agent]'); if (ag) { agent = ag.dataset.agent; draw(); return; }
       const f = e.target.closest('[data-out]'); if (f) { outF = f.dataset.out; draw(); return; }
     });
@@ -230,6 +238,38 @@
       setOutcome(f.dataset.note, f.o.value, f.n.value.trim() || null); });
     $('reload').onclick = load;
     $('day').onchange = (e) => { day = e.target.value; city = 'All'; agent = 'All'; outF = 'all'; load(); };
+
+    // ---------- Fixed callers per city (e.g. Hyderabad): mark leave / week off, list is re-shared straight away ----------
+    let callers = [], cOpen = false, cDay = null;
+    const istDay = (add) => new Date(Date.now() + 5.5 * 36e5 + add * 864e5).toISOString().slice(0, 10);
+    async function loadCallers() {
+      if (PREVIEW || !me.team) return;
+      cDay = cDay || istDay(0);
+      const { data, error } = await db.rpc('followup_callers_get', { p_day: cDay });
+      callers = error ? [] : (data || []); drawCallers();
+    }
+    function drawCallers() {
+      const box = $('callers'), cs = callers.filter(c => city === 'All' || c.city === city);
+      box.classList.toggle('hidden', !cs.length); if (!cs.length) return;
+      const cities = [...new Set(cs.map(c => c.city))];
+      const dayTxt = cDay === istDay(0) ? 'today' : cDay === istDay(1) ? 'tomorrow' : cDay;
+      box.innerHTML = cities.map(ct => { const g = cs.filter(c => c.city === ct), on = g.filter(c => !c.off);
+        return `<div class="hd"><span><b>${esc(cityLabel(ct))} calls ${dayTxt}:</b> shared by ${on.length} of ${g.length}${on.length < g.length ? ' · off: ' + g.filter(c => c.off).map(c => esc(c.name)).join(', ') : ''}</span>
+          <button data-cedit>${cOpen ? 'Done' : 'Leave / week off'}</button></div>
+          ${cOpen ? `<div class="who2">${g.map(c => `<span>${esc(c.name)} <small>${c.bikes} bikes</small></span>
+            <select data-off="${c.agent_id}" class="${c.off ? 'off' : ''}"><option value="">Working</option><option value="leave" ${c.off === 'leave' ? 'selected' : ''}>On leave</option><option value="week_off" ${c.off === 'week_off' ? 'selected' : ''}>Week off</option></select>`).join('')}</div>` : ''}`; }).join('')
+        + (cOpen ? `<div class="dsel"><button data-cday="0" class="${cDay === istDay(0) ? 'on' : ''}">Today</button><button data-cday="1" class="${cDay === istDay(1) ? 'on' : ''}">Tomorrow</button></div>` : '');
+    }
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('[data-cedit]')) { cOpen = !cOpen; drawCallers(); }
+      const d = e.target.closest('[data-cday]'); if (d) { cDay = istDay(+d.dataset.cday); loadCallers(); }
+    });
+    document.addEventListener('change', async (e) => { const s = e.target.closest('[data-off]'); if (!s) return;
+      s.disabled = true;
+      const { data, error } = await db.rpc('followup_off_set', { p_day: cDay, p_agent: s.dataset.off, p_kind: s.value || null });
+      if (error) { toast('Not saved: ' + error.message); s.disabled = false; return; }
+      callers = data || []; drawCallers(); toast('Saved – calls shared again');
+      if (cDay === meta.list_day) load(); });
 
     // ---------- Alerts with sound (push notifications) ----------
     const b64 = (s) => { const p = '='.repeat((4 - s.length % 4) % 4); const r = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...r].map(ch => ch.charCodeAt(0))); };
