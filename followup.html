@@ -9,7 +9,7 @@
   <link rel="manifest" href="agent.webmanifest">
   <style>
     :root { --brand: #e3262b; --brand-dark: #b91c21; --bg: #f4f5f7; --card: #fff; --text: #111827; --muted: #6b7280; --border: #e5e7eb;
-      --ok: #15803d; --bad: #d93025; --hub: #7c3aed; --rec: #b45309; --oth: #6b7280;
+      --ok: #15803d; --bad: #d93025; --mov: #9f1239; --hub: #7c3aed; --rec: #b45309; --oth: #6b7280;
       --renew: #1d67bc; --submit: #7c3aed; --recover: #d93025; --noreach: #6b7280; }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", sans-serif; font-size: 15px; }
@@ -131,11 +131,12 @@
     // What actually happened after the evening call (live from Metabase)
     const LIVE = [
       { k: 'not_renewed', label: 'Not renewed yet', long: 'Not renewed yet', c: 'var(--bad)' },
+      { k: 'moved_recovery', label: 'Moved for recovery', long: 'Moved for recovery', c: 'var(--mov)' },
       { k: 'renewed', label: 'Renewed', long: 'Renewed', c: 'var(--ok)' },
       { k: 'at_hub', label: 'Bike at hub', long: 'Bike at hub / submitted', c: 'var(--hub)' },
       { k: 'recovered', label: 'Recovered', long: 'Recovered', c: 'var(--rec)' },
       { k: 'other', label: 'Other', long: 'Left recovery list', c: 'var(--oth)' }];
-    const liveOf = (k) => LIVE.find(o => o.k === k) || LIVE[4];
+    const liveOf = (k) => LIVE.find(o => o.k === k) || LIVE[LIVE.length - 1];
     const fmtD = (d) => new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
     let day = null;
     const CITY_LABEL = { NCR: 'Delhi' };
@@ -181,10 +182,10 @@
       const inC = inCity.filter(r => agent === 'All' || agentOf(r) === agent);
       const cnt = (k) => inC.filter(r => (r.live || 'other') === k).length;
       const pct = (n) => inC.length ? Math.round(100 * n / inC.length) + '%' : '–';
-      const shown = LIVE.filter(o => cnt(o.k) || o.k === 'renewed' || o.k === 'not_renewed');
+      const shown = LIVE.filter(o => cnt(o.k) || o.k === 'renewed' || (o.k === 'not_renewed' && !cnt('moved_recovery')));
       $('sum').innerHTML = `<div class="top"><b>${inC.length} bikes on the list</b><span>${city === 'All' ? 'All cities' : esc(cityLabel(city))}${agent !== 'All' ? ' · ' + esc(agent) : ''}</span></div>
         <div class="big"><div style="--c:var(--ok)"><b>${cnt('renewed')} <small style="font-size:13px">${pct(cnt('renewed'))}</small></b><span>Renewed</span></div>
-          <div style="--c:var(--bad)"><b>${cnt('not_renewed')} <small style="font-size:13px">${pct(cnt('not_renewed'))}</small></b><span>Not renewed – moving to 1–2 day recovery</span></div></div>
+          <div style="--c:var(--bad)"><b>${cnt('not_renewed') + cnt('moved_recovery')} <small style="font-size:13px">${pct(cnt('not_renewed') + cnt('moved_recovery'))}</small></b><span>${cnt('moved_recovery') ? 'Not renewed – moved for recovery' : 'Not renewed – moves to recovery next morning'}</span></div></div>
         <div class="bar">${LIVE.map(o => `<i style="width:${inC.length ? 100 * cnt(o.k) / inC.length : 0}%;background:${o.c}"></i>`).join('')}</div>
         <div class="legend">${shown.map(o => `<span style="--c:${o.c}">${o.label} ${cnt(o.k)}</span>`).join('')}</div>`;
       const F = [{ k: 'all', l: 'All' }, ...shown.map(o => ({ k: o.k, l: o.label }))];
