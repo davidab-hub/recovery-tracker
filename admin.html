@@ -273,7 +273,13 @@
     .t-tile { position: relative; padding-right: 36px; } .t-tick { position: absolute; top: 10px; right: 10px; font-style: normal; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border); font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; color: transparent; }
     .t-tile.on .t-tick { background: var(--tc); border-color: var(--tc); color: #fff; }
     .t-pick { font-size: 13px; color: var(--muted); margin: 12px 0 0; } .t-pick b { color: var(--text); } .t-next .go:disabled { opacity: .45; cursor: default; }
-    /* bulk: new PINs for many phone logins + Excel download */
+    /* bulk: new PINs for many phone logins, sent on WhatsApp */
+    .b-msgs { display: grid; gap: 10px; max-height: 52vh; overflow: auto; margin-top: 10px; }
+    .b-msg { border: 1px solid var(--border); border-radius: 12px; padding: 10px; } .b-msg.sent { border-color: #16a34a; background: rgba(22,163,74,.06); }
+    .b-mh { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; } .b-mh small { color: var(--muted); } .b-mh em { margin-left: auto; color: #16a34a; font-style: normal; font-weight: 800; font-size: 12.5px; }
+    .b-msg textarea { font-size: 12.5px; } .b-ma { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+    .b-ma button, .b-ma a { border-radius: 10px; padding: 7px 14px; font: inherit; font-size: 13px; font-weight: 800; border: 1px solid var(--border); background: var(--input); color: var(--text); cursor: pointer; text-decoration: none; }
+    .b-ma .t-wa { background: #16a34a; color: #fff; border-color: transparent; }
     .t-dl { border: 1px solid var(--border); background: var(--input); color: var(--text); border-radius: 12px; padding: 10px 14px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; }
     .t-add + .t-dl, .t-dl + .t-add { margin-left: 0; }
     .b-warn { background: #fef3c7; color: #92400e; border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.45; margin-bottom: 12px; }
@@ -420,7 +426,7 @@
       </section>
 
       <section class="panel" style="margin-top:10px" id="peoplePanel">
-        <div class="t-head"><h3>Team &amp; access</h3><button type="button" class="t-add" id="addPerson">+ Add person</button><button type="button" class="t-dl" id="bulkPins" title="Give new PINs to many phone logins and download them as Excel">⬇ Download logins</button><div class="t-sum" id="teamSum">Loading…</div></div>
+        <div class="t-head"><h3>Team &amp; access</h3><button type="button" class="t-add" id="addPerson">+ Add person</button><button type="button" class="t-dl" id="bulkPins" title="Give new PINs to many phone logins and send them on WhatsApp">🔑 Send logins</button><div class="t-sum" id="teamSum">Loading…</div></div>
         <label class="t-search"><span>🔍</span><input id="teamSearch" type="search" placeholder="Search by name or phone" autocomplete="off"></label>
         <div class="t-chips" id="teamChips"></div>
         <div class="t-grid" id="teamGrid"></div>
@@ -510,7 +516,7 @@
           <div class="t-save"><button type="button" data-act="cancel">Cancel</button><button type="button" class="ok" data-act="save">Save changes</button></div></div>`;
       } else {
         body = `<div class="t-act">${u.is_me ? '<span class="t-me">This is you</span>' : `<button type="button" class="pri" data-act="edit">Edit access</button>`}
-          ${u.is_agent ? '<button type="button" data-act="pin">🔑 New PIN</button>' : '<button type="button" data-act="link">🔗 New link</button>'}
+          ${u.is_agent ? `<button type="button" data-act="show" title="${u.has_pin ? 'See and share their current PIN' : 'PIN not saved yet: give a New PIN once'}">👁 Show PIN</button><button type="button" data-act="pin">🔑 New PIN</button>` : '<button type="button" data-act="link">🔗 New link</button>'}
           ${u.is_me ? '' : '<button type="button" class="more" data-act="more" title="More">⋯</button>'}</div>`;
       }
       return `<div class="t-card" data-id="${u.id}" style="--c:${c}"><div class="t-top"><div class="t-av">${esc(initials(u.name || contact))}</div>
@@ -572,9 +578,15 @@
         if (act === 'pin') {
           const pin = newPin();
           if (!confirm(`Give ${who} a new PIN (${pin})? Their old PIN stops working.`)) return;
-          const r = await call('set_pin', { id: u.id, pin }); showShare('pin', { ...r, pin }); return;
+          const r = await call('set_pin', { id: u.id, pin }); showShare('pin', { ...r, pin }); u.has_pin = true; return;
         }
         if (act === 'link') { showShare('link', await call('link', { id: u.id })); return; }
+        if (act === 'show') {
+          b.disabled = true; b.textContent = 'Loading…';
+          try { const r = await call('get_pin', { id: u.id }); showShare('pin', { ...r, roles: r.roles && r.roles.length ? r.roles : rolesOf(u) }); }
+          catch (err) { $('listErr').textContent = `${who}: ${err.message}`; }
+          b.disabled = false; b.textContent = '👁 Show PIN'; return;
+        }
         if (act === 'more') {
           if (!confirm(`Remove ${who}? Their login is deleted and they lose access straight away.`)) return;
           await call('remove', { id: u.id }); await loadUsers();
@@ -633,17 +645,16 @@
       const rs = (r.roles && r.roles.length ? r.roles : [r.role || 'agent']).filter(x => GIVES[x]);
       const what = rs.length === 1 && rs[0] === 'agent' ? 'Recovery App' : `app (${listJoin(rs.map(x => GIVES[x]))})`;
       const msg = `Hi ${r.name || ''}, here is your login for the Bounce ${what}:\nhttps://davidab-hub.github.io/recovery-tracker/app.html\n\nPhone: ${r.phone}\nPIN: ${r.pin}\n\nTo install the app:\n1. Open the link in Chrome.\n2. Tap "⬇ Install Bounce app" (or ⋮ → Install app).\n3. Open the Bounce app from your home screen and sign in with your phone number and PIN.`;
-      return `<h3>Send ${esc(r.name || r.phone)} their login</h3><div class="t-step">Send the PIN only to them. If they forget it, use "New PIN" on their card.</div>
+      return `<h3>Send ${esc(r.name || r.phone)} their login</h3><div class="t-step">Send the PIN only to them. You can see it again any time with "Show PIN" on their card.</div>
         <textarea readonly rows="7" id="shareMsg">${esc(msg)}</textarea>
         <div class="t-next"><button type="button" data-add="copy">Copy</button><a class="t-wa" href="https://wa.me/91${esc(r.phone)}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">WhatsApp</a><button type="button" class="go" data-add="close">Done</button></div>`;
     }
     function showShare(kind, r) { add = { step: 3, roles: [], result: shareHtml(kind, r) }; drawAdd(); $('addModal').classList.remove('hidden'); }
     $('addPerson').addEventListener('click', openAdd);
 
-    // ---- Download logins: PINs are stored one-way, so the only way to hand out PINs in bulk is to give
-    //      the chosen phone logins NEW PINs and download them at once (the old PINs stop working). ----
+    // ---- Send logins: PINs are stored one-way, so the only way to hand out PINs in bulk is to give the chosen
+    //      phone logins NEW PINs (the old PINs stop working) and show a ready WhatsApp message for each. ----
     const APP_LINK = 'https://davidab-hub.github.io/recovery-tracker/app.html';
-    const loadJs = (src) => new Promise((ok, bad) => { const t = document.createElement('script'); t.src = src; t.onload = ok; t.onerror = () => bad(new Error('Could not load the Excel tool. Check your internet and try again.')); document.head.appendChild(t); });
     const accessOf = (u) => { const rs = rolesOf(u).filter(r => GIVES[r]); return rs.length === 1 && rs[0] === 'agent' ? 'Recovery App' : listJoin(rs.map(r => ROLE[r] ? ROLE[r][0] : r)) || 'No access yet'; };
     const pinMsg = (r) => `Hi ${r.name || ''}, here is your login for the Bounce ${r.access === 'Recovery App' ? 'Recovery App' : 'app'}:\n${APP_LINK}\n\nPhone: ${r.phone}\nPIN: ${r.pin}\n\nOpen the link in Chrome, install the app, and sign in with your phone number and PIN.`;
     let bulk = null;
@@ -656,7 +667,7 @@
     }
     function closeBulk() {
       if (bulk && bulk.step === 2) return;   // don't close half-way
-      if (bulk && bulk.step === 3 && bulk.rows.length && !confirm('Close? The new PINs are only in the downloaded file; they cannot be shown again.')) return;
+      if (bulk && bulk.step === 3 && bulk.rows.some(r => !r.sent) && !confirm(`${bulk.rows.filter(r => !r.sent).length} people haven't been sent their new PIN yet. Close anyway? (You can still use Show PIN on their card.)`)) return;
       $('bulkModal').classList.add('hidden'); bulk = null; $('bulkBox').innerHTML = '';
     }
     function drawBulk(err = '') {
@@ -664,27 +675,32 @@
       if (bulk.step === 1) {
         const n = bulk.sel.size, agents = all.filter(isAgentOnly);
         const cityBtns = CITIES.filter(c => agents.some(u => u.city === c)).map(c => `<button type="button" data-b="city" data-c="${c}">Agents · ${c} (${agents.filter(u => u.city === c).length})</button>`).join('');
-        box.innerHTML = `<h3>Download logins</h3><div class="t-step">For phone + PIN logins (${all.length} people). Email logins use their own password and are not included.</div>
-          <div class="b-warn"><b>Everyone you tick gets a new 6-digit PIN now and their old PIN stops working straight away.</b> PINs are stored scrambled, so existing PINs can't be downloaded. The new PINs are shown only once, in the Excel file.</div>
+        box.innerHTML = `<h3>Send logins</h3><div class="t-step">For phone + PIN logins (${all.length} people). Email logins use their own password and are not included.</div>
+          <div class="b-warn"><b>Everyone you tick gets a new 6-digit PIN now and their old PIN stops working straight away.</b> To re-share someone's current PIN without changing it, use <b>👁 Show PIN</b> on their card instead.</div>
           <div class="b-quick"><button type="button" data-b="all">Everyone (${all.length})</button><button type="button" data-b="agents">All recovery agents (${agents.length})</button>${cityBtns}<button type="button" data-b="none">Clear</button></div>
           <div class="b-list">${all.map(u => `<label class="b-row"><input type="checkbox" data-id="${u.id}" ${bulk.sel.has(u.id) ? 'checked' : ''}><span><b>${esc(u.name || '—')}</b><small>${esc(u.phone || '')} · ${esc(accessOf(u))}${u.city ? ' · ' + esc(u.city) : ''}</small></span></label>`).join('') || '<p class="note" style="padding:10px">No phone logins.</p>'}</div>
           <p class="t-pick"><b>${n}</b> selected</p>
           <label class="b-ok"><input type="checkbox" id="bOk" ${bulk.ok ? 'checked' : ''}><span>I understand: the ${n} people ticked get new PINs and their old PINs stop working. I will send each person their new PIN.</span></label>
           <p class="err">${esc(err)}</p>
-          <div class="t-next"><button type="button" data-b="close">Cancel</button><button type="button" class="go" data-b="go" ${n && bulk.ok ? '' : 'disabled'}>Give new PINs &amp; download (${n})</button></div>`;
+          <div class="t-next"><button type="button" data-b="close">Cancel</button><button type="button" class="go" data-b="go" ${n && bulk.ok ? '' : 'disabled'}>Give new PINs (${n})</button></div>`;
         return;
       }
       if (bulk.step === 2) {
         box.innerHTML = `<h3>Giving new PINs…</h3><div class="t-step">Keep this page open.</div><div class="b-bar"><i style="width:${bulk.total ? Math.round(bulk.done / bulk.total * 100) : 0}%"></i></div><p class="t-pick">${bulk.done} of ${bulk.total} done</p>`;
         return;
       }
+      const sent = bulk.rows.filter(r => r.sent).length;
       box.innerHTML = `<h3>${bulk.rows.length} new PIN${bulk.rows.length === 1 ? '' : 's'} ready</h3>
-        <div class="t-step">The Excel file has been downloaded: name, phone, city, access, new PIN, app link and a message ready to send.</div>
-        <div class="b-warn">Keep the file private and delete it once everyone has their PIN. The PINs can't be shown again after you close this box.</div>
+        <div class="t-step">Send each person their message: tap <b>WhatsApp</b> (opens a chat with them, message filled in) or <b>Copy</b> and paste it. ${sent} of ${bulk.rows.length} sent.</div>
+        <div class="b-warn">Send each person their message. If you close this box, you can still see any of these PINs later with <b>👁 Show PIN</b> on their card.</div>
         ${bulk.fail.length ? `<div class="b-fail"><b>${bulk.fail.length} could not be changed (their old PIN still works):</b><br>${bulk.fail.map(f => esc(f.name || f.phone) + ' – ' + esc(f.error)).join('<br>')}</div>` : ''}
+        <div class="b-msgs">${bulk.rows.map((r, i) => `<div class="b-msg ${r.sent ? 'sent' : ''}"><div class="b-mh"><b>${esc(r.name || '—')}</b><small>${esc(r.phone)}${r.city ? ' · ' + esc(r.city) : ''} · PIN <b>${esc(r.pin)}</b></small>${r.sent ? '<em>✓ Sent</em>' : ''}</div>
+          <textarea readonly rows="4" id="bm${i}">${esc(pinMsg(r))}</textarea>
+          <div class="b-ma"><button type="button" data-b="copy" data-i="${i}">Copy</button><a class="t-wa" data-b="wa" data-i="${i}" href="https://wa.me/91${esc(r.phone)}?text=${encodeURIComponent(pinMsg(r))}" target="_blank" rel="noopener">WhatsApp</a></div></div>`).join('')}</div>
         <p class="err">${esc(err)}</p>
-        <div class="t-next">${bulk.rows.length ? '<button type="button" data-b="again">⬇ Download again</button>' : ''}<button type="button" class="go" data-b="close">Done</button></div>`;
+        <div class="t-next"><button type="button" data-b="xlsx">⬇ Excel (optional)</button>${bulk.rows.length > 1 ? '<button type="button" data-b="copyall">Copy all messages</button>' : ''}<button type="button" class="go" data-b="close">Done</button></div>`;
     }
+    const loadJs = (src) => new Promise((ok, bad) => { const t = document.createElement('script'); t.src = src; t.onload = ok; t.onerror = () => bad(new Error('Could not load the Excel tool. Check your internet and try again.')); document.head.appendChild(t); });
     async function downloadBulk() {
       if (!window.XLSX) await loadJs('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
       const head = ['Name', 'Phone', 'City', 'Access', 'New PIN', 'App link', 'Message to send'];
@@ -712,9 +728,7 @@
       };
       await Promise.all([worker(), worker(), worker()]);
       bulk.rows.sort((a, b) => (a.city + a.name).localeCompare(b.city + b.name));
-      bulk.step = 3; let err = '';
-      if (bulk.rows.length) { try { await downloadBulk(); } catch (e) { err = e.message + ' Use "Download again".'; } }
-      drawBulk(err);
+      bulk.step = 3; drawBulk();
     }
     $('bulkPins').addEventListener('click', () => { if (!users.length) return; openBulk(); });
     $('bulkModal').addEventListener('change', (e) => {
@@ -734,7 +748,14 @@
       else if (a === 'city') bulk.sel = new Set(all.filter(u => isAgentOnly(u) && u.city === b.dataset.c).map(u => u.id));
       else if (a === 'none') bulk.sel = new Set();
       else if (a === 'go') { if (bulk.sel.size && bulk.ok) await runBulk(); return; }
-      else if (a === 'again') { try { await downloadBulk(); } catch (err) { drawBulk(err.message); } return; }
+      else if (a === 'copy' || a === 'copyall') {
+        const text = a === 'copy' ? pinMsg(bulk.rows[+b.dataset.i]) : bulk.rows.map(pinMsg).join('\n\n------\n\n');
+        try { await navigator.clipboard.writeText(text); } catch (err) { const m = a === 'copy' ? $('bm' + b.dataset.i) : null; if (m) { m.select(); document.execCommand('copy'); } }
+        if (a === 'copy') bulk.rows[+b.dataset.i].sent = true; else b.textContent = 'Copied ✓';
+        if (a === 'copy') drawBulk(); return;
+      }
+      else if (a === 'xlsx') { try { await downloadBulk(); b.textContent = 'Downloaded ✓'; } catch (err) { drawBulk(err.message); } return; }
+      else if (a === 'wa') { bulk.rows[+b.dataset.i].sent = true; setTimeout(() => drawBulk(), 300); return; }
       if (['all', 'agents', 'city', 'none'].includes(a)) { bulk.ok = false; drawBulk(); }
     });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && bulk) closeBulk(); });
