@@ -106,7 +106,6 @@
   <div class="pv hidden" id="pv">Preview with today's real bikes – rider numbers hidden. Nothing here is saved.</div>
   <div class="wrap">
     <div class="alertbar hidden" id="alertbar"><p id="alertTxt"></p><button id="alertBtn"></button></div>
-    <div class="chips"><select class="daysel" id="day" aria-label="List date"></select></div>
     <div class="chips" id="cities"></div>
     <div class="callers hidden" id="callers"></div>
     <div class="chips hidden" id="agents"></div>
@@ -162,8 +161,6 @@
         }
         if (me.city && !me.team) city = me.city;
         $('sub').textContent = meta.list_at ? `List of ${fmtT(meta.list_at)} · ${rows.length} bikes${meta.synced_at ? ' · status as of ' + fmtT(meta.synced_at) : ''}` : 'No list yet – it is made every day at 5:30 PM';
-        const days = meta.days || []; day = meta.list_day;
-        $('day').innerHTML = days.map(d => `<option value="${d}" ${d === meta.list_day ? 'selected' : ''}>${d === days[0] ? 'Latest list · ' : ''}${fmtD(d)} evening</option>`).join('');
         draw(); alertBar(); loadCallers();
       } catch (e) { $('list').innerHTML = `<div class="msg">Could not load the list: ${esc(e.message || e)}</div>`; }
       finally { $('reload').disabled = false; }
@@ -237,7 +234,7 @@
       if (!f.o.value) { toast('Pick a call result first'); return; }
       setOutcome(f.dataset.note, f.o.value, f.n.value.trim() || null); });
     $('reload').onclick = load;
-    $('day').onchange = (e) => { day = e.target.value; city = 'All'; agent = 'All'; outF = 'all'; load(); };
+    // no day picker: the page always shows the latest list, which changes by itself at 5:30 PM
 
     // ---------- Fixed callers per city (e.g. Hyderabad): mark leave / week off, list is re-shared straight away ----------
     let callers = [], cOpen = false, cDay = null;
